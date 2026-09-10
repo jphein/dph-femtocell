@@ -25,7 +25,11 @@ esac
 
 hr(){ printf '%s\n' "──────────────────────────────────────────────────────────────"; }
 
-# OUIs seen on Cisco-built / ip.access femtocells.
+# OUIs seen on these femtocells.
+# ⚠️ An OUI lookup on any of these returns **Cisco SPVTG**, not ip.access. Both are right at
+#    different layers: ip.access designed the femtocell platform and its software stack, Cisco
+#    shipped, badged and registered the units. Do not discard a candidate because the vendor
+#    string says Cisco -- that is the expected answer.
 # ⚠️ NOT EXHAUSTIVE, and this is the script's main failure mode. An unlisted OUI does
 #    NOT mean the device is absent. A real DPH-154 in our lab carried an OUI that was
 #    missing from the first version of this list -- the scanner would have confidently

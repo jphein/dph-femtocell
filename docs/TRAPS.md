@@ -691,3 +691,32 @@ the bring-up was driving a console that never answers, and it never populated th
 list (trap 10). Everything after those two was impatience mistaken for failure. **Two failures
 that look identical can need opposite responses**, so use the acceptance criteria in
 [`BRINGUP.md`](BRINGUP.md) rather than a stopwatch alone.
+
+---
+
+## 22. Running the root tool twice does not confirm it worked
+**Read from the tooling's own source. This one bites the *reader*, not the author.**
+
+**SYMPTOM.** You run the root-acquisition tool. You are not sure it worked. You run it again to
+check — and it reports success. **That success proves nothing about whether the technique
+works.**
+
+**MECHANISM.** The tool calls its `try_root()` check **before** it injects anything. So on the
+second run, the check succeeds against **the residue of the first run** — an account or a key
+that is still sitting there. What you have verified is the **persistence of the side effect**,
+not the **method**.
+
+> ### ⭐ And note which run is the dangerous one: **the second.** The first run you treat as
+> ### uncertain; the second is the one you *trust*, and it is the one that cannot fail.
+> Same family as trap 15 (a store that reads back correctly while the air never changes) and,
+> for that matter, as a publication gate that excludes itself from its own scan: **the check is
+> structurally unable to observe the thing it is being asked about.**
+
+**CHECK.** Verify root by its **effect on a fresh, unprivileged path**, not by re-running the
+acquisition:
+- log in over your **own** newly-installed key, from a clean session;
+- confirm a privileged read that has nothing to do with the tool.
+
+⇒ **To test the *method* rather than the residue, you must first remove the residue** — undo
+the injected account or key, then run once. Otherwise you are testing persistence, and
+persistence is not what you wanted to know.

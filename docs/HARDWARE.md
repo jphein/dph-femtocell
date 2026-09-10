@@ -7,6 +7,28 @@
 
 ---
 
+## ⚠️ First: "ip.access" or "Cisco"? Both, at different layers
+
+This guide says **ip.access** a lot, because that is whose femtocell software stack is running
+inside — the components, the management model, the config layout, the sibling nano3G hardware.
+
+But when you go to **identify a unit**, everything in front of you will say **Cisco**:
+
+```
+the sticker          Cisco Systems
+an OUI lookup on the MAC   Cisco SPVTG      <- for every OUI these units use
+the on-device paths  a mix: both vendors appear
+```
+
+⇒ **ip.access designed the platform; Cisco shipped, badged and OUI-registered these units.**
+Both names are correct and they are not in competition. **Where this guide helps you identify
+hardware — a sticker, a MAC, a DHCP client name — it means the Cisco layer.** Where it talks
+about the software stack, it means ip.access.
+
+⚠️ If you look up an OUI and get "Cisco", that is not the guide being wrong.
+
+---
+
 ## The three at a glance
 
 | | **DPH-151** | **DPH-153** | **DPH-154** |

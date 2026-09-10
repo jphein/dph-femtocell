@@ -161,6 +161,16 @@ Access routes, all from fail0verflow's 2012 work:
   execution, bound to all interfaces because it was only ever meant to be reachable inside
   the operator's IPsec tunnel.
 
+> ### ⚠️ The commonly-cited NAME for this route is wrong, and the artefact carries the error
+> The route that actually yields root on a DPH-151 is **telnet, a hardcoded vendor guest
+> password, and a command injection through the local IPC client** — the three bullets above.
+> It is frequently called a *"CWMP RCE"*, and it is not one: **CWMP is not involved.**
+>
+> ⭐ The misnomer is baked into the tooling — the key file people pass around is *named* for
+> CWMP — so it propagates every time someone quotes the filename. **Expect every other
+> write-up you find to use the wrong name**, and do not go looking for a TR-069 vulnerability
+> that is not there.
+
 > ### ⭐ The backdoor survived a hardware generation
 > fail0verflow published against the **151** in 2012 and the same binary is still present in
 > the **153**. It was not patched between them. ⚠️ That raises the prior for the 154; it does
@@ -193,10 +203,13 @@ operator's infrastructure is unreachable. **Capture it to a file the first time.
 
 ## Route 5 — the management plane itself
 
-The TR-069 / CWMP stack is a legitimate configuration path and, on this firmware family, has
-also been an entry route. If you control DNS for the device — and you do, since it is on your
-network and its management hostnames are dead — you can answer as its management server
-without touching the device at all. See [`CONFIG.md`](CONFIG.md).
+The TR-069 / CWMP stack is a legitimate **configuration** path. If you control DNS for the
+device — and you do, since it is on your network and its management hostnames are dead — you
+can answer as its management server without touching the device at all. See
+[`CONFIG.md`](CONFIG.md).
+
+⚠️ **It is not how root is obtained on this device**, despite a widely-repeated name that says
+otherwise. See the correction under Route 3.
 
 The point for a reader is the *architecture*: the device is designed to be provisioned
 remotely by whoever answers those hostnames, and on your own network that is you.
@@ -209,6 +222,10 @@ remotely by whoever answers those hostnames, and on your own network that is you
 > ✅ **Generate your own keypair.** Nobody else's key is of any use to you, and a key that has
 > been published is worse than no key. There is no credential in this repo for the same reason
 > there is no point in one.
+>
+> ⛔ **And do not "confirm it worked" by running the tool a second time** — that check cannot
+> fail. See trap 22 in [`TRAPS.md`](TRAPS.md); it is the single most likely way a reader
+> misleads themselves here.
 
 ⛔ **What this repo does not contain, deliberately:** working payloads, or the construction of
 anything meant to be *served to* a device. Where a trap can only be explained by reproducing
