@@ -1538,6 +1538,73 @@ they stopped.
 | write a capture to the device | **the root filesystem is 100% full, 0 bytes available.** `/tmp` is a 15 MB RAM disk on a box with ~2.5 MB free; another temp path is a **separate 512 KB** RAM disk; the flash is ~3.5 MB |
 | run a long one-liner over SSH | **the SSH daemon silently rejects commands over roughly 900 characters** — measured OK at 900, broken pipe at 1500. The error reads like a permissions problem (`exec request failed on channel 0`) |
 
+> ### ⚠️ AND THAT LAST ERROR HAS **TWO** CAUSES, WHICH IS WHY IT MISLEADS
+> ```
+> exec request failed on channel 0
+>    cause 1   your command is over ~900 characters
+>    cause 2   you are opening the Nth concurrent SSH session -- dropbear refuses it
+> ```
+> ⭐ **Its own source note is the point: it "reads exactly like a dead device."** So a reader who
+> knows only cause 1 shortens a command that was never too long, and a reader who knows neither
+> concludes the unit has died.
+>
+> ✅ **Discriminate for free: close your other sessions and retry the SAME command.** Works ⇒ cause
+> 2. Still fails ⇒ shorten it. ⭐ And if you script against this box, **gate on a positive banner
+> from the command you ran** — a refused session must never be recordable as a device-down.
+
 ✅ **FIX for captures: stream over SSH stdout** (`tcpdump -s 0 -U -w -`). Zero filesystem writes,
 no race against a reboot, and no truncated-copy hazard.
 ✅ **FIX for long commands: put the loop logic on your workstation**, not on the device.
+
+---
+
+## 48. Your cell will not radiate and the reason mentions GPS
+**Read from vendor code on a donor DPH-151 rootfs. ⚠️ Our own unit's flash is unread.**
+
+> *You arrive thinking: "the service-disable reason says GPS, so the receiver is broken — or I need
+> to get this thing near a window."*
+
+**SYMPTOM.** The cell will not bring the radio up, and the reason the management layer reports names
+GPS.
+
+**MECHANISM — and it is an infrastructure absence, not a fault in your unit.** The vendor's
+service-disable vocabulary is a **closed, validated set** (a string-compare chain that returns an
+error for anything unrecognised, so it is the *accepted input set* rather than a sample of strings
+that happen to be in the binary). **Two of its six entries are GPS:** a **lock timeout** and an
+**out-of-tolerance** condition.
+
+And the lock timeout is reachable **with no hardware fault at all**:
+
+```
+the device fetches GPS assistance data from its operator's server
+   -> that service was retired with the network. The server is gone.
+the device deletes its cached assistance file on every shutdown
+   -> EVERY lock attempt is a COLD START: no almanac, no ephemeris
+   -> minutes of clear sky against a timeout, indoors,
+      on units whose external antenna port was deleted
+```
+
+⇒ ⭐ **A reader will find a GPS reason and conclude the receiver is dead. It is a dead assistance
+server.**
+
+**CHECK.** Treat a GPS service-disable reason as **expected** on this hardware in 2020s conditions,
+and go look for the other gates (traps 5, 10, 25) before suspecting the receiver. See
+[`HARDWARE.md`](HARDWARE.md) for why you probably do not need a GPS antenna at all.
+
+> ### ⛔ AND WE CANNOT TELL YOU HOW TO CLEAR IT — BECAUSE OUR OWN CELL RADIATES WITHOUT EVER LOCKING
+> The unit these notes come from **serves handsets today with no GPS fix, ever.** So the gate is not
+> currently blocking us, **and nobody knows why.** A guide that told you *"GPS will stop you"* would
+> be contradicted by our own cell.
+>
+> ⚠️ **This trap is DIAGNOSTIC, not prohibitive.** It tells you what a GPS reason means. It does not
+> tell you the gate is your problem, and it does not tell you how to satisfy it.
+
+⚠️ **Bounds, all of them in this sentence:** the binary evidence is from a **donor** unit; the file
+that owns this question **retracts half its own support** (the strings live in a validating setter,
+the actual decision site is **unlocated**, and a once-only lockout callback is unread); and our own
+unit's flash has never been read.
+
+📌 **An untested lead, published as a lead and not a recipe:** you control DNS for this device, so a
+wildcard for the operator's domain makes it ask **you** for the assistance file. ⛔ **The file's
+format is unread** — serving a valid one is a real hosting job, not a config line. **Do not treat
+this as a procedure.**
