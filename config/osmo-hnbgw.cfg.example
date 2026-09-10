@@ -1,0 +1,89 @@
+! ─────────────────────────────────────────────────────────────────────────────
+!  osmo-hnbgw — the gateway a DPH femtocell speaks Iuh to.
+!
+!  TEMPLATE. Replace every <PLACEHOLDER>. Deploy with something like:
+!    sudo install -o osmocom -g osmocom -m 660 osmo-hnbgw.cfg /etc/osmocom/
+!
+!  ⛔ DO NOT paste this over a working config without reading it first. A restore
+!     procedure and an overwrite look identical from inside the command.
+! ─────────────────────────────────────────────────────────────────────────────
+!
+!  Role: the femtocell speaks Iuh (SCTP/29169) to this daemon; this daemon
+!  speaks RANAP onward to osmo-stp -> osmo-msc.
+!
+!  ⭐ osmo-hnbgw is vendor-neutral. Source-read, not assumed: the HNB register
+!     handler copies the HNB identity string verbatim without validating it, and
+!     the accept-all policy takes any conformant hNodeB. It rejects only on ASN.1
+!     decode failure, a getpeername() failure, an unknown HNB under a closed
+!     policy, or a duplicate cell identity. THE GATEWAY WILL TAKE A MICROCELL.
+!     Whatever is failing during bring-up, it is almost certainly device-side.
+!
+log stderr
+ logging color 1
+ logging print category 1
+ logging print level 1
+ logging print file basename last
+ logging level set-all notice
+ !
+ ! ⭐ TURN THESE UP FOR BRING-UP. They render the HNBAP register exchange at IE
+ !    level, which is the only way to see WHY a register was refused.
+ ! ⚠️ SUCCESS AND FAILURE MAY NOT LOG AT THE SAME SEVERITY. On a sibling stack
+ !    the successful path logged at DEBUG and the failure path at ERROR -- so
+ !    with DEBUG off, a count of outcomes is 100% failures BY CONSTRUCTION and
+ !    the query producing it is perfectly correct. Check that both paths log at
+ !    the same level before you count outcomes in a log.
+ logging level hnbap debug
+ logging level rua debug
+ logging level ranap debug
+!
+line vty
+ no login
+!
+hnbgw
+ !
+ ! ── PLMN ────────────────────────────────────────────────────────────────────
+ ! ⛔ NEVER a real carrier's MCC/MNC. 999-99 is ITU-reserved for private use;
+ !    001-01 is the 3GPP test network. Must match osmo-msc and your SIMs.
+ plmn 999 99
+ !
+ ! ── The RAB assignment timer ────────────────────────────────────────────────
+ ! 🔴 THE DEFAULT IS TOO SHORT FOR THIS HARDWARE.
+ !    Default X1002 is 10 s. Our AP answers RAB Assignment at 12-13 s, so at the
+ !    default the gateway tears the call down BEFORE the response arrives -- and
+ !    almost no capture ever contains a RAB-AssignmentResponse, which sends you
+ !    hunting a missing message that was merely late.
+ timer mgw X1002 30
+ !
+ iuh
+  ! ─────────────────────────────────────────────────────────────────────────
+  ! 🔴 SET A SPECIFIC ADDRESS. DO NOT USE 0.0.0.0.
+  !
+  ! With a wildcard bind, osmo-hnbgw advertises EVERY local address in the SCTP
+  ! INIT-ACK -- including transient ones such as GGSN subscriber tunnels. We
+  ! measured FOUR paths offered to the AP, two of which the AP could not route
+  ! to. With a 5 s heartbeat and a 2-retransmission path limit, the dead paths
+  ! accumulate failures and THE ASSOCIATION ABORTS at ~25 s, over and over.
+  !
+  ! ⭐ AND WHY IT "WORKED BEFORE": SCTP fixes its address list AT ASSOCIATION
+  !    SETUP. The previous association was established before those tunnels
+  !    existed, so only the real addresses were ever advertised. SAME CONFIG,
+  !    DIFFERENT STARTUP ORDER. Diffing the config against a known-good state
+  !    finds nothing, because the config is correct in both states.
+  !
+  ! ⇒ Any daemon left on a wildcard bind re-acquires this the moment a new
+  !   interface appears. The right question is not "what changed in the config"
+  !   but "what exists right now that did not before".
+  ! ─────────────────────────────────────────────────────────────────────────
+  local-ip <THIS-HOST-LAN-IP>
+ !
+ ! ── Media gateway ───────────────────────────────────────────────────────────
+ ! A dedicated MGW instance for the 3G IuUP/RTP path is cleaner than sharing the
+ ! MSC's. Use a distinct port so the two do not collide.
+ ! ⚠️ Two instances of one binary DO NOT have one role. Settings that are correct
+ !    on the core-facing MGW can be wrong on the AP-facing one. Symmetry between
+ !    them is a hypothesis, not a licence.
+ mgw 0
+  remote-ip 127.0.0.1
+  local-port 2729
+  remote-port <MGW-PORT>
+  reset-endpoint rtpbridge/*

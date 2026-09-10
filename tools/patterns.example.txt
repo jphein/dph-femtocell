@@ -1,0 +1,15 @@
+# Copy this to ~/.config/dph-femtocell/patterns.txt and replace every line with
+# YOUR identifiers before running tools/pre-publish-check.sh.
+#
+# The real list deliberately does NOT ship with this repo. A detector for an
+# identifier has to contain the identifier, so a checker with its patterns
+# inlined must exempt itself from its own scan — which makes the one file
+# guaranteed to hold every identifier the only file never checked. That is a
+# real incident, recorded in the header of pre-publish-check.sh.
+#
+# One pattern per line. Blank lines and # comments ignored. Matched as substrings.
+your-domain.example
+you@your-domain.example
+10.0.0.
++15550000000
+your-wifi-ssid
