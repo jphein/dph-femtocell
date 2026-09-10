@@ -87,16 +87,22 @@ set defaultNtpServer ("<NTP-IP>")    # the FACTORY-DEFAULT tier; harmless belt-a
 set hnbGwAddress "<HNBGW-IP>"        # your osmo-hnbgw, read-write, max length 260
 
 get ipsecEnable
-get apNtpServerInfo
 get hnbGwAddress
 ```
+⚠️ **`get apNtpServerInfo` is deliberately not in that list** — see the NTP note below. On this
+hardware it errors, and an erroring read is not a failed setting.
 
 > ### ⭐ NTP is not a nicety — it gates the whole thing
 > Without working NTP the device **does not even attempt the HNB-GW connection**. And there
 > are two NTP attributes at different tiers: the factory-default one is applied after a
 > reset and **is not necessarily the value in force**. Writing only the factory tier fails
 > **silently** and looks exactly like the HNB-GW step being broken.
-> **Set both, and read back the operational one.**
+> **Set both.**
+>
+> ⚠️ **But do not verify by reading the operational tier back** — on our DPH-151 that attribute was
+> **rejected in every form tried**, so the read tells you nothing either way. **Verify
+> behaviourally instead: does the gateway connection get attempted at all?** That is the thing NTP
+> gates, and unlike the attribute it is observable.
 >
 > ⚠️ If your unit has no route to the internet, an NTP address that resolves publicly will
 > resolve fine and **never sync**. Point it at an NTP server it can actually reach.

@@ -60,9 +60,15 @@ cannot distinguish them. Check the **runtime** proof — both processes announce
 
 Both lines, or the flag did not take.
 
-⚠️ **Scope, and it matters: the DPH-151 firmware ships this key correctly in BOTH forms.**
-Do **not** hand-append it there. This trap is the nano3G's, and it is in this guide because
-the two run the same firmware family and the failure is so completely silent.
+> ### ⚠️ SCOPE IS CONTESTED, AND THE SAFE ACTION IS THE SAME EITHER WAY
+> **This defect was measured on an ip.access nano3G.** Two readings of our own corpus disagree
+> about whether it applies to a DPH-151: one says that firmware ships the key correctly in both
+> forms, the other says **neither those config files nor that key has been confirmed to exist on
+> the DPH family at all.** We have not resolved it, and we are not going to pretend we have.
+>
+> ⛔ **So do not go hand-appending anything. CHECK FIRST** — look for the key in both files on
+> your own unit, and use the runtime banner below rather than the config to decide whether it
+> took. The check is cheap and it is correct under either reading.
 
 ⚠️ Two smaller bounds: the banner prints on any non-zero value while the Iuh branch takes
 only on exactly `1`, so a `2` would print the banner and not take the path; and our
@@ -120,6 +126,12 @@ that a failover happened is destroyed by the very next power cycle. **Read it fi
 2. **A software download.** The post-download hook deletes the live bank's contents.
    ⚠️ **Nothing mitigates this — re-apply every hand edit after any software download.**
 3. **Factory restore.** Guarded; needs an explicit argument that normal boot never passes.
+
+⚠️ **BOUND: not every config file follows the bank.** For at least one vendor management daemon
+the two banks' config files are **byte-identical**, and the file is re-copied from a fixed path on
+**every start** — so a bank switch does not change it, and "it must be a bank difference" is not
+available as an explanation for that daemon's behaviour. Check the specific file before assuming
+the bank explains anything.
 
 > ### ⛔ And read this before running any "restore" procedure
 > A restore document's natural voice is *"run this to get back to known-good"*, which is
@@ -441,9 +453,18 @@ attributes: an **operational** one and a **factory-default** one applied after a
 widely-circulated instruction names the factory one. Writing it succeeds, reads back fine,
 and changes nothing in force.
 
-**CHECK.** Set both; **read back the operational one**. And confirm the unit can actually
-*reach* the NTP server you gave it — on an isolated segment, a public address resolves fine
-and never syncs.
+> ### 🔴 CORRECTED — AND THE ADVICE TO "READ BACK THE OPERATIONAL TIER" DOES NOT WORK ON A DPH-151
+> On the DPH-151 the operational-tier attribute was **rejected in every form tried** (an error, or
+> a zero maximum length); only the factory-tier name is accepted. The tier *model* may still be
+> right about what the running client reads — but **you cannot verify it by reading that attribute
+> back on this hardware.**
+
+**CHECK — behaviourally, not by reading a tier.** Set what the device accepts, then ask the
+question that actually matters: **does the gateway connection get attempted at all?** That is the
+thing NTP gates, and it is observable. A tier read-back that errors tells you nothing either way.
+
+And confirm the unit can actually *reach* the NTP server you gave it — on an isolated segment a
+public address resolves fine and never syncs.
 
 ---
 
@@ -525,6 +546,18 @@ move the radio. **The DMI path is what moves what goes on the air.**
   PLMN), **not** through the TR-069 tree;
 - better, decode the broadcast from a handset's engineering/field-test screen.
 
+> ### ✅ THE BETTER READ-BACK: ask the device what it last *kept*
+> The management protocol binds a **`ParameterKey`** to the key of the most recent **successful**
+> write. That is the device's own statement about what it recorded, rather than your server's
+> statement that the request was accepted. **Pair every write with a `ParameterKey` read** — one
+> extra round trip.
+>
+> ⚠️ **And a two-sided bound, because it was paid for:** a callee-side read-back is evidence
+> **only if you can show the write actually executed first.** The one published case of this law
+> catching a silently-ignored write was **withdrawn by its own author about twenty minutes later**
+> — the "unchanged" samples came from sessions in which the queue ended before the write ran.
+> **The law stands; that example evaporated.** A status code of 0 is the caller's optimism.
+
 **RELATED, same shape:** the `csgIndicator` trap (#4) is this defect's twin — a stored value
 that the broadcast ignores. **On this firmware family, "the config says X" is never evidence
 that the air says X.**
@@ -562,6 +595,13 @@ antenna, distance — rather than a configuration one, until someone measures th
 > radiated power.** Of 22 power-related attributes, only two are read-only and both report
 > *capability*, not output. ⇒ Use the state pair as your check instead, and know what each one
 > means: **`administrativeState` is what you ASKED FOR; `operationalState` is what you GOT.**
+
+> ### ⭐ TWO THINGS THAT MAKE THIS SETTING PARTICULARLY HARD TO LEARN FROM
+> - **The parameter is read at BOOT.** A change looks fine for an entire cycle before it bites.
+>   ⇒ **A user who sets a value and sees the cell still up has learned nothing.**
+> - **A value that never binds runs forever without incident.** One previous value ran 15.7 hours
+>   cleanly *because it was inert* — it sat above the ceiling and never constrained anything.
+>   ⇒ **"It has been set for months and was fine" is not evidence, if the value never bound.**
 
 ⚠️ **And a caution about the containment setting itself:** a two-hour outage here was blamed
 on setting one of these to `0`, and that verdict was **retracted by its own author** once a

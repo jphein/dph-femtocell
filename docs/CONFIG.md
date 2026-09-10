@@ -73,7 +73,13 @@ choose to accept it. Adding a CA is a file copy. **Disabling is far less work.**
 ### `apNtpServerInfo` *and* `defaultNtpServer` — set both
 > ### ⭐ Without working NTP the device does not even attempt the HNB-GW connection.
 `apNtpServerInfo` is the **operational** attribute; `defaultNtpServer` is the **factory**
-tier. Setting only the factory one fails silently. Set both, read back the operational one.
+tier. Setting only the factory one fails silently, so **set both**.
+
+> ### 🔴 But do not verify by reading the operational tier back on a DPH-151
+> It was **rejected in every form tried** there — an error, or a zero maximum length. Only the
+> factory-tier name is accepted. The tier model may still describe what the running client reads;
+> **you simply cannot confirm it through that attribute on this hardware.**
+> ✅ **Verify behaviourally: does the gateway connection get attempted?** That is what NTP gates.
 
 ⚠️ **If the unit has no internet route, an NTP address that resolves publicly will resolve
 fine and never sync.** Point it at a server it can actually reach.
