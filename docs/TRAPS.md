@@ -546,6 +546,23 @@ sufficient alone**.
 limit you can find, and **treat containment as a physical question** — enclosure, no external
 antenna, distance — rather than a configuration one, until someone measures the interaction.
 
+> ### 🔴 AND THE WAY THIS ACTUALLY GOES WRONG IS A UNIT ERROR, NOT A MISSING SETTING
+> A power value here was once justified as *"matched to the other cell, not exceeding it."* Every
+> individual clause of that sentence was true, and the result was **about 19.5 dB — roughly 90× —
+> above where the reference cell actually runs**, on live licensed spectrum. Two errors compounded:
+> ```
+> it matched a HARDWARE CEILING against what was really an OPERATING SETTING
+> and it used the OTHER device's ceiling -- this one's own is 6 dB lower
+> ```
+> ⇒ ⭐ **Self-review does not catch this, because nothing in the sentence is false.**
+> ✅ **Name the DEVICE and the QUANTITY KIND in the same sentence as the number.** "A ceiling on
+> unit A" and "a setting on unit B" are four different things and two of them are not comparable.
+>
+> ⚠️ **And you cannot read your way out of it: this device exposes NO attribute reporting actual
+> radiated power.** Of 22 power-related attributes, only two are read-only and both report
+> *capability*, not output. ⇒ Use the state pair as your check instead, and know what each one
+> means: **`administrativeState` is what you ASKED FOR; `operationalState` is what you GOT.**
+
 ⚠️ **And a caution about the containment setting itself:** a two-hour outage here was blamed
 on setting one of these to `0`, and that verdict was **retracted by its own author** once a
 separately-measured hardware fault turned out to explain the same loop. **The floor value is
@@ -720,3 +737,225 @@ acquisition:
 ⇒ **To test the *method* rather than the residue, you must first remove the residue** — undo
 the injected account or key, then run once. Otherwise you are testing persistence, and
 persistence is not what you wanted to know.
+---
+
+## 23. The reboot log names the wrong process — structurally, every time
+**Read from vendor code on a DPH-151.**
+
+> *You arrive thinking: "the box says this process crashed, so that's what I'll go fix."*
+
+**SYMPTOM.** The device's reboot history consistently blames **one** process. You go and debug it.
+
+**MECHANISM — three separate defects in one small file, and all three flatter the record:**
+
+1. **Last writer wins.** The supervisor polls *all* monitored PIDs each cycle with **no `break`**,
+   and assigns the crashed-app name **unconditionally**. If two processes are dead at one poll,
+   the record names **whichever is last in the monitored list** — even if the real casualty died
+   minutes earlier.
+2. **The uptime field is left-censored at 300 s.** The reboot routine busy-waits until *system*
+   uptime reaches 300 and then records whatever it last read. **A death at 20 s, at 165 s and at
+   299 s all write ~300.** The field carries no information below the threshold. ⇒ A tight
+   cluster at ~300 is **a clamp in vendor code, not a property of the world**.
+3. **A non-clean reboot writes a literal `0`.** The clean path records a real uptime; some cause
+   codes hardcode `0`. So `uptime = 0` looks like a device dying instantly at boot and means
+   nothing at all.
+
+⭐ **And the 300 s is a DELAY, not an exclusion** — an early crash is *deferred* to ~300 s, while
+a late crash reboots almost immediately. **Same code, two behaviours, selected by uptime at the
+moment of the crash.**
+
+**CHECK.**
+- **Use the core dumps, not the log.** The core-copy step runs **per dead PID**, so it is
+  unbiased. Presence is strong evidence. ⚠️ Absence is weak — a purge runs first.
+- Read `uptime` **only alongside the cause code**, and treat any ~300–307 value as censored.
+- ⛔ **Do not sort the history by timestamp.** It is built by *prepend*, so file order **is**
+  insertion order, newest first. Its timestamps come from another file's mtime and read 1970 or
+  a stale year when the clock is unset.
+- ⚠️ If the partition has been remounted read-only, the history is **frozen** and you are reading
+  pre-remount records.
+
+> ### ⚠️ A related trap in the same subsystem: **a shared identifier is not shared behaviour.**
+> An audit found **six** files that trigger a reboot, not the five usually listed. One has its
+> **own** copy of a same-named reboot function with **no delay floor and no environment check** —
+> it reboots immediately. The auditor had read the function in one script, found the 300 s floor,
+> and carried that property to a **different file with the same function name**.
+> ✅ `grep -rl '/sbin/reboot'` across the filesystem **and print the count.**
+
+---
+
+## 24. Your TLS server is too modern to talk to it
+**Read from the device's own linked libraries.**
+
+> *You arrive thinking: "it connects and immediately gives up — it must be rejecting my certificate."*
+
+**SYMPTOM.** You stand up your own management server. The device connects and the session dies
+instantly. It looks exactly like your certificate being refused.
+
+**MECHANISM.** The device's client stack is **OpenSSL 0.9.8h (2008)**. Its exported symbols carry
+SSLv2/SSLv3/TLSv1 client methods **only** — 0.9.8 predates TLS 1.1 and 1.2 entirely. **Your
+server must offer TLS 1.0**, and every modern TLS stack disables TLS 1.0 and its ciphers by
+default. A TLS-1.2-only server produces a handshake failure indistinguishable from rejection.
+
+**CHECK.** Before diagnosing anything device-side, **prove your own server offers TLS 1.0** and a
+period-appropriate CBC cipher suite. A successful session negotiates TLS 1.0.
+
+⚠️ **And the device may FIN on you even after a clean handshake.** In one measured run, **73 of 73**
+sessions ended with the *device* closing — a completed mutual-TLS handshake, a valid client
+certificate presented, then a clean FIN in about 20 ms with **zero application bytes**. Two
+different handlers and two different server certificates gave identical results, which rules out
+"wrong handler". ⇒ **That is a post-handshake, pre-application decision on the device side, not
+your server closing early.** Your own server log already answers who closed: a `recv()` returning
+empty is a clean FIN.
+
+> ### ⭐ Instrument note worth more than the finding: **`strings` is not a symbol table.**
+> `strings` reported the TLS 1.0 client method **absent** while `nm -D` found it present. The
+> author was one step from publishing "no TLS 1.0 support", which is the opposite of the truth.
+
+---
+
+## 25. It registers, de-registers ~15 seconds later, and it is **not** the famous bug
+**Measured on a DPH-151.**
+
+> *You arrive thinking: "it drops after about fifteen seconds — that's the wildcard-bind bug from the forum."*
+
+**SYMPTOM.** The cell completes HNBAP registration, the core accepts it, and roughly **15 seconds
+later** the device de-registers itself and shuts down gracefully.
+
+**MECHANISM.** It registered carrying **uninitialised placeholder cell identity** — an all-zero
+PLMN, a sentinel location area, a sentinel service area. With no valid radio configuration it
+registers with sentinels and then stands down when the radio cannot come up. **This is trap 10
+wearing a timer's clothes.**
+
+> ### 🔴 It is NOT the wildcard-bind / SCTP path-failure fault, whose published symptom is the
+> ### same 10–20 second window. Four discriminators, any one of which settles it:
+> ```
+> SCTP aborts = 0            a path failure ABORTS; this shut down gracefully
+> INIT-ACK advertises no extra address parameters   -> not multi-homing at all
+> the exit is an application PDU with an explicit Cause, not a timeout
+> it follows that PDU by ~1.4 ms -- causally tied to a decision, not to a timer
+> ```
+
+**CHECK — free, and it needs no VTY or management read at all.** Watch the registration message
+for **real PLMN / location / service area values**. One decoded field proves your configuration
+survived to the radio. Sentinels there mean trap 10, not a network problem.
+
+---
+
+## 26. An error string names what the code **tried** to do, not what happened
+**Read at instruction level from vendor binaries.**
+
+> *You arrive thinking: "it says it received 16 bytes and choked — I have a framing bug."*
+
+**SYMPTOM.** A log line names a byte count and looks like a parser complaining about a malformed
+frame.
+
+**MECHANISM.** The number is a **compile-time constant** — the *length argument* of a `recv()`
+that returned **≤ 0**. The instruction sequence loads the constant, calls `recv`, compares the
+result against zero and branches to the error. **No received length is ever compared to anything
+on that path.** Its sibling message about incomplete data is the same shape. **Both are
+connection-loss handlers, not parser errors.**
+
+**CHECK.** `recv() == 0` is an **orderly peer close**. Ask **which peer hung up, and when** —
+not what malformed frame arrived. Those are opposite investigations.
+
+⚠️ The branch covers both `0` and negative returns, so **the binary itself cannot distinguish an
+orderly close from a socket error.** Neither can you, from that line.
+
+---
+
+## 27. A config value carries a trailing newline onto the wire
+**Read from a vendor binary's imports, and observed in a DNS query.**
+
+> *You arrive thinking: "the hostname looks right in the file but the lookup fails."*
+
+**SYMPTOM.** A value you set in a config file is visibly correct, and the device behaves as though
+it is wrong.
+
+**MECHANISM.** One vendor binary reads its config with `fgets` and imports **no newline-stripping
+function at all** — the usual candidates are absent from its symbol table, and the one string
+function it does import is used for field separators. ⇒ **The last comma-separated element of any
+list value carries the line's `\n`**, because it has no trailing comma and runs to the buffer end
+that `fgets` filled. It reached a live DNS query as a name with a trailing newline.
+
+**CHECK.** ⛔ **`od -c` the value, never `cat`.** `cat` renders a trailing newline invisible, which
+is exactly how this survived all the way to the wire. The device also self-instruments it: it logs
+a name and a length per entry, and the buggy final element logs **length = visible length + 1**.
+
+⚠️ **A sibling binary in the same firmware DOES strip the newline.** Parsing rules differ per
+binary, so testing one proves nothing about another.
+
+---
+
+## 28. The operator's hostnames still resolve, and nothing is behind them
+**Measured, with passing positive controls.**
+
+> *You arrive thinking: "the name resolves, so the service is up and my redirect isn't working."*
+
+**SYMPTOM.** You point the device at your own infrastructure, it does not take, and you check the
+operator's names — they resolve fine. So your redirect must be broken.
+
+**MECHANISM.** Decommissioned services behind **live DNS records**. Of eleven operator service
+names, ten still resolved and **nothing answered** on any management or time port.
+
+⭐ **Time service is the strongest single signal**: it is the first step of the documented boot
+order and it is **unauthenticated**, so its silence cannot be explained away as credential-gating.
+
+> ### 🔴 AND THE INSTRUMENT THAT MAKES THIS WORK IS THE ONE THAT HIDES IT
+> If you have set up a wildcard DNS answer for the operator's domain — which is how you redirect
+> the device in the first place — **your own resolver answers every name under it, including
+> names that are malformed or that never existed.** Anything your workaround covers stops
+> reporting.
+>
+> ✅ **Query past your own fix**: use an explicit public resolver, and **include a name you know
+> should not exist** so you can see what a real negative looks like.
+
+⚠️ **`open|filtered` from a UDP scan is not evidence of life** — it means *no reply*. And a UDP
+scan silently needs root; one run returned nothing at all, including for a known-open control.
+
+---
+
+## 29. A file's timestamp is not a timestamp on a device with no clock
+**Corrected from our own notes — the law survived, the mechanism under it did not.**
+
+> *You arrive thinking: "this file is older than the boot, so it's left over from last time."*
+
+**SYMPTOM.** You want to know whether a file on the device is fresh or stale. You compare its
+mtime against boot time.
+
+**MECHANISM.** These devices have **no battery-backed clock**. The clock starts at an epoch
+default and then **jumps discontinuously** when time sync succeeds. So a file written *before*
+sync carries a timestamp that "predates the boot" **while being completely fresh** — the mtime and
+any current clock reading come from two different time bases on one machine.
+
+> ### ⭐ THE LAW ABOVE IT, WHICH IS THE PART WORTH KEEPING:
+> **A positive control validates READABILITY, not CURRENCY.** It proves the file is present and
+> non-empty. It can never prove the file is about *now*. We built a freshness gate on exactly this
+> confusion, and on a RAM-backed file the gate can only fire on a clock artefact — rejecting
+> **fresh** data as stale.
+
+**CHECK — do not use the clock at all.**
+- **Compare a PID recorded inside the file against the live process table.** A match proves
+  current-boot provenance outright, with no timestamps involved.
+- To settle whether a path even survives a reboot, use `mount` — it needs no write and no marker
+  file. ⚠️ On our unit `/tmp` is **tmpfs**, so nothing there survives; a file that appears to have
+  done so is telling you about the clock, not about storage.
+
+---
+
+## 30. `--help` is an action
+**Measured across a fleet of device-facing scripts.**
+
+> *You arrive thinking: "I'll just run it with --help and see what it does."*
+
+**SYMPTOM.** You run an unfamiliar device-side script with `--help` to find out what it is. **It
+runs.**
+
+**MECHANISM.** A shell script with no argument parsing does not print help — it **executes**. In
+one audited set, a majority of device-facing scripts had no help text at all, one placed its help
+handling at line 59 of 61 (after 58 lines had already run), and one had **no shebang, no header,
+and fired three state-changing management actions at a live cell.**
+
+**CHECK.** ⛔ **Never probe an unknown script by running it.** Read it — `head -40` costs nothing.
+✅ And when deciding which tools are safe to run, use an **allowlist of provably-inert ones**,
+never a blocklist: a detector that misses things shrinks an allowlist **toward safety** and
+inflates a blocklist **toward danger**.
