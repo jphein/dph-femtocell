@@ -16,16 +16,31 @@ that is correct for one can destroy another — trap 2 is a worked example of ex
 
 ---
 
-## If you only read four
+## Start here
 
-Ranked by what they actually cost us, not by how interesting they are:
+**47 traps. You are not going to read them all before you start, so here is the order that matters.**
 
-| | trap | why it is first |
+### ☠️ Before you touch the hardware — these are irreversible
+| | trap | what it costs |
 |---|---|---|
-| 1 | **[#21 — give a cold boot 20 minutes](#21-a-cold-boot-takes-about-16-minutes-and-every-check-gave-up-sooner)** | ten cold boots scored as failures. The cell was fine. Three confident negatives, two people, **all correct when taken and all early**. |
-| 2 | **[#5 — two parallel state triplets](#5-a-cold-boot-leaves-the-cell-locked-and-the-obvious-unlock-sets-the-wrong-attribute)** | invisible for months, because the attribute you naturally read is the one that looks healthy. |
-| 3 | **[#3 — an address the AP cannot be reached at](#3-the-ap-advertises-an-address-it-cannot-be-reached-at)** | one root cause, four unrelated-looking symptoms, five people chasing the radio. One command finds it. |
-| 4 | **[#6 — `show hnb` lies in both directions](#6-show-hnb-on-the-core-lies-in-both-directions)** | it reported a cell as connected for three minutes after it was unplugged. Everything downstream inherits that. |
+| A | **[#41 — do NOT put the jumpers back](#41-opening-the-case-can-destroy-a-factory-configuration)** | guessing the pattern trips a **one-way tamper latch in flash**. Leaving them off is safe; restoring from memory is not. |
+| B | **[#31 — the other firmware bank may have no way in](#31-booting-the-other-firmware-bank-can-remove-every-way-back-in-and-it-is-sticky)** | one bank has no root account and no entry path, and the selection is **sticky**. |
+| C | **[#32 — unpacking the firmware overwrites your `/`](#32-unpacking-the-firmware-overwrites-your-filesystem)** | absolute paths in the archive. Only a permission error stopped it. |
+| D | **[#33 — correcting the PLMN removes a safety interlock](#33-correcting-the-plmn-silently-removes-a-safety-interlock)** | the wrong PLMN was itself preventing transmission. Nobody chose to remove that. |
+
+### 🔴 Before you conclude anything is broken
+| | trap | why it is here |
+|---|---|---|
+| 1 | **[#21 — give a cold boot 20 minutes](#21-a-cold-boot-takes-about-16-minutes-and-every-check-gave-up-sooner)** | ten cold boots scored as failures. The cell was fine. Three confident negatives, **all correct when taken and all early**. |
+| 2 | **[#25 — it deregisters after ~15 s, and it is NOT the famous bug](#25-it-registers-de-registers-15-seconds-later-and-it-is-not-the-famous-bug)** | same window as a well-known fault, completely different cause — and the real one is now traced end to end. |
+| 3 | **[#5 — two parallel state triplets](#5-a-cold-boot-leaves-the-cell-locked-and-the-obvious-unlock-sets-the-wrong-attribute)** | invisible for months, because the attribute you naturally read is the one that looks healthy. |
+| 4 | **[#3 — an address the AP cannot be reached at](#3-the-ap-advertises-an-address-it-cannot-be-reached-at)** | one root cause, four unrelated-looking symptoms. One command finds it. |
+| 5 | **[#6 — `show hnb` lies in both directions](#6-show-hnb-on-the-core-lies-in-both-directions)** | it reported a cell connected for three minutes after it was unplugged. |
+
+### ⏳ Before you spend a week on something
+- **[#45 — you may not need a security gateway at all](#45-you-may-not-need-a-security-gateway-at-all)** — the audited unit reached full service without one.
+- **[#47 — working on the device changes the device](#47-working-on-the-device-changes-the-device)** — ~2.5 MB free RAM, no swap, and your own debugging can reboot it.
+- **[#46 — a second cell removes service rather than adding it](#46-a-second-cell-on-the-same-plmn-removes-service-instead-of-adding-it)** — handsets pick on signal, not on whether the cell works.
 
 ---
 
@@ -213,6 +228,16 @@ Confirm with `ping` and an ARP-table check.
 ⛔ **`snat` on an nftables `input` hook cannot work** for the data case and we tried it: by the
 time the packet reaches `input` it is already being delivered to a local socket, so there is no
 egress left to rewrite. Measured ineffective, reverted.
+
+> ### ⚠️ "IT WORKED ON MY OTHER FEMTOCELL" IS A TOPOLOGY DIFFERENCE, NOT A REGRESSION
+> **A single-processor sibling is structurally immune** — one device, one address, so whatever it
+> advertises is necessarily correct. There is no fault available for it to have. Comparing against
+> it tells you nothing, and it makes your two-processor unit look broken.
+
+⚠️ **And the encoding option is not the fix**, though it looks like one: it selects an *encoding*,
+not an *address* — re-encoding the private address still yields the private address. On some
+builds it is a fatal config parse error. ⛔ **And the log line naming the encoding is the
+zero-initialised default, not confirmation that anything was applied.**
 
 ⛔ **There is no device attribute for this.** We checked the vendor's full attribute table:
 only gateway, IPsec and DHCP addresses exist. And `snat` on an nftables `input` hook does
@@ -507,6 +532,12 @@ calls. And more generally: **for any zero that matters, run a positive control**
 something you *know* is in that image. If the control also returns zero, your instrument is
 blind, not the world empty.
 
+> ### ⚠️ AND IT FAILS THE OTHER WAY: A PORT NUMBER IS A SUBSTRING OF A BUFFER SIZE
+> `13107` is a substring of `131072`. Someone was one sentence from publishing *"this binary
+> references that port"* when the hit was a **buffer constant**.
+> ⇒ ⭐ **A numeric token collides as readily as a common English fragment** — and this direction is
+> the worse one, because **a large hit count discourages the control that a zero invites.**
+
 ⚠️ On this host specifically: the `grep` in an agent shell may be a wrapper that silently
 skips gitignored paths. Use `/usr/bin/grep` by absolute path when a recursive zero is
 load-bearing.
@@ -540,6 +571,14 @@ noise) frame per 160 ms = 6.25/s. That *is* the expected rate for silence.
 has no DTX"* is **true about the codec and wrong about the flow** — a transcoding leg emits
 one output packet per input frame, so it **inherits the source's DTX cadence while carrying a
 codec that has none**.
+
+> ### ⭐ THE MECHANICAL RULE: **a caveat that predicts a RANGE cannot explain a VALUE OUTSIDE IT.**
+> Discontinuous transmission predicts roughly 6 packets/second of comfort noise. **It does not
+> predict ZERO.** So *"that's just DTX"* is available for a low rate and **not** for an absolute
+> zero — and an absolute zero from a peer that never answers is what an unroutable address looks
+> like (trap 3). ⇒ **Check the number against the bound's own prediction before letting the bound
+> explain it away.** ⚠️ A *true* caveat filters as effectively as a false one, and nothing will
+> ever refute it.
 
 **CHECK.** ⛔ A rate in packets/second discards the information you need. **Look at the
 inter-arrival distribution**: a 20 ms mode is speech, a 160 ms mode is DTX, and a bimodal
@@ -871,6 +910,17 @@ different handlers and two different server certificates gave identical results,
 your server closing early.** Your own server log already answers who closed: a `recv()` returning
 empty is a clean FIN.
 
+> ### ⚠️ AND YOUR PROBE LIES THE SAME WAY
+> `openssl s_client` will tell you **"no peer certificate available"** — and that is *your client*,
+> not the server. Modern OpenSSL's default security level refuses this era's parameters and closes
+> **before** the certificate is shown. `-cipher 'ALL:@SECLEVEL=0'` returns it immediately.
+> ⇒ ⭐ **A client-side policy rejection and a server that serves nothing are indistinguishable in
+> that output** — and the wrong reading sends you to fix a working service.
+
+⚠️ **The device also sends no TLS SNI**, so name-based virtual hosting cannot work on a single
+address. If you host more than one service, you need more than one address — and until you do,
+**every connection is handled by whichever service that address defaults to.**
+
 > ### ⭐ Instrument note worth more than the finding: **`strings` is not a symbol table.**
 > `strings` reported the TLS 1.0 client method **absent** while `nm -D` found it present. The
 > author was one step from publishing "no TLS 1.0 support", which is the opposite of the truth.
@@ -898,6 +948,26 @@ wearing a timer's clothes.**
 > the exit is an application PDU with an explicit Cause, not a timeout
 > it follows that PDU by ~1.4 ms -- causally tied to a decision, not to a timer
 > ```
+
+> ### ⭐ AND THE UNDERLYING CAUSE HAS NOW BEEN TRACED, ON A DPH-151 IMAGE
+> **The normal-mode boot script never programs the radio processor's array.** The vendor inlined
+> the array-init body into the *diagnostic* mode scripts and **not** into the normal one. Every
+> link was re-verified:
+> ```
+> no array image loaded
+>   -> DMA open fails with an invalid-argument error
+>   -> the router process cannot open the radio control plane
+>   -> the control app takes its fatal path
+>   -> its socket dies, the registry lookup returns empty
+>   -> HNB-Deregister, cause radioNetwork, ~15 s after a successful register
+> ```
+> ⭐ **Nothing is missing from the device.** The array image and its loader are both **present** —
+> the step is simply never executed in normal mode. ⇒ **A file-presence check reports everything
+> fine.**
+>
+> **How to see it:** the boot-script directory holds ~26 links and **none** references the array
+> initialiser — control: the same sweep *does* find the mode script, so it is not blind.
+> ⚠️ Booting a diagnostic mode proves the DMA *can* open. **That is a diagnostic, not a fix.**
 
 **CHECK — free, and it needs no VTY or management read at all.** Watch the registration message
 for **real PLMN / location / service area values**. One decoded field proves your configuration
@@ -1030,7 +1100,7 @@ inflates a blocklist **toward danger**.
 **These four can leave you with no way back in, or put a transmitter on the air. They are not
 "traps" in the debugging sense — read them before you act, not after.**
 
-## 31. Booting the other firmware bank can remove every way back in — and it is sticky
+## 31. Booting the other firmware bank can remove every way back in, and it is sticky
 **Measured on a DPH-151's own flash.**
 
 > *You arrive thinking: "I'll boot the other bank, it's the same box."*
@@ -1355,6 +1425,21 @@ from outside.
 of a **healthy** process, not of a crash. And on used hardware the crash directory holds **the
 previous operator's dumps from years earlier**, sitting alongside yours.
 
+> ### ⭐ AND MOST OF WHAT IS IN THERE IS THE PREVIOUS OWNER'S
+> On one audited unit **15 of 24** application dumps dated from the carrier era, a decade before
+> the current owner. The persistent reboot history held **235 entries over 15 years — two of them
+> the current owner's.**
+> ⇒ **The same firmware crashed the same way on the carrier's own production network. Nothing you
+> did introduced it.**
+>
+> ### ⚠️ AND THERE ARE **TWO** REBOOT HISTORIES. The one you find first is the RAM copy.
+> ```
+> the RAM copy      ~21 entries        <- what you will find first
+> the flash copy   ~235 entries        <- 1/11th of the record is what you were reading
+> ```
+> ⛔ **Do not sort either one** — it is reverse-chronological already, and its timestamps come
+> from a clock that may not have been set (trap 29).
+
 **CHECK.** Scope every read of that directory **by mtime**. A hit in a decade-old dump says nothing
 about you, and two sets coexist. An earlier reading of ours concluded "it is crashing" from exactly
 this and was **retracted by its own author**.
@@ -1382,3 +1467,77 @@ the device's own name map before the file exists.**
 
 ✅ **One durability note that cuts the other way:** that file is **not** in the post-download
 deletion list, so it survives the one trigger that wipes every other config file (trap 2).
+
+---
+
+## 45. You may not need a security gateway at all
+**Measured: the audited unit reached full service with none.**
+
+> *You arrive thinking: "I have to stand up an IPsec gateway before any of this works."*
+
+**SYMPTOM.** You budget days for a security gateway because every description of the boot order
+puts IPsec before everything else.
+
+**MECHANISM.** The firmware carries an **"IPsec is not supported" branch** that is a *supported*
+no-tunnel path straight to the management server, with a named switch controlling it. ⭐ **And the
+gate is a string compare against the literal `"0.0.0.0"`** — an **unprovisioned gateway address**,
+not a locked device. It is re-evaluated on config commit, **so no reboot is needed.**
+
+The unit these notes come from **served four subscribers with no security gateway at all.**
+
+**CHECK.** Before building anything: read the gateway address the device currently holds. If it is
+the unset sentinel, you are already on the no-tunnel path.
+
+⚠️ **BOUNDS, and they are real:** which branch a given unit takes is **not established**; the
+gateway address must move in the same change; and **enabling the switch needs write access to the
+device**, which may be the thing you do not yet have.
+
+🔒 We report only that the path exists. Nothing here is about constructing a gateway.
+
+---
+
+## 46. A second cell on the same PLMN **removes** service instead of adding it
+**Measured: bringing up a second unit took down two working handsets.**
+
+> *You arrive thinking: "I'll bring the second unit up alongside the working one and compare them."*
+
+**MECHANISM.** **A cell that broadcasts but cannot serve is worse than no cell.** Handsets choose
+on signal strength, not on whether the cell works — so they migrate to the new one and then fail.
+Distinct cell identities prevent an identity *collision*; they do **not** prevent *reselection*.
+
+**CHECK — and the instrument is not the one you would reach for.**
+- **Watch the INCUMBENT's subscriber list**, sampled before and after every step. Not the new
+  cell's attributes. *"The new cell registered"* is the success signal; **"a handset migrated" is
+  the failure signal, and nothing watches for it by default.**
+- **Identify the off-switch before you touch the on-switch.** The RF admin-state lock is the
+  correct kill. ⛔ **Do not tear down the Iuh association** — it is harmless and worth keeping for
+  diagnosis.
+
+---
+
+## 47. Working on the device changes the device
+**Measured on a DPH-151.**
+
+> *You arrive thinking: "it keeps rebooting while I'm looking at it."*
+
+**MECHANISM.** This is a **138 BogoMIPS ARM with about 2.5 MB of free RAM and no swap.** Concurrent
+SSH sessions, a `/proc`-wide file-descriptor walk (~65 s), and a recursive `grep -r` over the
+compressed root filesystem all preceded the instability — and the longest stable stretch began when
+they stopped.
+
+> ### ⇒ 🔴 **A LOAD-INDUCED REBOOT IS INDISTINGUISHABLE FROM A FAULT-INDUCED ONE.**
+> ⚠️ Its own author bounds it honestly: *"neither is established."* But it means **you must not
+> pool observations taken under load with quiet-box ones** — date-stamp the moment you stopped
+> poking it.
+
+**Three concrete limits worth knowing before you plan anything:**
+
+| you want to | reality |
+|---|---|
+| `grep -r` over the vendor tree | **kills your SSH connection** |
+| write a capture to the device | **the root filesystem is 100% full, 0 bytes available.** `/tmp` is a 15 MB RAM disk on a box with ~2.5 MB free; another temp path is a **separate 512 KB** RAM disk; the flash is ~3.5 MB |
+| run a long one-liner over SSH | **the SSH daemon silently rejects commands over roughly 900 characters** — measured OK at 900, broken pipe at 1500. The error reads like a permissions problem (`exec request failed on channel 0`) |
+
+✅ **FIX for captures: stream over SSH stdout** (`tcpdump -s 0 -U -w -`). Zero filesystem writes,
+no race against a reboot, and no truncated-copy hazard.
+✅ **FIX for long commands: put the loop logic on your workstation**, not on the device.
