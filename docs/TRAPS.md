@@ -60,15 +60,39 @@ cannot distinguish them. Check the **runtime** proof — both processes announce
 
 Both lines, or the flag did not take.
 
+> ### 🔴 BUT THAT CHECK HAS ITS OWN SILENT FAILURE, AND IT IS THE SAME SHAPE AS THE BUG
+> **The banner only reaches that log under a developer-mode flag.** So an empty grep is
+> **indistinguishable** from *"the flag did not take"* — you cannot tell a real negative from a
+> log that was never written.
+> ✅ **Pair it with a positive control on the same file**: grep for something you know that process
+> logs. Control silent ⇒ your instrument is off, not the flag.
+
 > ### ⚠️ SCOPE IS CONTESTED, AND THE SAFE ACTION IS THE SAME EITHER WAY
 > **This defect was measured on an ip.access nano3G.** Two readings of our own corpus disagree
 > about whether it applies to a DPH-151: one says that firmware ships the key correctly in both
 > forms, the other says **neither those config files nor that key has been confirmed to exist on
 > the DPH family at all.** We have not resolved it, and we are not going to pretend we have.
 >
+> ### ⭐ PARTIALLY RESOLVED, AND IT RESOLVES TOWARD "THIS IS REAL"
+> **Both parse styles live in ONE binary** — ten file-open/whole-line-compare/string-to-long
+> blocks, plus nine formatted-scan sites clustering separately. ⇒ **That is what makes this a live
+> hazard rather than a per-model quirk**: the same program genuinely parses two ways.
+>
+> ⚠️ **And the parse is INIT-ONLY** — a mid-boot fix changes nothing until the process restarts.
+
 > ⛔ **So do not go hand-appending anything. CHECK FIRST** — look for the key in both files on
 > your own unit, and use the runtime banner below rather than the config to decide whether it
 > took. The check is cheap and it is correct under either reading.
+
+> ### ⭐ AND THE PART THAT DEFEATS THE OBVIOUS FIX: **the KEY line must end in a newline.**
+> The key-matching path **NUL-writes the last character unconditionally**, assuming a trailing
+> newline is there to overwrite. ⇒ **A key line with no trailing newline** — because it landed
+> last in the file, or a copy lost the final `\n` — **becomes a truncated token and the whole-line
+> compare fails.**
+> ⭐ **The asymmetry is real and worth knowing: only the KEY line is fragile.** The value line is
+> parsed from raw input and is safe either way.
+> ⇒ So *"I put it on two lines like the guide said and it still doesn't take"* has a second cause,
+> and it is invisible in every editor. **`od -c` the last line** (trap 27's instrument, again).
 
 ⚠️ Two smaller bounds: the banner prints on any non-zero value while the Iuh branch takes
 only on exactly `1`, so a `2` would print the banner and not take the path; and our
@@ -999,3 +1023,362 @@ and fired three state-changing management actions at a live cell.**
 ✅ And when deciding which tools are safe to run, use an **allowlist of provably-inert ones**,
 never a blocklist: a detector that misses things shrinks an allowlist **toward safety** and
 inflates a blocklist **toward danger**.
+---
+
+# ☠️ ONE-WAY DOORS
+
+**These four can leave you with no way back in, or put a transmitter on the air. They are not
+"traps" in the debugging sense — read them before you act, not after.**
+
+## 31. Booting the other firmware bank can remove every way back in — and it is sticky
+**Measured on a DPH-151's own flash.**
+
+> *You arrive thinking: "I'll boot the other bank, it's the same box."*
+
+**SYMPTOM.** The bank switch succeeds. The device boots. **You have no login and no recovery
+channel.**
+
+**MECHANISM.** The two banks are **not two copies of one system**. On the unit measured, the older
+bank's `/etc/passwd` carries **two uid-0 logins** and the newer carries **a single unprivileged
+account** — no root at all. The vendor's undocumented entry path present in the older bank's helper
+binary is **absent** from the newer one. And the bank selection is written to the **persistent boot
+environment**, so it does not revert on its own.
+
+⇒ **Every route in can be on the bank you are leaving.**
+
+**CHECK — before you switch, not after:**
+```sh
+# unpack BOTH banks and compare what can log in
+grep ':0:' <bankA>/etc/passwd  ;  grep ':0:' <bankB>/etc/passwd
+```
+And grep both helper binaries for whatever entry path you rely on, **with a positive control on a
+string you know is in both** — the original check used the binary's own name (15 hits vs 16), so
+the search was demonstrably not blind.
+
+⛔ **We are deliberately not describing the vendor entry path itself.** What matters here is that
+it exists in one bank and not the other.
+
+---
+
+## 32. Unpacking the firmware overwrites **your** filesystem
+**Measured. Only a permission error stopped it.**
+
+> *You arrive thinking: "cpio extracted nothing — zero files."*
+
+**SYMPTOM.** You extract the initramfs, your output directory is **empty**, and `cpio` complains
+about `/sys`.
+
+**MECHANISM.** The archive stores **absolute paths**. A plain `cpio -idm` therefore extracts to the
+real `/` — and as root that unpacks a 2011 root filesystem **over your host**. The empty output
+directory is not a failed extraction; it is the extraction going somewhere else.
+
+**CHECK / FIX.**
+```sh
+cpio -idm --no-absolute-filenames < initramfs.cpio     # MANDATORY
+```
+> ### ⭐ **THE LOUD ERROR IS THE ANSWER.** The first attempt hid it with `--quiet` and
+> ### `2>/dev/null`, which turned *"I am writing to your root filesystem and was denied"* into
+> ### *"0 files"* — indistinguishable from an empty archive.
+> Never silence stderr on an extraction. The permission denial was the only thing that saved the
+> host, and the redirect nearly threw it away.
+
+---
+
+## 33. Correcting the PLMN silently removes a safety interlock
+**Measured.**
+
+> *You arrive thinking: "I fixed the PLMN — that's just good hygiene."*
+
+**SYMPTOM.** **None.** Everyone, including you, files the change as an improvement.
+
+**MECHANISM.** Bring-up gates are checked in sequence. While the unit still held the previous
+operator's PLMN, **that wrong value was itself preventing transmission** — two barriers stood
+between the device and radiating. Correcting it removes one, and **nobody chose to remove it**.
+
+⚠️ **And something may already be trying to clear the last one.** A pre-existing entry was found
+sitting in a management queue that wrote the **admin-enable and service-enable** parameters on
+*every* session — inherited configuration, not authored by the current owner.
+
+**CHECK, before correcting the PLMN:**
+1. **Enumerate what else is holding the radio down.** Know how many barriers you have, not just
+   that you have some.
+2. **Dump your management server's pending queue.** You may be one session away from radiating.
+3. ✅ **Implement the refusal at the TOOL level** — a hard block on sending the admin-state,
+   service-enable, RF-transmit, transmit-power, UARFCN and scrambling-code parameter names.
+   **Removing one queue entry fixes an instance; a refusal in the tool fixes the class.**
+
+---
+
+## 34. A used unit carries the previous operator's PLMN, and your core will not stop it
+**Measured live on a used unit.**
+
+> *You arrive thinking: "my core only knows my test PLMN, so it can't broadcast anything else."*
+
+**SYMPTOM.** Nothing rejects it. The cell registers and is accepted.
+
+**MECHANISM.** **The safety-critical identity lives on the radio unit, not in your core.**
+`osmo-hnbgw` runs an accept-all policy and **copies the HNB identity verbatim without validating
+it**. A femtocell still holding a real carrier's MCC/MNC will register happily, and the device
+holds that value across a `default / local / lkg / active` precedence stack.
+
+**CHECK.** Read the PLMN **off the device**, and confirm the **`InUse` sibling** read-back — the
+data model provides one on every settable RF parameter for exactly this purpose. Do it **before**
+anything enables RF, never from a bare echo of what you just set, and never in the same unverified
+batch as the write.
+
+> ### ⚠️ And "nothing attached" is not a safe outcome. It is an impersonation that also failed.
+
+⭐ **A useful provenance check:** if your unit still shows the factory **placeholder** PLMN and
+placeholder gateway hostnames, it was never fully provisioned by an operator — which cuts against
+it carrying live operator configuration at all.
+
+---
+
+# More traps
+
+## 35. A write that reads back as `0` may have been **consumed**, not lost
+**Measured.**
+
+> *You arrive thinking: "I set it, read it back, it's still zero."*
+
+**MECHANISM.** At least one service-enable parameter is a **one-shot edge, not a state**. Writing
+`1` arms a byte that a dispatch loop consumes exactly once and clears. So an immediate read-back of
+`0` is **indistinguishable** from "the write never took".
+
+⚠️ **Edge vs state is not derivable from the attribute namespace** — the same vendor-private range
+holds obvious verbs and obvious nouns. There is no mechanical classifier. The test is empirical.
+
+**CHECK — the three-read protocol:**
+```
+R1  immediately, same session      R1=0            -> a CONSUMED EDGE
+R2  later, same session            R1=R2=R3=V      -> persisted
+R3  after a reboot                 R1=R2=V, R3=old -> RAM only
+                                   RPC fault       -> rejected
+```
+> ### ⭐ **`R1` is the read nobody runs**, because the instinct is write → reboot → check.
+
+⛔ **Calibrate on an inert parameter** — a heartbeat interval, a log-upload flag. **Never on the
+radio-enable, and never on the PLMN.**
+
+---
+
+## 36. The management console is mute while the management path works fine
+**Measured. And it is the exact OPPOSITE of trap 7.**
+
+> *You arrive thinking: "the console accepts my connection and never replies."*
+
+**MECHANISM — four separable causes, and you can split them for free:**
+
+- **Telnet option negotiation.** The daemon sends `IAC DO LINEMODE` on connect. A raw `nc` that
+  never answers it **never gets a prompt**, and every command times out.
+- **Launch environment.** The vendor launcher sets **no library path at all**; the client inherits
+  it from whoever invokes it. ⭐ **Invariance across 26 restarts is the *signature* of a launch
+  defect, not evidence against one** — started the same wrong way 26 times, crippled identically
+  26 times. Discriminator: a healthy start prints exactly **six** task-creation lines and
+  "Completed initialisation". Fewer means half-initialised.
+- **Single-client collision.** A collided session returns an empty banner, indistinguishable from
+  "attribute not supported".
+- **Free split: did a prompt ever arrive?** No prompt ⇒ negotiation. Prompt but no result ⇒
+  launch or downstream.
+
+> ### 🔴 **THIS CONSOLE INVERTS THE VTY RULE IN TRAP 7, AND CARRYING IT ACROSS TRIPS TWO OF THE
+> ### FOUR CAUSES AT ONCE.**
+> ```
+> Osmocom VTY (trap 7):  a trailing `exit` BLINDS you -- the polite close is the broken one
+> this console:          you MUST send `quit` and read to EOF -- dropping the TCP connection
+>                        WEDGES it for ~60 s, and Ctrl-C kills it until reboot
+> ```
+> **Two consoles, opposite etiquette, one project.** A rule learned on one is a hazard on the other.
+
+⚠️ **The console may not exist at all on your firmware.** It is a *commissioning* mode you invoke,
+and the vendor's own boot path uses the one-shot client instead. **Its absence from the process
+list is normal**, not a fault.
+
+---
+
+## 37. One bad attribute name aborts the whole batch — and a real name from the wrong namespace reads as correct
+**Measured.**
+
+> *You arrive thinking: "the device rejected my whole query, so my transport is broken."*
+
+**MECHANISM.** A batch read aborts **entirely** on a single invalid name, so one wrong entry makes
+every valid one in the batch look absent. Worse: **the spec-correct name is often from a different
+namespace than the device's own table.** Four measured instances:
+
+| you reach for | reality |
+|---|---|
+| the standards-body name for the scrambling code | exists in the standard, **absent** from the device's table, which uses a shorter form |
+| `MaxFAPTxPower` | **CDMA2000-only.** UMTS uses `MaxFAPTxPowerExpanded`. Querying the wrong one returns a fault that reads as *"no TX power control exposed"* — false, **and it is the power cap** |
+| `UARFCNUL` | not in the UMTS RF object at all; only an `…InUse` read-back exists. The uplink is **derived** from the downlink by duplex offset. Planning to set it is planning a fault |
+| the address attribute in the vendor's own example script | it is the **read-only** 16-byte tunnel address, not the writable 260-byte gateway one. ⭐ **The field widths confirm the roles independently of the names** |
+
+**CHECK.** Read the device's own attribute table first (one grep), and **enumerate the tree** rather
+than guessing names. ⭐ A read on a non-existent parameter returns a **fault, not silence** — so a
+fault on one name plus a value on another is a **clean positive**, not an ambiguous zero.
+
+⚠️ **And check both shapes of the data model.** The standard split by technology between issues, so
+the admin-state and RF-transmit paths are **flat** in one issue and carry an extra technology
+segment in the other. A tool aimed at one shape gets empty faults from the other and reads it as
+*"no RF control exposed"* — **which lands directly on a safeguard.**
+
+---
+
+## 38. The device offers exactly one IKE proposal, and a modern responder refuses it
+**Measured off the wire.**
+
+> *You arrive thinking: "my IPsec responder never gets past the first exchange."*
+
+**MECHANISM.** It is **IKEv2**, and it offers a **single proposal with no alternatives**:
+AES-CBC-128, HMAC-SHA1-96, PRF-HMAC-SHA1, **DH group 2 (MODP-1024)**. Modern strongSwan does not
+offer group 2 by default, so a default install answers `NO_PROPOSAL_CHOSEN`.
+
+**CHECK / FIX.** Explicitly enable `aes128-sha1-modp1024` on your responder. ⭐ **One packet is
+enough to confirm** — every retransmission is byte-identical, so the capture needs no lucky timing.
+
+⚠️ **Counting trap: three packets is ONE attempt retransmitted** (same SPI, same nonce). Counting
+packets as attempts inflates the retry rate threefold.
+⚠️ **Method note worth more than the finding:** the packet *size* was used to guess the IKE version
+and was consistent with **both** candidates. ***A number consistent with both hypotheses is not weak
+evidence for one — it is no evidence.***
+
+---
+
+## 39. Standing up your own security gateway can take down your LAN, including your own shell
+**Measured; the routing numbers are documented defaults, not read off that build.**
+
+> *You arrive thinking: "I added an IPsec responder and lost the box."*
+
+**MECHANISM.** The device proposes a **very broad traffic selector**. As responder, its selector
+becomes your *local* side, which is harmless — but a broad **remote** selector, or routes installed
+into strongSwan's policy routing table at its default rule priority, **outranks your main routing
+table** and takes the LAN with it, including your management path.
+
+**CHECK — before you install:**
+```sh
+ip rule        # nothing below 32766 means a new priority-220 rule will SHADOW main
+```
+- **Pin the remote selector to the device's virtual IP as a `/32`.** Never mirrored, never `0/0`.
+- **Take the virtual-IP pool from the free RFC1918 block the device asks for**, never from your own
+  LAN subnet — otherwise you get an ARP collision on your own network.
+
+> ### ⚠️ `apt install strongswan` **starts the daemon.** Installing is not a read.
+> The packaging enables *and* starts the unit and loads all configuration, so it binds the IKE
+> ports immediately on a production host. ✅ Order: **mask → install → write config → review the
+> policy intent → unmask → start.**
+
+⚠️ Two companions that will waste an afternoon: the daemon ships **AppArmor-confined**, so key
+material outside the packaged paths produces denials that `ls -l` flatly contradicts (see trap 20's
+family); and **reverse-path filtering must be loose** — strict mode drops decapsulated packets, so
+a generic "harden your host" guide is actively wrong here.
+
+---
+
+## 40. `openssl x509 -in <file>` reads only the FIRST certificate in a bundle, silently
+**Measured across 44 PEM files.**
+
+> *You arrive thinking: "none of these certificates is a root."*
+
+**MECHANISM.** A sweep reported every certificate as an intermediate or leaf. **Two files held two
+certificates each**, and the second certificate in those two bundles was **the only self-signed
+root in the entire image**.
+
+**CHECK.** Count `BEGIN CERTIFICATE` **per file** before trusting any per-file certificate summary.
+
+> ### ⭐ **A count of FILES is not a count of CERTIFICATES, and nothing in the output says so.**
+
+---
+
+## 41. Opening the case can destroy a factory configuration
+**Measured on a DPH-151.**
+
+> *You arrive thinking: "I'm about to open this thing up."*
+
+**MECHANISM.** A 2×6 header carried **five jumpers tethered to the lid**. Opening the case lifts
+all five at once, and their positions are gone. Five of six columns jumpered reads as a **deliberate
+factory configuration**, not a debug header — **the device may not boot correctly until they are
+restored.**
+
+> ### ☠️ AND THE DANGEROUS MOVE IS PUTTING THEM **BACK**. THIS IS A ONE-WAY DOOR.
+> **Do not guess the pattern. Leave them off.**
+>
+> The firmware's tamper reader treats **all-pins-open as an explicitly excluded pattern** — it is
+> dropped as *invalid* and counted separately, and **it does not trip the latch**. But a
+> **guessed** pattern is *valid-looking*: it passes the validity gate, **mismatches the stored
+> word**, and after three consecutive reads **commits a tampered flag to flash. Permanently.**
+>
+> ```
+> no jumpers fitted   -> reads as the excluded pattern -> dropped as invalid -> SAFE
+> a GUESSED pattern   -> passes validity -> mismatch -> x3 -> tampered=1 in flash, ONE-WAY
+> ```
+> ⇒ **Restoring them from memory is strictly more dangerous than leaving them off.**
+> ⛔ **And do not run the vendor's tamper-clear command** — it is destructive.
+
+**CHECK.** ⭐ **Photograph the board before the lid is fully clear**, at an angle showing which
+columns are bridged — that is the only way to restore them *knowing* rather than guessing. **If you
+did not photograph it, leave them off.**
+
+⚠️ The jumpers coming away **with the housing** is itself the argument that this is
+tamper-**evidence**, not tamper-**response** — a response mechanism would use a microswitch.
+⚠️ **BOUND, in the sentence: this was measured on a sibling model's gateway processor, and is a
+strong sibling mechanism rather than a measurement of your unit.** It is published because the
+failure is irreversible and the safe action costs nothing.
+
+---
+
+## 42. Restart-shaped events with no explanation: check the barrel jack before the protocol
+**Measured, with the case open, after three people had spent effort on protocol explanations.**
+
+> *You arrive thinking: "it reboots at random and nothing in the logs explains it."*
+
+**MECHANISM.** A **loose power jack.** Irregular intervals, no cadence, nothing network-visible.
+
+> ### ⚠️ AND THE EXPENSIVE HALF: **the subject may not have been continuously powered during any
+> ### earlier measurement.** Instruments had been audited exhaustively; **power continuity never
+> ### was.** Every conclusion drawn across that period inherited it.
+
+⛔ **But it does not absorb every neighbouring mystery** — it did not explain an eight-minute window
+in which the device was demonstrably up and polling. ⭐ **A mundane cause arriving late wants to
+swallow the anomaly next to it.** Resist that.
+
+⚠️ **Competing software candidate, same signature:** the vendor watchdog restarts supervised daemons
+on death and **reboots the box** on repeated death, so a crash→restart→reboot loop looks identical
+from outside.
+
+---
+
+## 43. Crash files: zero-byte means healthy, and old ones are not yours
+**Measured.**
+
+> *You arrive thinking: "there are crash files, so it's crashing."*
+
+**MECHANISM.** A **zero-length** staging file is created at process **start**. It is the signature
+of a **healthy** process, not of a crash. And on used hardware the crash directory holds **the
+previous operator's dumps from years earlier**, sitting alongside yours.
+
+**CHECK.** Scope every read of that directory **by mtime**. A hit in a decade-old dump says nothing
+about you, and two sets coexist. An earlier reading of ours concluded "it is crashing" from exactly
+this and was **retracted by its own author**.
+
+---
+
+## 44. A boot-time config script that runs and does nothing
+**Measured.**
+
+> *You arrive thinking: "my boot script is there, it runs, and nothing changes."*
+
+**MECHANISM.** The vendor boot path executes a management script from the persistent partition at
+every boot — and **two independent conditions disable it silently**:
+1. a single **auto-generated marker comment** in the file causes the whole path to be skipped;
+2. on one firmware-variant family the init script **comments out every `set` line** before running
+   it. ⚠️ On the unit measured this second guard is a **no-op** — the vendor scoped it deliberately
+   to a different variant.
+
+**CHECK.** Grep the file for the auto-generated marker, and check your filesystem-variant prefix
+against the guard's condition.
+
+⛔ **And treat authoring one as a one-way door:** a boot-time script issuing writes runs **before
+anyone can intervene** and re-applies itself every cycle. **Review it attribute by attribute against
+the device's own name map before the file exists.**
+
+✅ **One durability note that cuts the other way:** that file is **not** in the post-download
+deletion list, so it survives the one trigger that wipes every other config file (trap 2).
