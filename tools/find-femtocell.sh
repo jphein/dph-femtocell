@@ -8,6 +8,10 @@
 #   ./find-femtocell.sh 192.0.2.0/24         discover on a subnet, then probe
 #   ./find-femtocell.sh --ip 192.0.2.77      skip discovery, probe one host
 #
+# Exit: 0 probed · 2 COULD NOT MEASURE · 3 measured, no candidate found
+#       ⭐ 2 and 3 are deliberately different. An instrument that cannot reach its
+#         subject must not be able to report a finding about it.
+#
 # ⛔ ISOLATE THE UNIT FIRST. On boot it resolves its operator's management hostnames,
 #    tries IPsec to a dead security gateway and TR-069 to a dead management server, and
 #    retries forever. Nothing answers, but the DNS queries and IPsec attempts leave your
@@ -39,10 +43,29 @@ OUI_RE='48:1D:70|00:1B:9E|00:1A:2F|00:24:97|68:BC:0C|CC:EF:48'
 
 if [ -z "$TARGET" ]; then
   echo "== discovery: $SUBNET =="
-  scan=$(sudo nmap -sn -n "$SUBNET" 2>/dev/null | grep -E "Nmap scan report|MAC Address" | paste - -)
+  # ⛔ DO NOT redirect nmap's stderr to /dev/null. A tool reporting its own failure
+  #    into the one stream the habitual redirect discards is how a broken scan becomes
+  #    a confident zero. Captured, and surfaced below.
+  err=$(mktemp); trap 'rm -f "$err"' EXIT
+  raw=$(sudo nmap -sn -n "$SUBNET" 2>"$err"); rc=$?
+  scan=$(printf '%s\n' "$raw" | grep -E "Nmap scan report|MAC Address" | paste - -)
   total=$(printf '%s\n' "$scan" | grep -c .)
-  # Print the denominator, always. "0 candidates" and "0 hosts scanned" are different
-  # findings and they look identical if you only print the hit count.
+
+  # ⭐ COULD-NOT-MEASURE IS ITS OWN OUTCOME, AND IT IS NOT "FOUND NOTHING".
+  #    An earlier version of this script printed "no femtocell among 0 hosts" and
+  #    exited 3 for an invalid subnet, a missing nmap and a sudo refusal alike --
+  #    byte-identical to a real scan of an empty network. The comment two lines up
+  #    said those were different findings; the code did not implement it.
+  # ⚠️ And 0 hosts on a subnet you are attached to is itself implausible: a working
+  #    scan sees your own gateway. Treat it as a broken instrument, not an empty LAN.
+  if [ $rc -ne 0 ] || [ "$total" -eq 0 ]; then
+    echo "   🔴 COULD NOT MEASURE — this is NOT a 'no femtocell found' result."
+    [ -s "$err" ] && sed 's/^/      nmap: /' "$err"
+    echo "      nmap exit=$rc, hosts parsed=$total"
+    echo "      Check: is the subnet right? is nmap installed? did sudo succeed?"
+    echo "      A working scan of a subnet you are on sees at least your gateway."
+    exit 2
+  fi
   echo "   hosts responding: $total"
   hits=$(printf '%s\n' "$scan" | grep -iE "$OUI_RE")
   if [ -n "$hits" ]; then
