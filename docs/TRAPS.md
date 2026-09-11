@@ -773,6 +773,15 @@ Two free corollaries:
   retraction detection, written by someone who had quoted "when you truncate, print the total" to
   two people within the hour.** ⇒ **Knowing the rule does not stop you being its instance;** the
   only thing that does is printing the total next to the sample.
+- ⭐ **AND WHEN YOU CORRECT A COUNT, SAY WHICH KIND OF CORRECTION IT IS.** A figure that moves
+  `14 → 39 → 45` reads as *"nobody can pin this down"*, and **the good number then inherits the
+  distrust the wrong one earned.** ⇒ Here only the first was an **error** (a truncated read
+  reported as a total); `39` and `45` are two valid **definitions** — *the first* retraction below
+  a threshold, versus *any* — and they reconcile exactly, differing by the 6 files that warn you at
+  the top and then retract something else 200 lines down.
+  ⇒ ✅ **Label it: ERROR, or SHARPENED DEFINITION.** Without that, a series of corrections is
+  indistinguishable from an unreliable measurement — and the last, best number is the one that
+  gets discounted.
 
 ---
 
