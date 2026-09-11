@@ -767,6 +767,12 @@ Two free corollaries:
   on output you already have. Same for `tail`.
 - **Print the denominator beside every count.** `0 hits` is a broken reader you cannot
   distinguish from a true zero; `0 hits / 165 keys parsed` is a finding.
+- ⭐ **And the sharper version of the same rule, because it caught three people in one evening:**
+  ***check whether your display limit became your answer.*** A `| head -14` read back as *"14 files"*
+  understated a corpus-wide retraction rate by a factor of three — **in the finding that was ABOUT
+  retraction detection, written by someone who had quoted "when you truncate, print the total" to
+  two people within the hour.** ⇒ **Knowing the rule does not stop you being its instance;** the
+  only thing that does is printing the total next to the sample.
 
 ---
 
