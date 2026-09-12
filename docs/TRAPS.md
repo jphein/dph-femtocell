@@ -39,6 +39,7 @@ written in prose here would be correct exactly once, and this file has already o
 | 3 | **[#5 — two parallel state triplets](#5-a-cold-boot-leaves-the-cell-locked-and-the-obvious-unlock-sets-the-wrong-attribute)** | invisible for months, because the attribute you naturally read is the one that looks healthy. |
 | 4 | **[#3 — an address the AP cannot be reached at](#3-the-ap-advertises-an-address-it-cannot-be-reached-at)** | one root cause, four unrelated-looking symptoms. One command finds it. |
 | 5 | **[#6 — `show hnb` lies in both directions](#6-show-hnb-on-the-core-lies-in-both-directions)** | it reported a cell connected for three minutes after it was unplugged. |
+| 6 | **[#50 — it shows the network and will not connect](#50-the-handset-finds-the-cell-shows-it-and-will-not-connect--because-you-are-lying-to-it-about-your-power)** | looks like access control; is actually **your SIB5 power advertisement**, and the handsets are the ones transmitting too hot. |
 
 ### ⏳ Before you spend a week on something
 - **[#45 — you may not need a security gateway at all](#45-you-may-not-need-a-security-gateway-at-all)** — the audited unit reached full service without one.
@@ -1747,3 +1748,59 @@ observation.
 > writer** — a short button press, a management-interface reboot action, and your own tooling can
 > all produce it — so **that code means "a reinitialise happened", not "somebody mistimed a
 > press."** `[measured: three distinct writers of the same code on one unit.]`
+
+---
+
+## 50. The handset finds the cell, shows it, and will not connect — because you are lying to it about your power
+**Mechanism from the vendor's own management library plus 3GPP TS 25.331. The magnitude is
+disputed between two of our own derivations, and is published disputed.**
+
+**SYMPTOM.** The handset lists your network and camps on it. Registration never completes. It
+reads as access control, a core-network fault, or a barred cell. It is none of those.
+
+**MECHANISM.** The cell broadcasts its CPICH transmit power in SIB5. **A handset does not
+measure your power — it is told.** It then sets its first RACH preamble by open loop:
+
+```
+Preamble_Initial_Power = P_CPICH(from SIB5) - CPICH_RSCP + UL_interference + Constant
+```
+
+Advertise a higher CPICH power than the cell actually radiates and the handset infers an
+enormous path loss, then **transmits its preamble that much too hot** — into a femtocell that
+may be a metre from its face. The receive front end overloads, the RACH fails, and the attach
+never begins. The vendor's library states both the precondition and the consequence:
+
+> *"…If this rule is broken, the **actual power with which CPICH is transmitted will be
+> different from the value of Primary CPICH Tx Power that is broadcast in SIB5/5bis**."*
+
+> ### ⭐⭐ This is the interference mode a containment plan usually misses completely
+> Every other power discussion in this repo concerns **your downlink** — how far the cell
+> reaches and who can hear it. **This one is uplink, and the transmitter is not yours.** It is
+> every handset in range being instructed to shout. ⇒ **A containment argument that bounds the
+> femtocell's own output and stops there does not touch this at all.**
+
+> ### ⚠️ And the attribute behind it does not look like a power setting
+> `cpichTxPowerUpperLimit` reading **500** is not somebody asking for +50 dBm. **500 is exactly
+> the 3GPP TS 25.331 ceiling for that SIB5 field** — the value an *unset* field sits at.
+> ⇒ **Correcting it changes the honesty of the advertisement, not the output.** The radio
+> cannot exceed its hardware power ceiling whatever this attribute says.
+> ⭐ **So "nobody ever configured this" and "somebody turned it up" present identically here,
+> and they call for opposite actions.**
+
+> ### ⚠️ How much too hot? Two derivations, and they do not agree
+> ```
+> ~29 dB   the figure carried in our brief
+> ~47 dB   broadcast 50 dBm vs a CPICH at 10 percent of a 13 dBm carrier (= +3.0 dBm)
+> ```
+> **Sign, cause and order of magnitude agree. The figure does not**, and it turns on a CPICH
+> power-percentage attribute that was never read. **"Tens of dB" is the honest statement.**
+> ⛔ **Do not quote a number from here** — read the percentage and the hardware ceiling on your
+> own unit.
+
+**CHECK.** Compare what you **advertise** against what you can **radiate**. They are different
+attributes and **the device does not check them against each other.** ⚠️ **And in `CONFIGURED`
+mode the upper-limit attribute stops being a bound and becomes the actual transmitted CPICH
+power** — so the identical number means two different things depending on a setting documented
+in another guide entirely: [`CONFIG.md`](CONFIG.md#rfparamscandidatelist--the-one-nobody-sets-and-the-cell-dies-without-it). See also
+[trap 16](#16-transmit-power-setting-one-limit-is-not-containment), which is the same subject
+from the downlink side and is also unresolved.
