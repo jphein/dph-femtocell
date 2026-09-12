@@ -520,10 +520,27 @@ value. ⛔ Do not delete the gate — a fail-closed gate testing the wrong thing
 **SYMPTOM.** The core accepts the HNB registration. Everything looks up. **No handset can
 attach.**
 
-**MECHANISM.** `cellParameterSelectionMethod` defaults to AUTO, which selects *from a
-candidate list*. With `rfParamsCandidateList` empty, the select action **acknowledges and
+**MECHANISM.** With `rfParamsCandidateList` empty, the select action **acknowledges and
 selects nothing**: `uarfcnDownlink = -1`, `scramblingCode = -1`,
 `operationalState = DISABLED`. An HNBAP association with no radio.
+
+> ### 🔴 An earlier revision of this trap blamed `AUTO`, and had it backwards.
+> It said AUTO *"selects from a candidate list"*. **It does not.** `AUTO` selects from
+> **network-listen scan results**; `CONFIGURED` is the mode that reads your list — the vendor's
+> own management library says so. Detail and corroboration:
+> [`CONFIG.md`](CONFIG.md#rfparamscandidatelist--the-one-nobody-sets-and-the-cell-dies-without-it).
+>
+> ⚠️ **The measurement below is untouched and still stands. What is no longer established is
+> WHY it worked.** Populating the list moved a real unit to a live carrier in 15 seconds, and
+> that is only consistent with the library text if the unit was **already** in `CONFIGURED` —
+> i.e. if *"defaults to AUTO"* was an assumption nobody read back. **We did not record the
+> method at the time, so we cannot close it**, and we are not going to invent a reading.
+> ⇒ **Read `cellParameterSelectionMethod` back on your own unit rather than trusting either
+> account of what the default is.**
+>
+> ⭐ **The consequence if yours IS in `AUTO`:** populating the list changes **nothing**, and a
+> no-change reads as *"the list is not the problem"* — sending you away from the fix instead of
+> toward it. **Set the method first, then the list.**
 
 **CHECK.** A registration alone is **not** an acceptance criterion. Require all three:
 ```

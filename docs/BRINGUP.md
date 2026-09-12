@@ -127,16 +127,25 @@ hardware it errors, and an erroring read is not a failed setting.
 > air** — trap 15 in [`TRAPS.md`](TRAPS.md) is a store that reads back correctly while the
 > broadcast never changes.
 
-> ### 🔴 The step everyone misses: populate the candidate list FIRST
-> `cellParameterSelectionMethod` defaults to **AUTO**, which selects *from a candidate
-> list*. With an empty list the select action **acknowledges and selects nothing** — you get
-> `uarfcnDownlink = -1`, `scramblingCode = -1`, `operationalState = DISABLED`, and an HNBAP
+> ### 🔴 The step everyone misses: set the selection METHOD, then the list
+> With no usable radio parameters the select action **acknowledges and selects nothing** — you
+> get `uarfcnDownlink = -1`, `scramblingCode = -1`, `operationalState = DISABLED`, and an HNBAP
 > association **with no radio**. The core shows the cell registering. No handset can attach.
 > The symptom is "the core says it's up and the phones say no service", and it will send you
 > to debug the core for a day.
+>
+> ⚠️ **Populating `rfParamsCandidateList` is only half of it — and an earlier revision of this
+> page said it was all of it.** `AUTO` reads **network-listen scan results**, not your list;
+> `CONFIGURED` reads the list. **A unit in `AUTO` that has never scanned selects nothing no
+> matter what the list contains**, which is indistinguishable from the write not landing.
+> ⇒ **Set the method first, and read it back before you unlock.** Full detail — including a
+> transmit-power attribute whose *meaning* changes with the method — in
+> [`CONFIG.md`](CONFIG.md#rfparamscandidatelist--the-one-nobody-sets-and-the-cell-dies-without-it).
 
 ```
+set cellParameterSelectionMethod CELL_PARAMETER_SELECTION_METHOD_CONFIGURED
 set rfParamsCandidateList ({<uarfcn>, <scrambling-code>, 1})
+get cellParameterSelectionMethod     # read it back BEFORE the unlock action
 action <selectCellParams>
 action <unlock>
 action establishPermanentHnbGwConnection
