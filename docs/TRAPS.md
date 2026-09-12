@@ -1905,3 +1905,42 @@ deliberate bring-up all apply it equally well.
 compare them. ⛔ **A successful `set` is evidence of a successful `set` and of nothing else.**
 Related: [trap 2](#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell)
 is the same hazard one layer down, where what a reboot picks up depends on which bank is live.
+
+---
+
+## 52. You corrected the fact, and the stale copy now reads as corroboration
+**Not a device fault. Measured on this repository, twice, two commits apart, in opposite
+directions — which is what identified the missing step.**
+
+**SYMPTOM.** A claim you have already corrected is still wrong somewhere else in the corpus.
+Worse than a lone error: **a reader who cross-checks two documents and finds them agreeing comes
+away with *more* confidence, not less.** A partial correction actively strengthens belief in the
+thing it was meant to remove.
+
+**MECHANISM.** Two failure modes that look unrelated and are the same missing step.
+
+```
+CORRECTING   fix the mention you found; the others stand, and now read as independent sources
+ADDING       grep the file you are editing, find nothing, conclude it does not exist
+```
+
+Both happened here within two commits. The first: a config attribute documented backwards, fixed
+in one guide while two others kept the original wording. The second: a data-model section
+written into a second guide that had held it all along, because the check was *"is it in this
+file"* rather than *"is it in this repo"*.
+
+> ### ⭐⭐ The rule is **grep the corpus**, not **grep carefully**
+> Neither instance was careless. Both greps were correct, ran cleanly, and answered the question
+> they were given. ⇒ **The defect was the scope of the question**, and scope is not something
+> care fixes — you can read a file with total attention and still be reading one file.
+
+**CHECK.** Two greps, and they are the same grep pointed at the repo rather than the file:
+
+```sh
+grep -rn '<the old claim>' --include='*.md' .    # after correcting anything
+grep -rln '<the concept>'  --include='*.md' .    # before adding anything
+```
+
+⚠️ **And positive-control the second one**, because it is the one whose failure is silent: a
+search that finds nothing and a search that cannot find anything print the same result. Confirm
+the pattern matches something you know is present before trusting a zero.
