@@ -40,6 +40,7 @@ written in prose here would be correct exactly once, and this file has already o
 | 4 | **[#3 — an address the AP cannot be reached at](#3-the-ap-advertises-an-address-it-cannot-be-reached-at)** | one root cause, four unrelated-looking symptoms. One command finds it. |
 | 5 | **[#6 — `show hnb` lies in both directions](#6-show-hnb-on-the-core-lies-in-both-directions)** | it reported a cell connected for three minutes after it was unplugged. |
 | 6 | **[#50 — it shows the network and will not connect](#50-the-handset-finds-the-cell-shows-it-and-will-not-connect--because-you-are-lying-to-it-about-your-power)** | looks like access control; is actually **your SIB5 power advertisement**, and the handsets are the ones transmitting too hot. |
+| 7 | **[#51 — a staged radio parameter fires at the NEXT reboot, whoever causes it](#51-a-staged-radio-parameter-is-a-loaded-change-and-any-reboot-fires-it)** | the write succeeds and changes nothing visible. A crash or a power cut applies it later, and nobody links the two events. |
 
 ### ⏳ Before you spend a week on something
 - **[#45 — you may not need a security gateway at all](#45-you-may-not-need-a-security-gateway-at-all)** — the audited unit reached full service without one.
@@ -1804,3 +1805,42 @@ power** — so the identical number means two different things depending on a se
 in another guide entirely: [`CONFIG.md`](CONFIG.md#rfparamscandidatelist--the-one-nobody-sets-and-the-cell-dies-without-it). See also
 [trap 16](#16-transmit-power-setting-one-limit-is-not-containment), which is the same subject
 from the downlink side and is also unresolved.
+
+---
+
+## 51. A staged radio parameter is a loaded change, and any reboot fires it
+**Measured on an ip.access unit. The mechanism is ordinary; the hazard is entirely in the timing.**
+
+**SYMPTOM.** A carrier or band change you made days ago — or did not know you had made —
+appears after an unrelated reboot. Nobody connects the two events, because nobody rebooted in
+order to apply anything.
+
+**MECHANISM.** `rfParamsCandidateList` is **applied at boot**, not at write time. A write
+therefore does not change the live carrier: it **arms** one. The `set` succeeds, a readback of
+the live `uarfcn*` is unchanged and correct, and everything looks healthy — because at that
+moment everything *is* healthy.
+
+⇒ **Staging and applying are separated by an arbitrary amount of time, and by whoever reboots
+next.** That need not be you and need not be deliberate. A crash, a watchdog, a power cut and a
+deliberate bring-up all apply it equally well.
+
+> ### ⭐⭐ The dangerous shape: a step that arms a change in a different subsystem from the one it is named after
+> Two of our own runbooks had the operator write a candidate list as part of a **PLMN**
+> procedure. ⇒ **Running a block called "set the PLMN" silently armed a BAND revert.** Both
+> writes succeed. Both readbacks pass. The band moves at the next power cut, and whoever debugs
+> it is hunting a change that nobody made.
+>
+> ⭐ **Before any reboot, on any unit, compare the STAGED value with the LIVE one.** That is a
+> different question from *"did my write succeed"*, and only the first one finds this.
+
+> ### ⚠️ And do not verify a band by grepping your own notes
+> When we corrected a band, the live configuration changed and **the notes did not** — the
+> superseded value went on outnumbering the correct one by roughly **fifty to one** across our
+> own documents. ⇒ **Anyone grepping for the band found overwhelming agreement on the wrong
+> answer.** **A count of agreeing documents measures copying, not truth.** Read it from the
+> device.
+
+**CHECK.** Ask for the staged list and the live carrier as **two separate questions**, and
+compare them. ⛔ **A successful `set` is evidence of a successful `set` and of nothing else.**
+Related: [trap 2](#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell)
+is the same hazard one layer down, where what a reboot picks up depends on which bank is live.
