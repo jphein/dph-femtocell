@@ -105,6 +105,63 @@ Every wall below was **measured**, not assumed:
 
 ---
 
+## The ip.access nano3G — the sibling these findings are cross-checked against
+
+**You are not being told to buy one.** It costs **$180–200** against the MicroCell's **$10**, and
+[`ALTERNATIVES.md`](ALTERNATIVES.md) covers when that premium is worth paying (and the
+part-number band trap that makes buying one risky anyway). It is here because **several findings
+in this repo were measured on one**, and you are entitled to know which, and how far they carry.
+
+**What it is:** ip.access's own product — the thing Cisco badged. The MicroCell is a rebadged
+sibling, not a separate design. **That is the structural bet this whole repo rests on**, and it
+is the reason the effort was tractable at all: the DPH is not a new device to reverse, it is a
+relative of one that was already solved and publicly documented.
+
+| | **DPH-151** | **ip.access nano3G S8** |
+|---|---|---|
+| **Software train** | `563.21.8` | `563.16.0` — ⭐ **same `563` family** |
+| **Processors** | **two SoCs**, radio + an added gateway | 🔴 **one address, no gateway SoC in front of it** — *measured* |
+| **Root filesystem** | — | **cramfs, read-only**; a separate **jffs2** partition is the only writable storage |
+| **Documented by** | this repo, and fail0verflow 2012 | ⭐ **Osmocom's own wiki** — an independent, maintained source |
+| **Price** | ~$10 | $180–200 |
+| **Bands** | B2 / B5 on all three | ⚠️ **depends on the part-number suffix** — see [`ALTERNATIVES.md`](ALTERNATIVES.md) |
+
+> ### ⭐ The architectural difference explains one of this repo's own traps
+> **[Trap 3 — the AP advertises an address it cannot be reached at](TRAPS.md#3-the-ap-advertises-an-address-it-cannot-be-reached-at)
+> is a consequence of the MicroCell's second SoC**, which sits in front of the radio half and
+> NATs it. **The nano3G is a single-address device and does not exhibit it.**
+>
+> ⇒ So when a nano3G-measured finding in this repo concerns *addressing or reachability*, **treat
+> it as the simple case and assume your DPH adds a layer.** When it concerns the *ip.access
+> software stack* — attributes, config banks, the boot order, the management model — it is the
+> same code and it transfers much more readily.
+
+### Which findings here came from a nano3G, and why that is worth knowing
+
+Every trap in [`TRAPS.md`](TRAPS.md) names the device it was measured on, and several name this
+one. **Two of them are opposites across the two devices**, which is the best possible argument for
+reading the scope line rather than the instruction:
+
+- **[Trap 2 — which config bank is live](TRAPS.md#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell)**:
+  on the nano3G measured here it was bank 2; on the DPH-151 it was bank 1, and that unit's bank 2
+  was **empty**. ⇒ **A correct instruction for one unit destroys the other.** Read the symlink.
+- **[Trap 4 — the CSG indicator](TRAPS.md#4-csgindicator-reads-false-in-the-database-and-broadcasts-true-on-the-air)**:
+  measured on a nano3G off the air, **never read on a DPH by anyone.** The fix is now known and is
+  in that entry; whether a DPH needs it is genuinely open.
+
+⚠️ **It cuts the other way too.** A nano3G finding is *not* a DPH finding, and this repo tries to
+say so every time. Where a nano3G result is all there is, that is stated in the entry rather than
+quietly generalised — because **the two devices have already been shown to differ on the one
+setting most likely to brick a bring-up.**
+
+> ### ⛔ One thing the nano3G does **not** give you: a cheaper route in
+> It is the better-documented device and it is the one Osmocom's wiki describes, so it is the
+> reference for the *software* side. **It is not a cheaper or easier device to get a shell on**,
+> and nothing in this repo suggests buying one to practise on. If the $10 unit is what you have,
+> the $10 unit is what this repo is about.
+
+---
+
 ## Firmware: where it comes from, and why none of it is here
 
 > ### ⛔ This repository distributes no firmware, no extracted binaries, and no vendor
