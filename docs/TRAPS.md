@@ -1901,6 +1901,12 @@ deliberate bring-up all apply it equally well.
 > answer.** **A count of agreeing documents measures copying, not truth.** Read it from the
 > device.
 
+> ### 📌 A fresh unit ships with nothing staged
+> `rfParamsCandidateList` read `()` on a factory-state unit — **empty, nothing armed.** ⇒ **This
+> hazard is about what *you* arm, not about what arrives**, which is worth knowing before you go
+> hunting for a staged value on a unit nobody has configured. It also means **a factory restore
+> disarms it**, at the cost of everything else a restore takes.
+
 **CHECK.** Ask for the staged list and the live carrier as **two separate questions**, and
 compare them. ⛔ **A successful `set` is evidence of a successful `set` and of nothing else.**
 Related: [trap 2](#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell)

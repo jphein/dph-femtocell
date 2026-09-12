@@ -45,6 +45,23 @@ that one.**
 matching a years-old report of locked status LEDs and the management port refusing
 connections, with no published resolution.
 
+> ### ✅ And once it arrives, stop reading labels — ask the device
+> The unit knows its own bands, and that is a stronger answer than anything printed on it:
+> ```
+> get umtsBandsSupported          ->  (UMTS_BAND_02, UMTS_BAND_05)      <- a 237B, measured
+> ```
+> ⇒ **Band 2 and Band 5, read from the hardware, independently confirming the part number.**
+> A `237C` would report **Band 4** here — and a Band-4 unit is **silently useless** for US
+> 1900/850 work: it powers up, commissions, and has nothing you can legally and usefully
+> transmit on.
+>
+> ⭐ **This is the acceptance test to run before you invest any time in a unit**, and it beats
+> the label on its own terms: **the label is on the outside and the rear barcode is already
+> known to be wrong across models** (above), while this is the radio answering for itself.
+> ⚠️ **It does not help you buy** — you need the unit in hand and a management channel
+> ([`ACCESS.md`](ACCESS.md#route-2--the-dmi-management-console)). **It turns "I think I got the
+> right one" into a reading**, which is the difference between a return window used and missed.
+
 ⚠️ **An FCC ID does not tell you the firmware version.** The same FCC ID set is listed across
 firmware generations. What you can infer is a weaker **floor** — a unit cannot run firmware
 older than the release that introduced its model. ⭐ **Use that to prefer a unit, never to rule

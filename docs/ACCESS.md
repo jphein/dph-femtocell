@@ -393,6 +393,15 @@ ENV_START_DMI_TELNET = FALSE      # via the vendor's own NV setter, then reboot
 > feature: it is how you make settings apply at boot with no management server anywhere.
 > ⇒ **Deploy one and you have closed your own way in.** **Have another route working first**,
 > and test it before you upload.
+>
+> ⚠️ **And the consequence reaches your tooling, not just your next session.** Any bring-up
+> script that drives the console over `:8090` **cannot run against a unit that has an
+> `init.dmi`** — not because it is broken, but because the port it needs does not exist on that
+> unit. ⇒ **A tool written for a unit without `init.dmi` cannot bring up a unit with one**, and
+> it will fail at connect with no indication that the cause is a file you installed deliberately
+> weeks earlier. **If you install one, your bring-up path has to move to a transport that does
+> not depend on that port** — the one-shot client over SSH, per
+> [Route 2](#route-2--the-dmi-management-console).
 
 **On the injection itself there is nothing to patch** — no vendor, no firmware update — so the
 defence is architectural:
