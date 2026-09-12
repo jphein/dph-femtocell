@@ -268,6 +268,54 @@ fi
 ⚠️ **Note what else lives in that branch:** `open_firewall_port`. **The firewall is not a second
 layer here — it is opened by the same code that opens the port.**
 
+### Where that flag comes from — and it is a button, not a bug
+
+**The firmware never writes `ENV_START_DMI_TELNET`.** Enumerated over the whole of `rcS`:
+
+```
+$SETNVENV call sites, entire file        2      ENV_VERBOSE_CONSOLE_ENABLED
+                                                ENV_FIREWALL_DISABLED
+ENV_START_DMI_TELNET, anywhere in rcS    0      <- never written by the firmware
+CONTROL: ENV_VERBOSE_CONSOLE_ENABLED     4      <- the reader works, so the 0 means something
+```
+
+And a **factory restore deletes `nv_env.sh` outright**, so on the next boot the variable is not
+set to `FALSE` — it is **absent**, and `opnormal` falls through to its own `:-"FALSE"` default.
+
+⇒ ⭐ **A virgin or factory-restored unit has the console OFF BY ABSENCE**, and the commissioning
+web UI's toggle is its **only** writer — `dmi_config.cgi`, which serves exactly this:
+
+```html
+<input type="submit" name="dmi_telnet" value=Enable >
+```
+
+✅ **Confirmed end to end on one unit:** the toggle was pressed during commissioning, and after
+*Complete Commissioning* plus two power cycles the variable read `TRUE`. **Since no firmware path
+writes it, that `TRUE` can only have come from the button — and it persists.**
+
+> ### ⭐⭐ So the chain has two stages, and the first one is a supported feature
+> ```
+> STAGE 1   the COMMISSIONING WEB UI enables the console. Not an exploit -- a BUTTON,
+>           and the only thing that sets the flag the branch above depends on.
+> STAGE 2   the console, now reachable, is unauthenticated.
+> ```
+> ⇒ **A vendor-supported commissioning control turns on an unauthenticated, root-equivalent
+> interface, and nothing else can turn it on.**
+>
+> ⭐ **This sharpens the defence rather than weakening it.** There is no patch to wait for and no
+> subtle hardening to get right: **the operator's entire control surface is that checkbox and the
+> two conditions in that `if`.** Nothing else in the firmware touches the flag.
+>
+> ⚠️ **And it closes symmetrically, which is worth knowing before you press anything:** a factory
+> restore deletes `nv_env.sh`, so **a restore turns the console back off — along with whatever
+> else you had configured.** That is the same event as
+> [trap 49](TRAPS.md#49-the-reset-button-reaches-factory-restore-sooner-than-the-manual-says),
+> where the threshold is shorter than the manuals say. **The reset button is both the recovery
+> path and the thing that removes your access.**
+>
+> ⛔ **Measured on an ip.access nano3G. The DPH equivalent is UNMEASURED** and should not be
+> assumed — on our DPH-151 the port never listened at all.
+
 ### The read primitive: `call` echoes what it cannot parse
 
 `call` is documented as *"Executes a DMI script"*. It takes a path, opens it, and echoes every
@@ -320,6 +368,15 @@ NV variable means editing the **file** and booting **again**.
 > ⭐ **The transferable lesson: when you meet an integrity check on an embedded device, ask what
 > it would cost an author to omit. If the answer is "delete one line", it is a marker, not a
 > check.**
+>
+> ☠️ **And it bites the author, not just the attacker — we nearly shipped this exact failure.** A
+> first draft of one of our own `init.dmi` files carried a comment *explaining* the autogen
+> banner, and **that explanatory comment contained the banner text**. The device's `grep -c` is
+> unanchored and counts occurrences anywhere in the file, so it returned 1, and the script would
+> have been **silently skipped** — no error, no log line, just a boot where nothing applied.
+> ⇒ **The warning would have caused the exact failure it was warning about.** **Do not write the
+> marker string into a file you want executed, in any context, including a comment about the
+> marker.**
 
 ### ✅ The defence — which is the reason this is written down at all
 
