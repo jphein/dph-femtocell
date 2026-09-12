@@ -82,6 +82,7 @@ documentation and `pySim` cover it.
 | [`docs/ALTERNATIVES.md`](docs/ALTERNATIVES.md) | when one of these is the wrong choice |
 | `config/` | sanitised core-network config templates, with placeholders |
 | `tools/` | scripts that generalise beyond one network |
+| `_config.yml` | GitHub Pages settings. **The file does not enable Pages** — that is a repo-settings decision. |
 
 ---
 
@@ -162,6 +163,26 @@ It carries its own **positive control**: it plants a key-shaped string, confirms
 it, and removes it. A scanner that cannot be shown to see a planted secret proves nothing
 when it reports none. It also fails the run if the scanner wrote anything to stderr, because
 a scanner that errored is a scanner whose zeros are meaningless.
+
+`tools/check-links.py` validates every relative link and `#anchor` across the Markdown. These
+pages cross-reference each other constantly, and once they are served as a site a broken anchor
+is broken navigation rather than a cosmetic miss.
+
+⚠️ **It is here partly as a worked example of the failure it guards against.** Its first
+version reimplemented GitHub's heading-to-anchor rule and got it subtly wrong — it collapsed
+runs of whitespace, so a heading containing an em-dash or an ampersand produced one hyphen
+where GitHub produces two — and it confidently reported five good links as broken. Two things
+let that through, and the second is the interesting one:
+
+- its docstring claimed a positive control that its code did not implement; what stood in for
+  it was the ordinary run, which is circular — a wrong rule produces broken links, and the code
+  reported those as broken links rather than as a failed control;
+- ⭐ **and the control it *should* have had would have passed anyway**, because at that moment
+  no heading in this repo contained an em-dash. **The corpus never exercised the rule under
+  test.** A control that cannot fail is decoration.
+
+It now checks the rule against heading/anchor pairs **measured** from rendered documents that
+do contain the awkward cases, rather than against this repo's own convenient sample.
 
 ## Prior art
 

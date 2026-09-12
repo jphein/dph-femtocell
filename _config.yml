@@ -1,0 +1,58 @@
+# GitHub Pages configuration.
+#
+# This file does NOT enable Pages. Enabling it is a deliberate act in the
+# repository settings (Settings -> Pages -> Build from a branch -> main, / root),
+# and that is the owner's decision, not this file's.
+#
+# NOTHING HERE HAS BEEN BUILT. This repository has no remote, so the site has
+# never been rendered even once. What follows is the documented default layout
+# for a Jekyll site served from a repository root. Treat it as a starting point
+# that wants one verification pass the first time Pages is switched on -- not as
+# something measured. In the vocabulary this repo uses on its own claims, every
+# line below is *reported*, none of it is *measured*.
+
+title: Reusing AT&T MicroCell femtocells
+description: >-
+  Field notes on the Cisco DPH-151/153/154 and the ip.access nano3G: what the
+  hardware is, how to get a management channel, how to bring a cell up against
+  your own core, and the traps that cost us nights.
+
+# Served from the repository ROOT, so README.md becomes the landing page and the
+# guides under docs/ keep the relative links they already use.
+#
+# This rests on one assumption: GitHub Pages enables jekyll-relative-links by
+# default, which rewrites docs/TRAPS.md -> docs/TRAPS.html so that links written
+# for in-repo browsing keep working on the site. If links 404 after the first
+# build, check that before changing anything else -- it is the load-bearing part.
+
+# ---------------------------------------------------------------------------
+# THEME -- deliberately unset. Ask before choosing one.
+# ---------------------------------------------------------------------------
+# With no theme the pages render as plain, unstyled HTML: readable, but with no
+# navigation and no layout. That is a legitimate place to stop.
+#
+# To adopt one, uncomment exactly ONE line:
+#
+# theme: jekyll-theme-primer     # GitHub's own documentation styling. Of the
+#                                # built-ins it handles wide tables and long
+#                                # code blocks best, which is most of this repo.
+# theme: jekyll-theme-minimal    # narrow column with a sidebar; poorer on tables
+# theme: jekyll-theme-cayman     # large header band, centred narrow column
+#
+# These pages lean on wide tables, long code blocks and emoji callouts, so
+# primer is the best structural fit. But a theme is a look, and picking a look
+# is not a documentation decision.
+
+# Keep the site's rendering identical to what GitHub shows in-repo, so a page
+# that reads correctly in the repository reads correctly on the site.
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+
+# In the repository but not part of the published site. Nothing in the docs
+# links to these, so excluding them breaks no navigation -- checked with
+# tools/check-links.py.
+exclude:
+  - tools/
+  - LICENSE

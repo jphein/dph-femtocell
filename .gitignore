@@ -1,0 +1,11 @@
+# Jekyll build output. A local `jekyll build` writes a complete second copy of
+# the site here; committing it would duplicate every page and put a build
+# artefact in front of the publishing checks.
+_site/
+.jekyll-cache/
+.jekyll-metadata
+
+# The real pattern file for tools/pre-publish-check.sh lives OUTSIDE the repo,
+# at $HOME/.config/dph-femtocell/patterns.txt, precisely so it needs no
+# exemption here. This entry is belt-and-braces against a copy landing in-tree.
+patterns.txt
