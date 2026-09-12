@@ -83,7 +83,7 @@ command is not evidence the callee accepted it.**
 ```
 set ipsecEnable FALSE
 set apNtpServerInfo ("<NTP-IP>")     # the OPERATIONAL NTP attribute
-set defaultNtpServer ("<NTP-IP>")    # the FACTORY-DEFAULT tier; harmless belt-and-braces
+set defaultNtpServer ("<NTP-IP>")    # the FACTORY-DEFAULT tier -- a DIFFERENT tier, not a duplicate
 set hnbGwAddress "<HNBGW-IP>"        # your osmo-hnbgw, read-write, max length 260
 
 get ipsecEnable
@@ -107,9 +107,39 @@ hardware it errors, and an erroring read is not a failed setting.
 > ⚠️ If your unit has no route to the internet, an NTP address that resolves publicly will
 > resolve fine and **never sync**. Point it at an NTP server it can actually reach.
 
-> ⚠️ **Some attributes live in a "last known good" tier that may not survive a reboot**, and
-> that tier is not readable over TR-069. **Re-read after every reboot** rather than assuming
-> a write persisted.
+> ### ⭐⭐ One setting exists at several TIERS — and reading back the one you wrote proves nothing
+> The two NTP writes above are not belt-and-braces. They are **one setting at two tiers**, and
+> the prefix *is* the tier:
+> ```
+> default<Thing>   the factory value, applied after a reset
+> local<Thing>     a locally-set value
+> lkg<Thing>       "last known good"
+> <Thing>          the BARE NAME -- the operational value, the one that drives behaviour
+> ```
+> Our notes name **eight distinct `lkg*` attributes** — `lkgApNtpServerInfo`, `lkgIpsecEnable`,
+> `lkgManagementServerUrl`, `lkgIpsecGatewayAddress`, `lkgManagementServerType` and more — so
+> this is structural in the data model, not a quirk of one attribute. **`defaultNtpServer`, in
+> the block above, is a tier-prefixed name on a DPH-151**, which is how we know the structure is
+> not specific to the sibling hardware.
+>
+> ⛔ **This defeats the "always read it back" rule the rest of this guide runs on.** A `get` of
+> the tier you just wrote returns your value, cheerfully, and says **nothing** about what the
+> device is doing. A night went into exactly that: writing the `local*` tier while the
+> **operational** tier drove behaviour. *Every readback passed.*
+> ⇒ ⭐ **Read back the bare name. That is the tier that acts.**
+
+> ### ⚠️ An empty `lkg*` is not neutral — it is why a setting vanishes at the next reboot
+> `lkgManagementServerUrl = ""` was measured on a unit whose **operational** value was set
+> correctly. ⇒ **The last-known-good tier had nothing in it, so a reboot had nothing to restore
+> from, and the configuration did not survive.** The symptom is a setting that reads back
+> perfectly, demonstrably works, and is gone after a power cut — which is very easy to blame on
+> the power cut itself.
+>
+> ⚠️ **It does not always overwrite.** A different fix was measured *holding* across a reboot,
+> with the `lkg` tier leaving it alone. **We never established the promotion rule and are not
+> going to guess at it here.** ⇒ **Treat reboot survival as something to TEST once,
+> deliberately, rather than a property to assume in either direction.** Reboot the unit before
+> you believe your bring-up — [Phase 7](#phase-7--surviving-a-power-cut) is where that lands.
 
 ## Phase 5 — Give the radio parameters, then unlock, then connect
 
