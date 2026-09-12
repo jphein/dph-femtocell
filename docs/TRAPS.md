@@ -18,7 +18,9 @@ that is correct for one can destroy another — trap 2 is a worked example of ex
 
 ## Start here
 
-**47 traps. You are not going to read them all before you start, so here is the order that matters.**
+**You are not going to read them all before you start, so here is the order that matters.**
+`(For how many there are, count them: ` `grep -c '^## [0-9]' docs/TRAPS.md` `. A number
+written in prose here would be correct exactly once, and this file has already outgrown one.)`
 
 ### ☠️ Before you touch the hardware — these are irreversible
 | | trap | what it costs |
@@ -259,6 +261,48 @@ and **never transmit** — no rejection is logged anywhere, on either side.
 with TRUE put back. The MIB builder appears to read neither attribute — most plausibly it
 hardcodes *"this is a Home NodeB, therefore advertise CSG-capable"*. ⚠️ **That last clause is
 an inference; what is measured is that both attributes say open and the air says closed.**
+
+> ### ✅ SOLVED — and the fix is a **PAIR**, where each half alone is **worse than the broken baseline**
+> ```
+> accessDecisionMode = LEGACY        <- takes csg-Indicator OUT of the broadcast MIB
+> csgAccessMode      = OPEN_ACCESS   <- no access control at all
+> ```
+> **Eight handsets attached within about 60 seconds of the second write**, having silently
+> declined the cell for weeks. `[measured, ip.access nano3G]`
+>
+> ⭐ **The inference above was wrong in an instructive way.** The MIB builder does not ignore
+> both attributes — it reads `accessDecisionMode`, which **nobody had set**, because nothing in
+> the documentation pointed at it. `csgAccessMode` alone cannot remove the indicator.
+>
+> ⛔ **And this is why it stayed unsolved: every single-attribute test looked like a failure.**
+> ```
+> LEGACY alone          -> DENY-ALL. Every handset rejected. The worst of the three states.
+> OPEN_ACCESS alone     -> some handsets served, the strict ones still refuse. The old baseline.
+> LEGACY + OPEN_ACCESS  -> all eight served.
+> ```
+> ⭐⭐ **A one-at-a-time search CANNOT find a fix whose components are individually harmful.**
+> Both halves had been tried separately, and both were "disproven" by exactly the evidence a
+> careful tester trusts. ⇒ **If you are changing one variable at a time and every change makes
+> things worse, that is a signal about the SHAPE of the fix, not about the variables.**
+>
+> ⛔ **NEVER set `LEGACY` without `OPEN_ACCESS`.** The vendor calls it *"Closed Access in Legacy
+> Mode"*: **stop advertising the gate, keep enforcing it on everyone.** With an empty access list
+> that is deny-all, and **nothing reaches the core at all** — so every instrument you would reach
+> for says the cell is healthy while no handset can use it. It is a nastier failure than the one
+> it replaces, because the previous one at least let some handsets through.
+>
+> ⭐ **The confirmation was the SHAPE of the recovery, not the count.** They arrived in a wave —
+> five, then seven, then eight, inside a minute. Handsets being *rejected and retrying* would
+> have trickled in; handsets **declining to attempt** all appear at once when you remove the
+> reason. **The wave is evidence about the mechanism, and a slow trickle would have refuted it.**
+>
+> ⚠️ **`OPEN_ACCESS` means strangers' handsets will ATTEMPT to attach.** On a live cell,
+> devices belonging to a real commercial carrier reached the core and were refused *there*.
+> ⇒ **The gate moves from the air interface to your core.** That is workable, and it is a
+> different security posture from the one you thought you had. Choose it deliberately.
+> ⚠️ The narrower alternative — `LEGACY` plus a **populated** access list — is **untested
+> here**, and whether that list survives a reboot has **never been measured**. Do not automate
+> closed access on the assumption that it does.
 
 A strict Release-8 handset with an empty Allowed CSG List is *required* by 3GPP TS 23.122 to
 decline such a cell. Others tolerate it and camp happily — so this presents as "some of my
