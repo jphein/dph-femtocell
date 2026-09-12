@@ -177,6 +177,30 @@ the two banks' config files are **byte-identical**, and the file is re-copied fr
 available as an explanation for that daemon's behaviour. Check the specific file before assuming
 the bank explains anything.
 
+> ### ⚠️ And some state is not in a bank at all, so copying banks preserves only part of a cell
+> On an **ip.access nano3G**, the radio band is **in neither bank**. No bank holds the UARFCN
+> anywhere; it lives in a file at the top of `/var/ipaccess`, **above** the bank directories.
+> ⇒ **A bank-to-bank copy can carry your Iuh key and not your carrier**, and a restore that
+> looks complete comes back on a band you did not choose.
+>
+> ⛔ **The bounds are the interesting part here, so they are stated rather than smoothed over:**
+> ```
+> power cycle         MEASURED surviving, twice
+> bank failover       INFERRED from the file's location -- NOT TESTED
+> software download   INFERRED from the file's location -- NOT TESTED
+> ```
+> ⚠️ **We first wrote "a bank failover cannot touch it", which is the inferred half stated as
+> certainty** — a claim about *system behaviour* asserted from a *fact about a path*. The
+> download hook deletes `config_bank_$BANK/*`, so a file above that directory is **plausibly**
+> out of reach. **Plausible is not measured**, and one of three triggers is tested.
+>
+> ⛔ **Device scope, and this is the one that is genuinely tempting to get wrong:** measured on
+> a nano3G. **Whether a DPH-151 or DPH-154 keeps its band in the same place is UNMEASURED.** It
+> reads like a firmware-layout fact rather than a per-unit configuration choice, which is
+> precisely the reasoning that would carry it across — ⭐ **and this trap is the worked example
+> of why that reasoning fails in this exact area**, given the bank numbering is already reversed
+> between two of these models and the third has no banks at all.
+
 > ### ⛔ And read this before running any "restore" procedure
 > A restore document's natural voice is *"run this to get back to known-good"*, which is
 > **indistinguishable from "run this over a working system"**. Branch on a measurable before
