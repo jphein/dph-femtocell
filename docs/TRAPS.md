@@ -303,9 +303,29 @@ an inference; what is measured is that both attributes say open and the air says
 > devices belonging to a real commercial carrier reached the core and were refused *there*.
 > ⇒ **The gate moves from the air interface to your core.** That is workable, and it is a
 > different security posture from the one you thought you had. Choose it deliberately.
-> ⚠️ The narrower alternative — `LEGACY` plus a **populated** access list — is **untested
-> here**, and whether that list survives a reboot has **never been measured**. Do not automate
-> closed access on the assumption that it does.
+> ### 🔴 The narrower alternative is worse than untested — there is one measurement and it points the wrong way
+> `LEGACY` plus a **populated** access list is the obvious way to keep a closed cell without the
+> deny-all. An earlier revision of this trap said whether that list survives a reboot had never
+> been measured. **It has, once:**
+> ```
+> before    accessControlList   populated with allow entries
+> after     accessControlList   ()            <- empty
+> upTime    626 -> 515                        <- it went DOWN, so the unit rebooted between reads
+> ```
+> **The list did not survive.** ⇒ ⛔ **If the enforcement half persists and the permission half
+> does not, a reboot leaves the cell enforcing against an empty whitelist — which is deny-all,
+> and is exactly the outage described at the top of this trap.** The narrow option can therefore
+> re-arm the failure this trap exists to document, at the first power cut, with no one touching
+> anything.
+>
+> ⚠️ **n=1, and the mechanism is not established.** One reboot, and nothing rules out something
+> else in that window having cleared the list. **That is enough to stop you automating closed
+> access on the assumption it persists; it is not enough to state non-persistence as a
+> property.** Measure it on your own unit across a deliberate power cycle before relying on
+> either answer.
+> ⭐ **Note the instrument, which is the reusable part: `upTime` going DOWN is what proves a
+> reboot happened between two reads.** Without it the empty list is just a value you cannot
+> explain.
 
 A strict Release-8 handset with an empty Allowed CSG List is *required* by 3GPP TS 23.122 to
 decline such a cell. Others tolerate it and camp happily — so this presents as "some of my
