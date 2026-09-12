@@ -29,6 +29,7 @@ written in prose here would be correct exactly once, and this file has already o
 | B | **[#31 — the other firmware bank may have no way in](#31-booting-the-other-firmware-bank-can-remove-every-way-back-in-and-it-is-sticky)** | one bank has no root account and no entry path, and the selection is **sticky**. |
 | C | **[#32 — unpacking the firmware overwrites your `/`](#32-unpacking-the-firmware-overwrites-your-filesystem)** | absolute paths in the archive. Only a permission error stopped it. |
 | D | **[#33 — correcting the PLMN removes a safety interlock](#33-correcting-the-plmn-silently-removes-a-safety-interlock)** | the wrong PLMN was itself preventing transmission. Nobody chose to remove that. |
+| E | **[#49 — the reset button restores sooner than documented](#49-the-reset-button-reaches-factory-restore-sooner-than-the-manual-says)** | measured **3 s** where every document said 5. A press you believe is a reboot can be a **factory restore**. Read your own unit's threshold. |
 
 ### 🔴 Before you conclude anything is broken
 | | trap | why it is here |
@@ -1667,3 +1668,65 @@ unit's flash has never been read.
 wildcard for the operator's domain makes it ask **you** for the assistance file. ⛔ **The file's
 format is unread** — serving a valid one is a real hosting job, not a config line. **Do not treat
 this as a procedure.**
+
+---
+
+## 49. The reset button reaches factory-restore sooner than the manual says
+**Measured on an ip.access nano3G (train `563.16.0`), by reading the vendor's own switch-monitor
+binary. ⛔ NOT measured on any DPH — the value below is almost certainly different on yours, and
+the point of this trap is the method, not the number.**
+
+**SYMPTOM.** You mean to reboot the unit and you factory-restore it instead. Your NV environment,
+your installed key, your access flags and both config banks are gone, and the unit comes back in
+its shipped state — which on this hardware means **no management surface at all**. Nothing warns
+you, because from outside a reboot and a restore look identical while they happen.
+
+**MECHANISM.** The button is sampled by a small vendor daemon that maps **hold duration** to one
+of two outcomes, and it prints its own thresholds in its help text:
+
+```
+held for LESS than N seconds  ->  reboot                    (harmless)
+held for MORE than N seconds  ->  RESTORE FACTORY DEFAULTS  (one-way)
+```
+
+**On the unit measured here `N` was 3. Every document in reach said 5** — the vendor manual, and
+two write-ups derived from it. ⇒ ⭐ **There is a band between the real threshold and the documented
+one where a press you believe is safe performs a factory restore.** On this unit that band was two
+seconds wide, and a four-second press — comfortably "short" by the documentation — lands in it.
+
+⚠️ **And the error is asymmetric, which is why it is worth a trap.** The documented figure is
+*safe for the operation the manual describes* (you want a restore; 5 > 3, so you get one, with
+margin). It is only wrong for the operation the manual does **not** describe: a deliberate short
+press. So the number is simultaneously correct in the guide and dangerous in the reader's hand.
+
+**CHECK.** ✅ **Read the thresholds off your own unit rather than trusting any document, this one
+included.** The daemon is small and its help text is plain:
+
+```sh
+strings /path/to/the/switch-monitor-binary | grep -i -A2 'switch is pressed'
+```
+
+⚠️ **If `strings` is absent, `grep` the binary directly** — and print the denominator, because a
+zero from a missing tool and a zero from a binary that does not contain the text are the same
+observation.
+
+> ### ⭐ The generalisable half: **the binary is a better source than the manual, and it is on the
+> ### device you already own**
+> This threshold has been written down three ways in this project — `>10 s`, then `>5 s`, then the
+> measured `3 s` — each revision tightening it, and each one carried forward by people quoting the
+> previous document rather than the device. **Three sources agreeing is not three pieces of
+> evidence when they share one origin.**
+>
+> ⚠️ **Treat any surviving unsourced duration in a femtocell guide as suspect**, and prefer a
+> number you can point at in a binary over a number you can point at in a PDF.
+
+> ### ⛔ And there is only one instrument that tells you WHICH one you performed, after the fact
+> The device writes a reboot-cause history, and a restore and a reinitialise get **different
+> cause codes**. That file is the only thing that distinguishes them — the LEDs do not, and the
+> boot looks the same.
+>
+> ⚠️ **Two things about reading it.** It is **reverse-chronological**, so `tail` gives you the
+> oldest entries and a confident wrong answer. And the reinitialise code has **more than one
+> writer** — a short button press, a management-interface reboot action, and your own tooling can
+> all produce it — so **that code means "a reinitialise happened", not "somebody mistimed a
+> press."** `[measured: three distinct writers of the same code on one unit.]`
