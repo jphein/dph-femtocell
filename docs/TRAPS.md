@@ -2007,7 +2007,8 @@ managementServerUrl, OPERATIONAL tier, EMPTY
   -> there is nothing to provision from, so it never provisions
   -> the system manager parks, awaiting application registration
   -> the 3G control app's registrations go unanswered
-  -> the internal readiness gate never flips
+  -> the internal readiness gate never flips          (trap 57 -- and a zero there
+                                                       is NORMAL pre-bring-up)
   -> no transceiver, no Iuh, no cell
 ```
 
@@ -2104,3 +2105,62 @@ command, and it answers what the flag cannot.
 > when it does costs you **a wasted `ls`**. ⇒ **Check before you need it**, not after — and if the
 > suffix *is* honoured on your unit, there is a recoverable copy sitting there that nobody has
 > been looking for.
+
+---
+
+## 57. The readiness gate reads zero on a healthy unit, because bring-up is what opens it
+**Measured on an ip.access nano3G across four boots. Provenance bounded at the end — a second
+unit is measured only in the negative.**
+
+**SYMPTOM.** You read the firmware's readiness word on a unit you have not brought up, get
+`00000000`, and conclude the board is faulty or still initialising. **You wait. It never
+changes.**
+
+**MECHANISM.** ⭐ **The gate is a PRODUCT of bring-up, not a precondition for it.**
+
+```
+bring-up, step 1     programs the radio array  (the vendor's own init script)
+bring-up, ~49 lines later
+                     polls the readiness word, aborts if it never reads 1
+```
+
+⇒ **That poll VERIFIES step 1 worked. It is not waiting for the device to become ready.** And the
+**normal boot path never programs the array at all** — it performs an FPGA load and stops there.
+⇒ **So the array is unprogrammed on every boot until something programs it, and zero is the
+correct reading on a unit nobody has brought up.**
+
+`[measured, 4 boots, 4-for-4: programmed -> gate 1 -> cell came up · never programmed -> gate 0
+-> the core-side connection fails in a way that makes no sense on its own terms.]`
+
+> ### ☠️ And the obvious fix is the destructive one
+> **Do not program the array by hand against a running application set.** The vendor's init
+> script **stops and resets the array before it loads anything** — so against live apps that is a
+> RUNNING→STOPPED transition underneath a process whose job is to notice exactly that. It raises
+> a fatal error, the manager aborts, the process watchdog sees the death, the radio is turned
+> off, and **the board reboots.**
+> ⇒ ⭐ **Order is load-bearing: array first, applications after.** A bring-up script that insists
+> on that order is not being fussy.
+> ⚠️ **Two defects, one root:** the array is never programmed at boot, **and** programming it
+> late destroys the thing it was fixing.
+
+**CHECK.** ✅ **Ask what WRITES the value, not what reads it.** A status word with no writer on
+the boot path cannot change on the boot path, and no amount of waiting will move it. ⇒ **Grep the
+boot scripts for the writer.** If the only one lives in your bring-up, then a pre-bring-up zero
+is the design rather than a fault.
+
+> ### 📋 Provenance, stated narrowly because this is the kind of claim that gets over-stated
+> ```
+> MEASURED   one unit, four boots, both directions
+> MEASURED   a second unit, THE NEGATIVE ONLY -- gate 0, bring-up never run
+> NOT YET    nobody has watched the second unit's bring-up OPEN the gate
+> ```
+> ⇒ **Expected, not established, on any unit but the first.**
+>
+> ⚠️ **The address of the status word is firmware-specific and is deliberately not the load-bearing
+> part of this entry.** On ours it is `713eb8`; **treat that as a starting point for your own
+> build, not a constant** — see [trap 56](#56-sed--ie-may-or-may-not-have-made-a-backup-and-the-flag-cannot-tell-you)
+> for what happens when a version-dependent detail is carried across builds as though it were universal.
+
+📌 This is the named version of the link that [trap 54](#54-every-watched-process-is-running-every-port-is-listening-and-there-is-no-cell)
+describes abstractly as *"the internal readiness gate never flips"* — **there it is the last link
+in a chain of correct waits; here it is a thing you will read directly and misinterpret.**
