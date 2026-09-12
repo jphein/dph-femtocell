@@ -2151,10 +2151,11 @@ is the design rather than a fault.
 > ### 📋 Provenance, stated narrowly because this is the kind of claim that gets over-stated
 > ```
 > MEASURED   one unit, four boots, both directions
-> MEASURED   a second unit, THE NEGATIVE ONLY -- gate 0, bring-up never run
-> NOT YET    nobody has watched the second unit's bring-up OPEN the gate
+> MEASURED   a second unit, BOTH directions -- gate 0 before bring-up,
+>            and 1 on the first poll after it, watched twice
 > ```
-> ⇒ **Expected, not established, on any unit but the first.**
+> ⇒ ✅ **Two units, both directions. An earlier revision of this entry said the second unit was
+> measured only in the negative; that was true when written and was superseded within the day.**
 >
 > ⚠️ **The address of the status word is firmware-specific and is deliberately not the load-bearing
 > part of this entry.** On ours it is `713eb8`; **treat that as a starting point for your own
@@ -2164,3 +2165,59 @@ is the design rather than a fault.
 📌 This is the named version of the link that [trap 54](#54-every-watched-process-is-running-every-port-is-listening-and-there-is-no-cell)
 describes abstractly as *"the internal readiness gate never flips"* — **there it is the last link
 in a chain of correct waits; here it is a thing you will read directly and misinterpret.**
+
+---
+
+## 58. A script that runs inside `$( )` must not background anything that keeps stdout
+**Mechanism measured locally, both shapes. Whether it is what bricked a unit is UNRESOLVED — see
+the bound at the end.**
+
+**SYMPTOM.** You append a few harmless lines to a boot-time helper — a watchdog loop, a poller,
+anything long-lived and backgrounded — and the device stops completing its boot. **The lines are
+correct. They work when you run the script by hand.**
+
+**MECHANISM.** ⭐ **Command substitution waits for EOF on stdout, not for the main process to
+exit.** A backgrounded child **inherits that stdout** and holds the substitution open for as long
+as it lives. So if the script is invoked as `$(…)` — and on this platform the root hook *is* a
+command substitution, because the injected value is `"x$(…)"` — **your background job pins the
+boot.**
+
+```
+$( sh helper.sh )        helper backgrounds a loop, stdout not redirected
+                         -> the substitution does not return until that loop EXITS
+                         -> boot stalls exactly where the payload runs
+```
+
+`[measured locally: a backgrounded 2-second loop that keeps stdout made `$(…)` take **2009 ms**;
+the same loop with the redirect moved returned in **4 ms**.]`
+
+> ### ☠️ And the fix that looks right is wrong — redirect the SUBSHELL, not the command inside it
+> ```sh
+> ( while …; do thing; done ) &                  # ⛔ pins the substitution
+> ( while …; do thing >/dev/null 2>&1; done ) &  # ⛔ STILL pins it -- the SUBSHELL holds fd 1
+> ( while …; do thing; done ) >/dev/null 2>&1 &  # ✅ the redirect belongs here
+> ```
+> ⚠️ **Redirecting the inner command is the shape that fools people, and there is a reason it
+> fools them: it sometimes works.** A subshell containing a **single command** is commonly
+> optimised into an `exec`, so the inner redirect lands on the only process and the hazard
+> disappears. **A subshell containing a loop cannot be optimised away, so the subshell survives
+> holding the inherited descriptor.**
+> `[measured: single-command subshell with an inner redirect returned in 5 ms — indistinguishable
+> from fixed. The identical pattern around a loop took 2009 ms.]`
+> ⇒ ⭐⭐ **So "redirect the inner command" is a rule that passes on the simple test case and fails
+> on the real one.** That is worse than a rule that never works.
+
+**CHECK.** ⭐⭐ **Before you edit a script, ask how it is INVOKED.** The same three lines are
+inert in an init script and fatal inside `$( )`. **Nothing in the script tells you which**, and
+the file you are editing looks identical in both worlds. ⇒ **Grep for the callers before you add
+anything long-lived**, and if any caller is a substitution, redirect at the subshell.
+
+> ### ⚠️ BOUND — the hazard is established; the incident is not
+> This is published because **anyone who gains persistence on one of these boxes will eventually
+> add something to a boot hook, and the hook is a command substitution.** That much is measured.
+>
+> ⛔ **What is NOT established is that this is what killed the unit it was found on.** The
+> mechanism predicts a stall at the point the payload runs — but the network client and the SSH
+> daemon start **before** that point, so a stall there should leave the box **pingable, with SSH
+> answering.** **It is not pingable at all.** ⇒ **Most likely cause, not proven cause**, and the
+> discrepancy is recorded rather than explained away.
