@@ -4,8 +4,25 @@ Failure modes that cost us days. Each one is written as **SYMPTOM** (what you wi
 **MECHANISM** (why), and **CHECK** (the observation that distinguishes it from what it
 resembles).
 
-**Every trap names the device it was measured on.** These models differ, and an instruction
-that is correct for one can destroy another — trap 2 is a worked example of exactly that.
+**Every trap states what it was measured on**, and the ones that matter most for cross-device
+safety name a **model**. These models differ, and an instruction correct for one can destroy
+another — trap 2 is a worked example of exactly that.
+
+> ### ⚠️ This paragraph used to claim more than the file delivers
+> It said *every* trap names its device. **It does not. 24 of 51 name a model, and five say only
+> "Measured."** Most of the rest name a **source** instead — a vendor binary, the core, the
+> management library, a 3GPP document — which is the honest answer for a trap that is not
+> model-specific, but it is **not the same claim**.
+>
+> ⇒ **Where an entry does not name a device, do not assume it applies to yours.** The gap is
+> left visible rather than closed by attributing hardware we cannot verify after the fact.
+>
+> **Count it yourself rather than trusting this paragraph — it will go stale exactly the way the
+> last one did:**
+> ```sh
+> grep -c '^## [0-9]' docs/TRAPS.md                               # traps
+> grep -A2 '^## [0-9]' docs/TRAPS.md | grep -c 'DPH-15\|nano3G'   # of those, naming a model
+> ```
 
 > ### The one habit that would have saved most of this time
 > **Name the question your instrument actually answers, and check it is the question you
