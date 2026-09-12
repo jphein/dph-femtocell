@@ -1944,3 +1944,104 @@ grep -rln '<the concept>'  --include='*.md' .    # before adding anything
 ⚠️ **And positive-control the second one**, because it is the one whose failure is silent: a
 search that finds nothing and a search that cannot find anything print the same result. Confirm
 the pattern matches something you know is present before trusting a zero.
+
+---
+
+## 53. "Read-only" that came from a warning string, not from a rejected write
+**Measured on an ip.access nano3G, on two unrelated attributes.**
+
+**SYMPTOM.** An attribute is documented — in your own notes — as read-only, and work is planned
+around routing past it. **It was never read-only.**
+
+**MECHANISM.** The setter prints a warning and **performs the write anyway**:
+
+```
+**** Setting Read-Only Attribute <name> (<id>) from DMI is not recommanded
+<name> (<id>) = <the value you just set>          <- and the readback confirms it
+```
+
+⚠️ **"not recommanded" is not a refusal, and the device is not lying** — it is saying the write
+is *unsupported*, which is a different claim from *impossible*. **Nobody tried it, because the
+warning read like a refusal.**
+
+⭐ **The tell is that the claim has no failed write behind it.** Ask of any "read-only" in your
+notes: **did someone write it and observe a rejection, or did someone see a warning and stop?**
+Those two produce identical documentation and opposite facts.
+
+> ### ⚠️ Two independent instances, and there is a third outcome hiding between them
+> - **`csgIndicator`** — the setter warns, the write lands, **and the broadcast does not follow**.
+>   See [trap 4](#4-csgindicator-reads-false-in-the-database-and-broadcasts-true-on-the-air).
+>   ⇒ ⭐ **A successful write to a "read-only" attribute can still change nothing that matters.**
+>   That is a **third state** beyond accepted and rejected, and **a readback cannot distinguish
+>   it from success** — the stored value is exactly what you asked for.
+> - **`managementServerType`** — warned, **applied, confirmed by readback**, and behaviourally
+>   real. Planning had rested on the belief it could not be changed, and that belief traced back
+>   to the warning rather than to any attempt.
+
+**CHECK.** ⛔ **A warning is not a return code.** Write it, read it back, **and then check what
+the value actually governs** — because the two instances above differ precisely there, and only
+the second one did anything.
+
+---
+
+## 54. Every watched process is running, every port is listening, and there is no cell
+**Measured on an ip.access nano3G during commissioning.**
+
+**SYMPTOM.** The unit looks healthy by every instrument you would naturally reach for. The
+watched applications are all running. The ports you expect are listening. Nothing has crashed
+and nothing is logging an error. **There is no radio and no cell.**
+
+**MECHANISM.** One empty string at the top, and below it a chain of components that are each
+**waiting correctly**:
+
+```
+managementServerUrl, OPERATIONAL tier, EMPTY
+  -> the management-server TYPE stays at its non-TR-069 default
+  -> the device sits in a management mode whose server address is also empty
+  -> there is nothing to provision from, so it never provisions
+  -> the system manager parks, awaiting application registration
+  -> the 3G control app's registrations go unanswered
+  -> the internal readiness gate never flips
+  -> no transceiver, no Iuh, no cell
+```
+
+⭐ **Nothing in that chain is faulted.** Every component is in a legal state, doing the correct
+thing given its input. ⇒ **A process table cannot see it, a port check cannot see it, and a crash
+log cannot see it, because there is no crash.** That is *why* every instrument agrees the unit is
+fine — they are all answering questions about liveness, and nothing is dead.
+
+⛔ **Only the first link is worth checking**; the rest are consequences. Read the **operational
+tier** of the management-server URL, by its bare name — see
+[the four-tier model](CONFIG.md#the-four-tier-value-model), and note that the tier trap and this
+outage are the same event seen from two ends.
+
+**CHECK.** ✅ **Choose an instrument that can only be satisfied by the END of the chain.**
+*"Is there a cell"* is answerable. *"Are the processes up"* is a different question, and it will
+keep agreeing with a dead unit for as long as you are willing to ask it.
+
+---
+
+## 55. `ps` truncates the argument list, so a flag reads as absent
+**Measured on an ip.access nano3G (busybox `ps`).**
+
+**SYMPTOM.** You check whether a daemon was started with a particular flag. `ps` does not show
+it. You conclude it was started without it, and go looking for why.
+
+**MECHANISM.** **busybox's `ps` truncates the argument list.** The process really does carry the
+flag; the output simply does not reach it. There is no ellipsis and no warning — **the line just
+ends**, and a short line looks exactly like a complete one.
+
+✅ **`/proc/<pid>/cmdline` has the truth.** It is NUL-separated, so make it readable:
+
+```sh
+tr '\0' ' ' < /proc/<PID>/cmdline; echo
+```
+
+> ### ⭐ This refines the rule at the top of this file rather than repeating it
+> That rule says `ps` answers *is it listed*, not *is it running*. **This is a third question it
+> does not reliably answer either: _with what arguments_.** ⇒ **Three different questions, one
+> command, and it looks equally authoritative answering all of them.**
+>
+> ⚠️ **And the failure direction is the dangerous one:** a truncated line reads as **absence of
+> the flag**, never as presence. **So it always fails toward "the thing you were looking for is
+> not there"** — which is the conclusion that starts an investigation rather than ending one.
