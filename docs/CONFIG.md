@@ -45,6 +45,27 @@ lkg<Thing>         last known good
 > 2. **The `lkg` tier is not readable over TR-069** and some `lkg`-tiered writes **do not
 >    survive a reboot**. Re-read after every reboot instead of assuming a write persisted.
 >
+> ### 🔴 A worked example, measured — and the verification PASSED
+> Two units, one serving and one dead, differing in exactly one place:
+> ```
+>                                working unit        blocked unit
+> managementServerUrl (2116)     "http://<acs>/acs"  ""            <- OPERATIONAL, EMPTY
+> defaultManagementServerUrl     "<acs-host>"        "<acs-host>"  <- DEFAULTS,  set
+> localManagementServerUrl       "<acs-host>"        "<acs-host>"  <- LOCAL,     set
+> ```
+> **The commissioning form writes the DEFAULTS tier. The operational tier was never populated.**
+> ⇒ ⛔ **The verification that was actually performed — reading the form's own echo, which showed
+> the address back — passed.** Nobody read `2116`. **The readback was of the wrong tier**, which
+> is the failure this section describes, and it still happened to the people who wrote it down.
+>
+> ⭐ **Which tier a UI writes is not guessable from the UI.** A form that shows you an address
+> and accepts it has told you it stored *something*, *somewhere*. **Read the bare name
+> afterwards, or you have verified nothing.**
+>
+> ⚠️ **And a factory restore puts a unit back into exactly this state** — see
+> [trap 49](TRAPS.md#49-the-reset-button-reaches-factory-restore-sooner-than-the-manual-says).
+> **The recovery path re-arms the fault.**
+
 > ### ⚠️ An EMPTY `lkg*` is not neutral — it is one reason a setting vanishes
 > `lkgManagementServerUrl = ""` was measured on a unit whose **operational** value was set
 > correctly, and that setting did not survive a reboot: **the last-known-good tier had nothing
