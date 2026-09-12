@@ -85,13 +85,67 @@ tier. Setting only the factory one fails silently, so **set both**.
 fine and never sync.** Point it at a server it can actually reach.
 
 ### `rfParamsCandidateList` — the one nobody sets, and the cell dies without it
-`cellParameterSelectionMethod` defaults to **AUTO**, which selects *from a candidate list*.
-With an empty list the select action **acknowledges and selects nothing**. Format is a
-tuple list: `({<uarfcn>, <scrambling-code>, 1})`.
 
-**What you see if you skip it:** `uarfcnDownlink = -1`, `scramblingCode = -1`,
+Format is a tuple list: `({<uarfcn>, <scrambling-code>, 1})`. **But setting it is only half
+the job, and the other half is the part that gets missed.**
+
+> ### 🔴 `AUTO` does **not** read this list. An earlier revision of this page said it did.
+> ```
+> AUTO        selects from NETWORK-LISTEN SCAN RESULTS
+> CONFIGURED  uses exactly the values you supplied
+> ```
+> **The vendor's own management library says so**, of the parameters NWL chooses between:
+> *"It is applicable if Cell Parameter Selection Method is set to Auto, otherwise its value is
+> ignored."* A unit that has never run a network-listen scan has an empty scan-result store —
+> so **in AUTO the select action acknowledges and selects nothing, with or without a candidate
+> list.**
+>
+> ⭐ **The wrong mechanism produces the right symptom, which is what makes it expensive.**
+> Populate the list, leave the method at `AUTO`, and the identical failure comes back — and it
+> reads as *"the list write did not take"* rather than *"the device is not looking there"*.
+
+**So set both, method first:**
+
+```
+set cellParameterSelectionMethod=CELL_PARAMETER_SELECTION_METHOD_CONFIGURED
+set rfParamsCandidateList=({<uarfcn>, <scrambling-code>, 1})
+```
+
+✅ **Corroborated independently by sysmocom's shipping nano3G configuration**, which sets the
+TR-069 twin of this attribute to `CONFIGURED` and turns off scan-on-boot, periodic scanning and
+neighbour-list population. Their entire configuration is *do not scan, use the candidate lists*.
+
+⛔ **Do not run a network-listen scan to "fix" AUTO.** It is an on-air action, it is
+unnecessary once the method is `CONFIGURED`, and skipping it removes the question rather than
+answering it.
+
+**What you see if you skip all this:** `uarfcnDownlink = -1`, `scramblingCode = -1`,
 `operationalState = DISABLED` — and the cell **still registers with the core**. An HNBAP
 association with no radio. The core says up; the handsets say no service.
+
+⚠️ **And `uarfcnDownlink` / `uarfcnUplink` are read-only reports, not controls.** A write to
+one **succeeds and does nothing** — the device recomputes them from the candidate list at boot.
+That looks exactly like a band change that did not take.
+
+> ### ☠️ Switching to `CONFIGURED` changes what a **transmit-power** attribute MEANS
+> The same library text, on the CPICH power limits:
+> *"If Cell Parameter Selection Method is set to **Auto**, this attribute defines the **lower
+> limit** for the CPICH Tx Power that can be selected by NWL… If set to **Configured**, this
+> attribute defines the **actual power level at which the Primary CPICH is transmitted**."*
+>
+> ⇒ **In AUTO these are bounds on an automatic choice. In CONFIGURED they are the setting.**
+> The same number, never rewritten, stops describing a limit and starts describing an output —
+> and the library notes it **includes the gain of any external amplifier**.
+>
+> ✅ **Read the CPICH power attributes before and after you flip the method.** This is the one
+> configuration change in this guide that can change what you are radiating without any power
+> attribute being written, and the [README](../README.md) spectrum section is the thing to
+> re-read if the number surprises you.
+
+`[Scope: the library documentation strings are platform-level ip.access text. The AUTO-selects-
+nothing behaviour was **measured on an ip.access nano3G**, train 563.16.0 — the same 563 family
+as the DPH-151, but not a DPH. The power-meaning flip is **read from the library, not measured
+on either**.]`
 
 ### PLMN (MCC / MNC)
 Two routes, and they are not equivalent:
