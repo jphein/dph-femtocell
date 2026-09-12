@@ -441,11 +441,23 @@ defence is architectural:
 - **Neither of those is exotic, and both are things you would do anyway** for a surplus carrier
   device with a dead management path.
 
-⚠️ **One robustness note if you edit `nv_env.sh` by any route:** it is **rewritten
-non-atomically on every boot**, and **whether the vendor's own setter leaves a backup is not
-established — see [trap 56](TRAPS.md#56-sed--ie-may-or-may-not-have-made-a-backup-and-the-flag-cannot-tell-you)** — two whole-file `sed` passes and an append. **A power
+⚠️ **One robustness note if you edit `nv_env.sh` by any route:** it has **no backup and is
+rewritten non-atomically on every boot** — two whole-file `sed` passes and an append. **A power
 cut inside that window leaves a corrupted environment with nothing to restore from.** That is a
 hazard for ordinary configuration work, quite apart from anything above.
+
+> ### ⭐ "No backup" is measured, and it is worth knowing *why* it is not obvious
+> The vendor's setter edits with `sed -ie`, which **looks** like it requests a backup suffix.
+> On this firmware's BusyBox it does not — **`-i` there takes no attached suffix, so `-ie` parses
+> as `-i -e` and nothing is backed up.** `[measured on the device: BusyBox v1.9.2 (2011), whose
+> own help prints a bare `-i`; a direct run left no suffixed file.]` ⚠️ **On a modern BusyBox the
+> identical flag DOES write a backup** — see
+> [trap 56](TRAPS.md#56-sed--ie-may-or-may-not-have-made-a-backup-and-the-flag-cannot-tell-you),
+> because the version boundary is the whole finding.
+>
+> ✅ **So back it up yourself, by convention, before you touch it.** On our unit the only copies
+> that exist are ones we made by hand. ⇒ **A reader who trusts the flag gets nothing; a reader
+> who copies first gets everything.**
 
 ---
 

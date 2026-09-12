@@ -2069,15 +2069,32 @@ implementation and by version:
 ```
 GNU sed             -ie  ->  in-place, backup suffix "e"          file.e IS created
 BusyBox 1.37.0      -ie  ->  in-place, backup suffix "e"          file.e IS created   [measured]
-BusyBox, older      -i takes NO suffix, so -ie parses as -i -e    NO backup at all
+BusyBox 1.9.2       -i takes NO suffix, so -ie = -i -e            NO backup at all    [measured]
 ```
 
-`[measured: BusyBox 1.37.0's own help reads `-i[SFX]` / "Optionally back files up, appending SFX",
-and the run produced the suffixed file.]`
+`[both measured, not reasoned: BusyBox 1.37.0's help prints `-i[SFX]` / "Optionally back files up,
+appending SFX" and the run produced the suffixed file; BusyBox v1.9.2 (2011), on the femtocell
+itself, prints a bare `-i` and the identical run left no suffixed file.]`
+
+> ### ✅ One command discriminates, and you should run it before trusting either row
+> ```sh
+> busybox sed --help 2>&1 | grep -- '-i'      #  -i[SFX]  => a backup IS written
+>                                             #  -i       => it is NOT
+> ```
+> ⇒ **The help text is the authority for the build in front of you**, and it takes a second.
 
 ⇒ **The same eight characters mean two different things**, and which you get depends on a version
-nobody checked. ⚠️ **This firmware's BusyBox is roughly a decade older than the one measured
-above.** ⛔ **Do not carry either answer onto a device from this table.**
+nobody checked. **Roughly fifteen years and an added feature separate those two rows.**
+
+> ### ⭐⭐ Two correct measurements disagreed, and adjudicating between them would have been wrong
+> This entry exists because a reported claim did not reproduce. The reported behaviour was real —
+> **on the device.** The contradicting measurement was also real — **on a modern build.**
+> ⇒ **The fix for a disagreement between two valid measurements is not to decide which is right.
+> It is to ask which INSTANCE each claim is about.**
+> ⭐ **A mechanism is true over a range, and a claim without its range is not finished.** Neither
+> party had stated a version, so the sentence *"BusyBox `sed -i` takes no suffix"* was unfalsifiable
+> and wrong-sounding at the same time — **it is true of some BusyBoxes and false of others, and
+> nothing in it says which.**
 
 **CHECK.** ✅ **Look for the file.** `ls` beside the target for the exact suffixed name. One
 command, and it answers what the flag cannot.
