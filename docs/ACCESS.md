@@ -352,6 +352,33 @@ that is what sourcing a shell file means.
 `$( )` runs in a **subshell**, so it cannot change the environment of the parent. Altering an
 NV variable means editing the **file** and booting **again**.
 
+### A second write path, through the web UI — and it skips the validator the first one has
+
+The attribute route above goes through the DMI console. There is another, through the
+**commissioning web UI**, and the pair is worth seeing together because they are guarded
+differently:
+
+```
+attribute route   set <a URL-shaped attribute>      -> a URL-field validator exists here
+file route        dmi_config.cgi, multipart upload  -> the file field BYPASSES that validator
+                  form field `dmi_filename`            entirely
+```
+
+⇒ **The uploaded file lands as `init.dmi`, and `opnormal` executes it as root at boot**, through
+the first branch of the `if` above (`ipa-dmi -c "call …"`). ⚠️ **No injection is needed on this
+path at all — the file is a script, and the device runs it because that is the feature.**
+
+⭐ **The shape worth carrying away: somebody DID think about validation here.** There **is** a
+validator, on the field that looks like the input. **The multipart file field is a second path to
+the same sink and does not pass through it.** ⇒ **When you find input validation on an embedded
+device, ask what else reaches the same place.**
+
+> ### ⚠️ And this changes what the defence below COSTS you
+> Installing an `init.dmi` to close `:8090` is still the right move. **But the file you install is
+> executed as root at every boot — that is not a side effect, it is the mechanism.** ⇒ **You are
+> not disabling a feature; you are choosing to use it.** Write the file accordingly, and read the
+> marker rule immediately below before you do.
+
 > ### ⭐⭐ Both guards on the `init.dmi` path are a `grep` for a COMMENT
 > Look again at `dmistart()`. The device decides whether to execute `init.dmi` by counting
 > occurrences of the string `// init.dmi - THIS FILE IS AUTO-GENERATED`. **A file carrying that
@@ -414,8 +441,9 @@ defence is architectural:
 - **Neither of those is exotic, and both are things you would do anyway** for a surplus carrier
   device with a dead management path.
 
-⚠️ **One robustness note if you edit `nv_env.sh` by any route:** it has **no backup, and it is
-rewritten non-atomically on every boot** — two whole-file `sed` passes and an append. **A power
+⚠️ **One robustness note if you edit `nv_env.sh` by any route:** it is **rewritten
+non-atomically on every boot**, and **whether the vendor's own setter leaves a backup is not
+established — see [trap 56](TRAPS.md#56-sed--ie-may-or-may-not-have-made-a-backup-and-the-flag-cannot-tell-you)** — two whole-file `sed` passes and an append. **A power
 cut inside that window leaves a corrupted environment with nothing to restore from.** That is a
 hazard for ordinary configuration work, quite apart from anything above.
 

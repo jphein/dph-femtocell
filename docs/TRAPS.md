@@ -2051,3 +2051,39 @@ tr '\0' ' ' < /proc/<PID>/cmdline; echo
 > ⚠️ **And the failure direction is the dangerous one:** a truncated line reads as **absence of
 > the flag**, never as presence. **So it always fails toward "the thing you were looking for is
 > not there"** — which is the conclusion that starts an investigation rather than ending one.
+
+---
+
+## 56. `sed -ie` may or may not have made a backup, and the flag cannot tell you
+**Measured locally on BusyBox 1.37.0. What the device's much older BusyBox does is NOT
+established here, which is the entire point of this entry.**
+
+**SYMPTOM.** A vendor script edits a critical file with `sed -ie`. You read that and conclude a
+backup exists, because `e` looks like a suffix. Or you conclude one does not, because you have
+read that BusyBox's `-i` takes no suffix and `-ie` therefore parses as `-i -e`. **Both readings
+are defensible and at most one is true on your unit.**
+
+**MECHANISM.** `-i` optionally takes an *attached* suffix, and support for that varies by
+implementation and by version:
+
+```
+GNU sed             -ie  ->  in-place, backup suffix "e"          file.e IS created
+BusyBox 1.37.0      -ie  ->  in-place, backup suffix "e"          file.e IS created   [measured]
+BusyBox, older      -i takes NO suffix, so -ie parses as -i -e    NO backup at all
+```
+
+`[measured: BusyBox 1.37.0's own help reads `-i[SFX]` / "Optionally back files up, appending SFX",
+and the run produced the suffixed file.]`
+
+⇒ **The same eight characters mean two different things**, and which you get depends on a version
+nobody checked. ⚠️ **This firmware's BusyBox is roughly a decade older than the one measured
+above.** ⛔ **Do not carry either answer onto a device from this table.**
+
+**CHECK.** ✅ **Look for the file.** `ls` beside the target for the exact suffixed name. One
+command, and it answers what the flag cannot.
+
+> ### ⭐ The failure is asymmetric, which decides when to look
+> Believing a backup exists when it does not **costs you the file**. Believing one does not exist
+> when it does costs you **a wasted `ls`**. ⇒ **Check before you need it**, not after — and if the
+> suffix *is* honoured on your unit, there is a recoverable copy sitting there that nobody has
+> been looking for.
