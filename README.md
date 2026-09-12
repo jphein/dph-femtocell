@@ -101,6 +101,15 @@ Model scope is stated on every instruction that has one. The three models differ
 that matter, and **an instruction that is correct for one can destroy another** — see the
 config-bank trap in [`docs/TRAPS.md`](docs/TRAPS.md) for a worked example.
 
+⚠️ **And "model" here includes one device that is not a MicroCell at all.** Some findings were
+measured on an **ip.access nano3G** — the product Cisco badged as the DPH — because it runs the
+same `563` software train and was available to test against. **Every entry that came from one
+says so.** Where a nano3G result is all there is, the entry says that too rather than quietly
+generalising it: the two devices have already been shown to be **opposite** on the single setting
+most likely to brick a bring-up. See
+[`docs/HARDWARE.md`](docs/HARDWARE.md#the-ipaccess-nano3g--the-sibling-these-findings-are-cross-checked-against)
+for what transfers and what does not.
+
 ---
 
 ## What this repo is *not*
@@ -161,6 +170,14 @@ the `wizard` UDP backdoor) — still the only substantial published teardown, an
 explicitly deferred the GPS and Iuh questions to a follow-up that never appeared. The
 Osmocom Discourse threads on the DPH-153 are the other main source. This repo tries to
 carry that forward rather than repeat it.
+
+⭐ **For the ip.access side, the reference is [Osmocom's own nano3G
+documentation](https://osmocom.org/projects/cellular-infrastructure/wiki)** — an independent,
+maintained account of the same software stack, covering the management interface and the
+configuration sequence. Where this repo describes that stack, it is correcting or extending a
+source that already exists rather than publishing a new one. **`sysmocom`'s shipped femtocell
+configuration is the other artefact worth reading**: it settles at least one question in
+[`docs/CONFIG.md`](docs/CONFIG.md) that our own measurements only corroborated.
 
 ## Licence
 
