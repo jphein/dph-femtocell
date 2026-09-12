@@ -7,9 +7,22 @@
 # NOTHING HERE HAS BEEN BUILT. This repository has no remote, so the site has
 # never been rendered even once. What follows is the documented default layout
 # for a Jekyll site served from a repository root. Treat it as a starting point
-# that wants one verification pass the first time Pages is switched on -- not as
-# something measured. In the vocabulary this repo uses on its own claims, every
-# line below is *reported*, none of it is *measured*.
+# that wants one verification pass the first time Pages is switched on.
+#
+# WHAT HAS been checked locally, without a build -- each with a positive control
+# confirming the check would catch a planted instance:
+#   - this file parses as YAML and declares no theme
+#   - no Markdown page begins with a "---" line, which Jekyll would otherwise
+#     read as front matter and swallow
+#   - no page contains Liquid delimiters (double-brace, or brace-percent).
+#     Jekyll runs Liquid BEFORE Markdown, so those are live even inside code
+#     fences, and this repo is mostly code fences
+#   - every relative link and #anchor resolves (tools/check-links.py)
+#
+# WHAT HAS NOT: that GitHub's build actually succeeds, and that
+# jekyll-relative-links rewrites the .md links as expected. Only a first build
+# settles those. In the vocabulary this repo uses on its own claims, the four
+# checks above are *measured* and everything else here is *reported*.
 
 title: Reusing AT&T MicroCell femtocells
 description: >-
