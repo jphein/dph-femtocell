@@ -104,9 +104,12 @@ config-bank trap in [`docs/TRAPS.md`](docs/TRAPS.md) for a worked example.
 
 ⚠️ **And "model" here includes one device that is not a MicroCell at all.** Some findings were
 measured on an **ip.access nano3G** — the product Cisco badged as the DPH — because it runs the
-same `563` software train and was available to test against. **Every entry that came from one
-says so.** Where a nano3G result is all there is, the entry says that too rather than quietly
-generalising it: the two devices have already been shown to be **opposite** on the single setting
+same `563` software train and was available to test against. **Entries that came from one say
+so** — with one honest caveat: where we could establish the software family but not the specific
+model, an entry says *"an ip.access unit"* rather than naming the nano3G, because **inventing an
+attribution in a repo whose subject is that instructions do not transfer between models would be
+worse than the vagueness.** Where a nano3G result is all there is, the entry says that too rather
+than quietly generalising it: the two devices have already been shown to be **opposite** on the single setting
 most likely to brick a bring-up. See
 [`docs/HARDWARE.md`](docs/HARDWARE.md#the-ipaccess-nano3g--the-sibling-these-findings-are-cross-checked-against)
 for what transfers and what does not.

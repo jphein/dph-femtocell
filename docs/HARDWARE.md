@@ -138,8 +138,10 @@ relative of one that was already solved and publicly documented.
 
 ### Which findings here came from a nano3G, and why that is worth knowing
 
-Every trap in [`TRAPS.md`](TRAPS.md) names the device it was measured on, and several name this
-one. **Two of them are opposites across the two devices**, which is the best possible argument for
+Traps in [`TRAPS.md`](TRAPS.md) state what they were measured on, and **24 of the 51 name a
+specific model** — several of them this one. (The rest name a *source* instead, and that file's
+header says which, and says not to assume an unattributed trap applies to your unit. An earlier
+version of this sentence claimed *every* trap named a device; it does not.) **Two of them are opposites across the two devices**, which is the best possible argument for
 reading the scope line rather than the instruction:
 
 - **[Trap 2 — which config bank is live](TRAPS.md#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell)**:
