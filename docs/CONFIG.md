@@ -45,6 +45,22 @@ lkg<Thing>         last known good
 > 2. **The `lkg` tier is not readable over TR-069** and some `lkg`-tiered writes **do not
 >    survive a reboot**. Re-read after every reboot instead of assuming a write persisted.
 >
+> ### ⚠️ An EMPTY `lkg*` is not neutral — it is one reason a setting vanishes
+> `lkgManagementServerUrl = ""` was measured on a unit whose **operational** value was set
+> correctly, and that setting did not survive a reboot: **the last-known-good tier had nothing
+> in it, so there was nothing to restore from.** The symptom is a value that reads back
+> perfectly, demonstrably works, and is gone after a power cut — which is very easy to blame on
+> the power cut.
+>
+> ⚠️ **It does not always overwrite.** A different fix was measured *holding* across a reboot
+> with the `lkg` tier leaving it alone. **The promotion rule — what gets a value into `lkg` and
+> when — was never established.** ⇒ **Test reboot survival once, deliberately, rather than
+> assuming it in either direction.**
+>
+> 📌 **Scale, so this reads as structure rather than a quirk of one setting: eight distinct
+> `lkg*` attributes appear across our notes** — `lkgApNtpServerInfo`, `lkgIpsecEnable`,
+> `lkgManagementServerUrl`, `lkgIpsecGatewayAddress` and `lkgManagementServerType` among them.
+
 > ⚠️ **Precedence between the tiers is a naming convention we have not traced in code.** We
 > have the parameter names, the setter, the validator and the commit path; nobody has read
 > the arbiter that chooses between them. Treat the ordering above as strong inference, not
