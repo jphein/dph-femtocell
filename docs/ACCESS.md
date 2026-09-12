@@ -94,9 +94,13 @@ the whole project collapses to a config exercise.
 > 1. **It was NOT listening by default on our DPH-151.** Measured: zero listeners, with
 >    `/proc/net/tcp` confirmed readable so it is a real zero rather than a blind one. It has to
 >    be started — and **the library path is required or the binary dies immediately.**
-> 2. **"Unauthenticated" is INFERRED, not measured.** No login step appears in any documented
->    sequence, but nobody here has demonstrated the port is unauthenticated on a MicroCell.
->    Our own notes say so in as many words. Do not plan around it.
+> 2. **"Unauthenticated" is now MEASURED — but on the sibling, not on a MicroCell.** On an
+>    ip.access nano3G the port is a telnet DMI console with **no authentication step of any
+>    kind**, demonstrated rather than assumed, and it is a full root path from there
+>    ([Route 6](#route-6--the-nano3gs-dmi-console-where-the-management-plane-is-the-root-path)).
+>    **On a DPH-151 it remains inferred**: no login step appears in any documented sequence, and
+>    nobody here has demonstrated it, because on our unit the port never listened.
+>    ⇒ **Plan for it being unauthenticated; do not claim it is, on a MicroCell.**
 > 3. ✅ **There is a better path that bypasses the socket entirely** — the DMI client has a
 >    one-shot command mode you can run over SSH. It is non-interactive, scriptable, and does
 >    not consume the single-client port. **Prefer it.**
@@ -227,10 +231,136 @@ remotely by whoever answers those hostnames, and on your own network that is you
 > fail. See trap 22 in [`TRAPS.md`](TRAPS.md); it is the single most likely way a reader
 > misleads themselves here.
 
-⛔ **What this repo does not contain, deliberately:** working payloads, or the construction of
-anything meant to be *served to* a device. Where a trap can only be explained by reproducing
-such a chain, this guide describes the **symptom and the defence** and stops. That boundary is
-in the [README](../README.md#scope-your-hardware-your-core) and it is not an oversight.
+## Route 6 — the nano3G's DMI console, where the management plane **is** the root path
+
+**Measured on an ip.access nano3G**, not on a MicroCell — see
+[`HARDWARE.md`](HARDWARE.md#the-ipaccess-nano3g--the-sibling-these-findings-are-cross-checked-against) for what
+does and does not transfer. On our DPH-151 port 8090 was **not listening at all**, so none of
+this was reachable there. It is here because the two devices run the same software train,
+because the shape is a *class* of bug worth recognising, and because **the defence is one write
+and nobody would think to apply it.**
+
+### The console, and the whole of its access control
+
+TCP **8090** is a plain telnet DMI console with **no authentication step of any kind** —
+measured on this hardware, not inferred. It exposes the attribute model read/write plus the
+action table. Everything below follows from it being open.
+
+It is open only when **two conditions hold at once**. From `/etc/init.d/opnormal`'s
+`dmistart()`:
+
+```sh
+if [ -f ${DMISCRIPT} ]; then          # /var/ipaccess/init.dmi EXISTS
+    clean_sets_from_initdmi
+    IS_DMI_AUTOGEN=`grep -c "// init.dmi - THIS FILE IS AUTO-GENERATED" ${DMISCRIPT}`
+    if [ $IS_DMI_AUTOGEN -eq 0 ] && [ -x ${PROG_DMI} ]; then
+        ${PROG_DMI} -c "call ${DMISCRIPT}" &      # run it
+    fi
+else                                  # init.dmi ABSENT -- the ONLY telnet path
+    if [ ${ENV_START_DMI_TELNET:-"FALSE"} == "TRUE" ]; then
+        ${PROG_DMI} -u ${DMI_TELNET_PORT} &
+        open_firewall_port ${DMI_TELNET_PORT}
+    fi
+fi
+```
+
+⇒ **`init.dmi` absent AND `ENV_START_DMI_TELNET=TRUE`.** Both, or there is no port at all.
+⚠️ **Note what else lives in that branch:** `open_firewall_port`. **The firewall is not a second
+layer here — it is opened by the same code that opens the port.**
+
+### The read primitive: `call` echoes what it cannot parse
+
+`call` is documented as *"Executes a DMI script"*. It takes a path, opens it, and echoes every
+line as `### Executing: <line>` before failing to parse it. ⇒ **Any file the DMI process can
+open is readable** — every config file, every init script, the NV environment.
+
+⭐ **Read the `### Executing:` lines and not the error echo** — the error path **lowercases**,
+so a value's case is destroyed in exactly the copy most people scroll to.
+
+📌 **This is genuinely useful for legitimate work**, which is worth saying plainly: it is how
+you answer *"is that key actually in the config file"* without having a shell at all.
+
+### The write primitive: a URL-shaped attribute landing in a file that is sourced as root
+
+`/var/ipaccess/nv_env.sh` is **sourced as root** early in boot. Several MIB string attributes
+are written into it **verbatim**, as `export` lines. `crlServerBaseUrl` (2203) is one:
+
+```
+set crlServerBaseUrl="http://example/"   ->   export ENV_CRL_BASE_SERVER="http://example/"
+```
+
+**That is the whole bug, and it is worth stating as a class rather than as a trick:** a
+configuration string is interpolated into a shell file that is later executed, with **no
+validation and no quoting discipline**. `;`, backticks, `$(` and `|` all round-trip unmodified.
+
+⚠️ **The detail that makes it work where you might expect it not to:** the DMI parser owns the
+double quote, so the shell string cannot be *terminated* from inside the value. **It does not
+need to be — `$(...)` command substitution is evaluated inside double quotes.** A value of the
+shape `x$(…)` therefore has its contents run **as root, at every boot**, when `nv_env.sh` is
+sourced. No second service, no network fetch, no memory corruption: the device does it because
+that is what sourcing a shell file means.
+
+⚠️ **A structural caveat, which is also why this is a two-reboot procedure and not a one-shot:**
+`$( )` runs in a **subshell**, so it cannot change the environment of the parent. Altering an
+NV variable means editing the **file** and booting **again**.
+
+> ### ⭐⭐ Both guards on the `init.dmi` path are a `grep` for a COMMENT
+> Look again at `dmistart()`. The device decides whether to execute `init.dmi` by counting
+> occurrences of the string `// init.dmi - THIS FILE IS AUTO-GENERATED`. **A file carrying that
+> marker is not run; a file without it is.** There is a second marker of the same kind —
+> `// !--- This comment is used by WebIf to save the ---!` — which decides whether `set` lines
+> inside the file get commented out before it runs.
+>
+> ⇒ **Both markers are provenance claims carried in a comment, and a comment is not
+> provenance.** A file that simply omits them is executed in full, with its `set` lines intact.
+> ⚠️ **And they were not written as security controls** — they exist to stop the device
+> re-running its own generated configuration. **They are load-bearing for security anyway**,
+> which is the usual way this happens.
+>
+> ⭐ **The transferable lesson: when you meet an integrity check on an embedded device, ask what
+> it would cost an author to omit. If the answer is "delete one line", it is a marker, not a
+> check.**
+
+### ✅ The defence — which is the reason this is written down at all
+
+**Close the console. Either condition breaks the chain, and either is one write:**
+
+```
+ENV_START_DMI_TELNET = FALSE      # via the vendor's own NV setter, then reboot
+```
+— or install **any** `init.dmi` at all, which takes the other branch and never opens the port.
+
+> ### ⚠️ And the trade nobody discovers until it has cost them a cycle
+> **Installing an `init.dmi` CLOSES `:8090`.** The two are **mutually exclusive by
+> construction** — they are the two arms of one `if`. And `init.dmi` is a genuinely useful
+> feature: it is how you make settings apply at boot with no management server anywhere.
+> ⇒ **Deploy one and you have closed your own way in.** **Have another route working first**,
+> and test it before you upload.
+
+**On the injection itself there is nothing to patch** — no vendor, no firmware update — so the
+defence is architectural:
+
+- ⭐ **Treat the DMI console as a root-equivalent interface, because on this hardware it is
+  one.** It is not a "config port" with a smaller blast radius. Anything that can write
+  attributes can write a file that runs as root.
+- **Put it behind what you would put a root shell behind** — in practice an isolated segment,
+  since as noted the device's own firewall is opened by the same branch that opens the port.
+- **Neither of those is exotic, and both are things you would do anyway** for a surplus carrier
+  device with a dead management path.
+
+⚠️ **One robustness note if you edit `nv_env.sh` by any route:** it has **no backup, and it is
+rewritten non-atomically on every boot** — two whole-file `sed` passes and an append. **A power
+cut inside that window leaves a corrupted environment with nothing to restore from.** That is a
+hazard for ordinary configuration work, quite apart from anything above.
+
+---
+
+⛔ **What this repo does not contain, deliberately:** a working payload, or a construction
+sequence you could follow without understanding it. **Mechanisms are described** — in enough
+detail to verify on your own unit, because a description too vague to check is not
+documentation — **and the assembled article is not.** The test applied above: a reader should
+finish understanding the *class* of bug, and be unable to skip straight to a tool. That boundary
+is in the [README](../README.md#scope-your-hardware-your-core) and it is not an oversight.
 
 ---
 
@@ -240,7 +370,9 @@ in the [README](../README.md#scope-your-hardware-your-core) and it is not an ove
 |---|---|
 | SSH to the picoChip with legacy algorithms | **measured live**, DPH-151 |
 | DMI one-shot client answering get/set/action | **measured live**, DPH-151 |
-| DMI on TCP 8090 | **measured live: not listening by default** on our DPH-151, and its telnet front end did not answer once started. Works on sibling ip.access hardware. "Unauthenticated" is **inferred, never measured**. |
+| DMI on TCP 8090 | **measured live: not listening by default** on our DPH-151, and its telnet front end did not answer once started. **"Unauthenticated" is inferred on a MicroCell, never measured there.** |
+| DMI on TCP 8090, unauthenticated, as a root path | **measured live, ip.access nano3G** — console, file read, and the `nv_env.sh` injection sink. **Not reproduced on any DPH**, where the port did not listen. See [Route 6](#route-6--the-nano3gs-dmi-console-where-the-management-plane-is-the-root-path). |
+| `init.dmi` closing `:8090` | **read from `opnormal` on a nano3G** — the two paths are arms of one `if`. Not tested by installing one. |
 | Ralink has no SSH server | **read from a firmware image**, not confirmed on a live device |
 | Ralink telnet / IPC / `wizard` backdoor | **reported** (fail0verflow 2012); `wizard` binary **present** in 151 and 153 images |
 | serial console pinout and baud | **reported** (fail0verflow 2012) |

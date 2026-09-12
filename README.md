@@ -169,6 +169,18 @@ equipment or network. Some of the same mechanisms would apply — that is true o
 networking knowledge — but the material here is organised around reuse, and working attack
 payloads are not published, here or anywhere.
 
+⚠️ **One root path is described in full**, and the reason is that a reader who owns one of these
+needs to be able to **close** it. The ip.access nano3G's management console is a root path, and
+[`ACCESS.md`](docs/ACCESS.md#route-6--the-nano3gs-dmi-console-where-the-management-plane-is-the-root-path) gives the injection sink, the boot-script branch that gates the port, and
+the one-write defence — **in enough detail to verify on your own unit, because a description too
+vague to check is not documentation** — while stopping short of an assembled article.
+
+📌 **Context, stated so the judgement is visible rather than implied:** this hardware generation
+has **no live network and no vendor left to ship a fix.** AT&T's 3G service ended in February
+2022, and these are surplus units in the hands of the people reusing them — which is also the
+audience for this page. **The thing that helps them is the mechanism stated accurately**,
+including that the obvious hardening step closes the console you were using.
+
 ## Safety of this repo
 
 `tools/pre-publish-check.sh` runs before every commit and exits non-zero if it finds key

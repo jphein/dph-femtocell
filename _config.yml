@@ -39,16 +39,20 @@ description: >-
 # build, check that before changing anything else -- it is the load-bearing part.
 
 # ---------------------------------------------------------------------------
-# THEME -- deliberately unset. Ask before choosing one.
+# THEME -- chosen, not defaulted. The alternatives are kept below so the next
+# reader can see there was a choice.
 # ---------------------------------------------------------------------------
-# With no theme the pages render as plain, unstyled HTML: readable, but with no
-# navigation and no layout. That is a legitimate place to stop.
+# These pages are mostly wide tables and long code blocks, and primer is
+# GitHub's own documentation styling, so it is the closest structural fit of
+# the built-ins. With no theme at all the pages still render -- plain, unstyled,
+# readable, no navigation -- which was the alternative considered.
+theme: jekyll-theme-primer
+
+# Considered and not taken:
 #
-# To adopt one, uncomment exactly ONE line:
-#
-# theme: jekyll-theme-primer     # GitHub's own documentation styling. Of the
-#                                # built-ins it handles wide tables and long
-#                                # code blocks best, which is most of this repo.
+# (no theme)                     # renders unstyled but readable; a legitimate
+#                                # place to stop, and what this file shipped
+#                                # with before the choice was made.
 # theme: jekyll-theme-minimal    # narrow column with a sidebar; poorer on tables
 # theme: jekyll-theme-cayman     # large header band, centred narrow column
 #
