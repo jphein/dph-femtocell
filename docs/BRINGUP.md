@@ -236,6 +236,15 @@ survives a power cycle is a **jffs2 partition mounted at `/var/ipaccess`**; anyt
 `/var/run` is tmpfs and clears at boot (which is what you want for a lock file, and exactly
 what you do not want for your scripts).
 
+⚠️ **The device's own configuration files live under that same path, in a *bank* it can
+regenerate without asking you.** Two traps apply directly to anything you write there, and both
+are model-dependent:
+[trap 1](TRAPS.md#1-iuh_enable--two-config-files-two-parsers-one-silent-failure) — one key, two
+files, two different parsers, one silent failure — and
+[trap 2](TRAPS.md#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell),
+where **which bank is live differs per model**, and guessing kills the cell. **Read the live
+bank; never assume it.**
+
 > ### ⛔ Do not call a cold boot failed before **T+20 minutes**
 > Measured across ten cold boots on our unit:
 > ```
