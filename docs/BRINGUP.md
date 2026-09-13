@@ -332,6 +332,23 @@ You need to issue **DMI** get/set/action commands on the radio processor; everyt
 a later miss means the attribute NAME is wrong. **If it does not, your transport is dead and every
 subsequent "not found" is meaningless.**
 
+> ### ⚠️ **A SEPARATE, REAL DEFECT ON `.106`: IT HAS NO TIME SOURCE** `[measured 2026-09-13]`
+> ```
+> .106   418 x NTP attempts to AT&T servers — correctly BLOCKED by our egress rules. No clock.
+> .244   uses a LOCAL source (10.0.6.1), taken from hw_description.dat.       Clock OK.
+> ```
+> ⛔ **NOT the cause of the provisioning silence** — ⭐ *a clock fails CONSISTENTLY, and this
+> symptom is intermittent across units that share it.* **Recorded as a standalone defect so the
+> next reader does not adopt it as an explanation, and does not re-discover it either.**
+>
+> ### ☠️ **AND THE OBVIOUS FIX DOES NOT SURVIVE A REBOOT — MEASURED THE HARD WAY, 2026-09-13**
+> **A live `iptables -t nat -I` redirect on the RALINK fixes the clock and then EVAPORATES.**
+> `[the Ralink's root filesystem is an INITRAMFS EMBEDDED IN THE KERNEL — ACCESS.md:283. Nothing
+>  written at runtime survives. A lane applied the redirect, reported the clock fixed, and the
+>  next reboot wiped the NTP redirect, the MASQUERADE and the access rules together.]`
+> ⇒ ⭐⭐ ***On the Ralink, "I fixed it" and "I fixed it until the next reboot" are the same
+> action.*** **Any rule you need to keep must be re-applied by something that runs at boot.**
+
 ## Phase 4 — Point it at your core
 
 > ### 🎯 **DO THIS**
