@@ -91,8 +91,32 @@ The 154's full SoC identity is genuinely unsettled.
 | **Simultaneous voice** | — not documented | ⊘ | **4 UE contexts** ● | **8 calls** ○ |
 | **HSDPA** | configured 3600 kbps ● | — | exposed, unread ● | **21 Mbit/s** ● |
 | **HSUPA** | 🔴 **NO** — 0 controls in 898 attributes ● | — | exposed, unread ● | ✅ **YES — 5.7 Mbit/s** ● |
-| **Downlink, measured here** | **2.31 Mbit/s** ● (64 % of the HSDPA 3.6 ceiling) | — | ⊘ radio never up | not measured |
-| **Uplink, measured here** | **0.28 Mbit/s** ● (73 % of the R99 384k ceiling) | — | ⊘ radio never up | not measured |
+| **Downlink, measured here** | **2.31 Mbit/s** ● (64 % of the HSDPA 3.6 ceiling) | — | ⊘ radio never up | **0.48–0.71 Mbit/s** ● (two handsets, see below) |
+| **Uplink, measured here** | **0.28 Mbit/s** ● (73 % of the R99 384k ceiling) | — | ⊘ radio never up | ⊘ not separately measured |
+
+> ### ⭐ HOW "IS IT ACTUALLY HSDPA?" WAS SETTLED WITHOUT READING A SINGLE BEARER ATTRIBUTE
+> A first measurement on the nano3G came back at **~300 kbit/s** — below the **R99 ceiling of 384
+> kbit/s** — which is exactly what a cell that had silently fallen back to R99 would produce, on
+> hardware rated far higher. **Two things could explain it and they need different fixes.**
+> ```
+> first try, mid-reattach      37 kB/s  = ~300 kbit/s     <- below the R99 ceiling
+> settled, same handset        89 kB/s  = ~711 kbit/s     <- ABOVE it
+> second, independent handset  60 kB/s  = ~484 kbit/s     <- ABOVE it
+> ```
+> ⇒ ✅ **Two independent handsets both exceeded the R99 ceiling, so the bearer cannot be R99.** The
+> low first number was the **re-attach**, not the bearer type.
+> ⭐ **The method is the transferable part: a capability ceiling makes a rate into a discriminator.**
+> You do not need to read which bearer type is in use if you can show the throughput is impossible
+> for the one you are worried about. ⚠️ **But only in one direction** — exceeding the ceiling rules
+> R99 *out*; falling below it proves nothing, because a good bearer on a bad link looks identical.
+> ⛔ **And never take the first measurement after a re-attach as the answer.** Both cells produced a
+> misleadingly low figure in the settling window, and on a cell that has never carried data before,
+> that figure is maximally convincing.
+
+⚠️ **These nano3G figures are well under its rated capability**, and no conclusion is drawn from
+that here: they were taken minutes after the cell first carried data, at a deliberately low
+transmit setting, on handsets that had just rescanned onto it. **Throughput tracks the link.**
+**Treat the row as "HSDPA confirmed active", not as a benchmark.**
 
 ⇒ ⭐ **HSUPA is the nano3G's real advantage**, and it is a hardware/firmware capability rather than a
 setting — **the 151 exposes no control for it anywhere in 898 attributes.** If uplink throughput
