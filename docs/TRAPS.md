@@ -9,10 +9,19 @@ safety name a **model**. These models differ, and an instruction correct for one
 another — trap 2 is a worked example of exactly that.
 
 > ### ⚠️ This paragraph used to claim more than the file delivers
-> It said *every* trap names its device. **It does not. 24 of 51 name a model, and five say only
-> "Measured."** Most of the rest name a **source** instead — a vendor binary, the core, the
-> management library, a 3GPP document — which is the honest answer for a trap that is not
+> It said *every* trap names its device. **It does not** — a substantial minority name a model,
+> some say only "Measured", and most of the rest name a **source** instead: a vendor binary, the
+> core, the management library, a 3GPP document. That is the honest answer for a trap that is not
 > model-specific, but it is **not the same claim**.
+>
+> ⚠️ **An earlier revision of this correction gave exact counts. They went stale within the day**,
+> because every entry appended after they were written falsified them while the sentence went on
+> looking authoritative. ✅ **The counts are therefore deliberately not stated here.** Measure them
+> when you need them — this is the answer that cannot rot:
+> ```sh
+> grep -c '^## [0-9]\+\. ' TRAPS.md                          # total entries
+> grep '^\*\*Measured on' TRAPS.md | grep -c 'DPH-15[134]\|nano3G'   # naming a model
+> ```
 >
 > ⇒ **Where an entry does not name a device, do not assume it applies to yours.** The gap is
 > left visible rather than closed by attributing hardware we cannot verify after the fact.
@@ -2287,8 +2296,13 @@ is a config bank; here it is the page you read to find out.
 ---
 
 ## 60. A corpus you are writing is not a corpus you have read
-**Reported by the lane it happened to, on the evening this file reached 59 entries. The
+**Reported by the lane it happened to, on the evening this file was growing fastest. The
 generalisation is theirs; the incident is recorded because they asked for it to be.**
+
+> ⚠️ **An earlier revision of this line named the exact entry count.** It was correct when written
+> and false by the end of the same evening — **inside the card about documentation you trust
+> without checking.** Left as a note rather than quietly fixed, because the demonstration is worth
+> more than the tidiness.
 
 **SYMPTOM.** You spend an hour diagnosing a fault, concluding the hardware is at issue. **The
 answer is in a file in your own repository, which you have been actively adding to all evening.**
@@ -2400,3 +2414,228 @@ that reads A will pass while B is empty.* Ask **which component answers the ques
 instrument asks**, and read the value from the one that has to **use** it.
 
 ---
+
+## 62. Packet data depends on an address that exists at runtime and in no configuration file
+**Measured on the core side of a working private UMTS network carrying data for real handsets.
+Core-side, so it applies whichever femtocell you are using.**
+
+**SYMPTOM.** Data works. It works for days. **Then the core host reboots and every packet session is
+gone** — no handset attaches, no context activates, and **nothing in any log names a cause.** The
+daemons start, bind, and report healthy.
+
+**MECHANISM.** The GTP daemons bind and peer on a **secondary IP address**, and both halves name it
+explicitly:
+```
+osmo-ggsn.cfg   gtp bind-ip      <the address>
+osmo-sgsn.cfg   ggsn 0 remote-ip <the address>
+```
+⚠️ **The address itself was added once, by hand, with `ip addr add` — and existed in no netplan, no
+`systemd-networkd` unit and no `/etc/network` file.** ⇒ **It survives exactly as long as the host
+stays up.**
+
+> ### ⭐ Why nothing tells you
+> **A missing bind address is not an error at the layer that reports errors.** The daemons come up,
+> the config parses, the VTY answers. The failure is that a peer relationship silently has no
+> endpoint — and **the address's absence is invisible to every component that depends on it**,
+> because each one only knows the string it was configured with.
+> ⇒ **This is a landmine, not a fault: it is armed the moment the address is created by hand, and it
+> fires on an unrelated event weeks later.**
+
+**CHECK.** ✅ **For every address your config files name, ask which file creates it.**
+
+```sh
+grep -rhoE '([0-9]{1,3}\.){3}[0-9]{1,3}' /etc/osmocom/*.cfg | sort -u | while read a; do
+  printf '%-16s ' "$a"
+  ip -4 addr | grep -q "$a" && printf 'live '   || printf 'ABSENT '
+  grep -rqs "$a" /etc/netplan /etc/systemd/network /etc/network && echo 'persisted' || echo 'NOT PERSISTED'
+done
+```
+⇒ **`live` + `NOT PERSISTED` is the landmine.** ⭐ **Both columns are needed** — "it answers" and
+"it will answer after a reboot" are different questions, and only the second one is about
+configuration.
+
+📌 **Generalises past GTP.** Any interface alias, any route, any `ip` command typed during a debugging
+session becomes load-bearing the moment something is configured to point at it. **The debugging
+session ends; the dependency does not.**
+
+---
+
+## 63. A host route fixes the voice symptom and cannot fix the data one, because the rejection is a source-address check
+**Measured on a live network where both symptoms appeared together and looked like one fault.**
+
+**SYMPTOM.** Media does not flow. You add a host route to the AP's transport address, **voice starts
+working immediately** — and **data still does not.** The obvious reading is that the route is
+incomplete, or that data needs a second route.
+
+**MECHANISM.** They were never the same fault.
+```
+DLGTP ERROR  Unknown GSN peer <addr>       6133 of 6141 GTP errors were this ONE line
+```
+⭐ **That is a check on the SOURCE ADDRESS of the arriving packet, not a routing decision.** A route
+changes which way a packet leaves; it does not change the address the packet arrives *from*. ⇒ **The
+peer check rejects it on arrival regardless of how well it was routed.**
+
+> ### ⭐⭐ AND THE DETAIL THAT RULES OUT THE OBVIOUS ALTERNATIVE
+> **The rejected tunnel id is the GGSN's OWN local id for that subscriber.** ⇒ **It knows the tunnel.
+> It recognises the session. It refuses the packet anyway, on the source address alone.**
+> **That is what eliminates "unknown tunnel" as an explanation** — and without it you would spend the
+> afternoon on session state, which is correct and irrelevant.
+
+**CHECK.** ✅ **When one fix resolves half a symptom, treat the halves as separate faults until
+proven otherwise.** A single change that fixes voice and not data is **evidence they were two
+problems**, not evidence the change was partial.
+⇒ **Read what the rejecting component actually says.** Here it named the reason in one line,
+repeated six thousand times, while the search was for something subtler.
+
+---
+
+## 64. Three handsets, three unrelated faults, one symptom — and the fix is a log filter
+**Measured while bringing packet data up for real handsets.**
+
+**SYMPTOM.** "Data doesn't work." Three handsets, none of them online, and an afternoon spent
+looking for the network fault they have in common. **There isn't one.**
+
+**MECHANISM.** Each handset failed for **a different reason that was not the network's**:
+
+| handset behaviour | actual cause |
+|---|---|
+| sends **no APN** at all | falls through to the core's `default-apn` — ✅ **works, once a default exists** |
+| attaches but **never activates a context** | nothing broken; the bearer was proven separately |
+| a third, unrelated per-device fault | its own owner, its own fix |
+
+⇒ **Three faults with three owners, presenting identically at the only place anyone was looking:
+the aggregate log.**
+
+**CHECK.** ✅ **Filter every packet-data log by IMSI before concluding anything.**
+
+⇒ ⭐ **That single habit turned one apparent network fault into three handset faults.** An aggregate
+log over N subscribers is **N interleaved stories**, and the shared symptom is an artefact of the
+view, not a property of the system. **Pick one subscriber and follow it end to end.**
+
+⛔ **And one diagnostic to avoid while you are in there: `show mm-context all` SEGFAULTS the SGSN.**
+A command that reads state should not be able to end the process holding it; this one can.
+
+---
+
+## 65. A derived value is computed once at cell setup, so provisioning a running AP changes the database and not the air
+**Measured on an ip.access nano3G. The mechanism is a derived-vs-stored distinction and is not
+specific to one attribute — expect siblings of it.**
+
+**SYMPTOM.** You correct the cell identity on a running AP. **Every readback confirms it.** The value
+reaches flash. You fire the apply action and it returns **confirmed**. ⇒ **And handsets still see the
+old identity**, because the air never changed.
+
+**MECHANISM.** ⭐ **The broadcast value is not the attribute you wrote.** It is **derived** — computed
+**once, at cell setup**, from the attribute — and then held:
+
+```
+you write     the identity attribute        -> database ✅  flash ✅  readback ✅
+the air       carries a value RRM computed  -> from the attribute as it was AT CELL SETUP
+                                               and keeps it until the next cell setup
+```
+
+⇒ **Two values, one name.** The stored one is what every instrument shows you. The derived one is
+what a handset reads. **They agree right up until you change the stored one on a running cell.**
+
+> ### ⛔ AND THE APPLY ACTIONS DO NOT RECOMPUTE IT — ONE OF THEM CONFIRMS ANYWAY
+> ```
+> the parameter-apply action    does NOT recompute it
+> the unlock/select action      does NOT recompute it  --  AND RETURNS CONFIRMED
+> ```
+> ⇒ ⭐⭐ **A confirmed action reads as an applied action.** That is the whole trap: the
+> acknowledgement is truthful about the *call* and silent about the *effect*, and there is no
+> observable difference from the side that issued it.
+> 📌 Same family as [trap 5](TRAPS.md#5-a-cold-boot-leaves-the-cell-locked-and-the-obvious-unlock-sets-the-wrong-attribute) —
+> **an acknowledgement is a statement about receipt, never about consequence.**
+
+> ### ⭐ WHY NOBODY HITS THIS DURING A NORMAL BRING-UP
+> **The bring-up path is safe for free, because it runs after a reboot** — cell setup happens
+> *after* the attributes are in place, so derived and stored agree. ⇒ **The trap is reachable only by
+> hand-provisioning a cell that is already up**, which is exactly what you do when you are fixing
+> something. **The repair path is the exposed one; the happy path is not.**
+> ⚠️ **That also means it can hide for a long time**, validated by every clean bring-up, in the same
+> way [trap 5](TRAPS.md#5-a-cold-boot-leaves-the-cell-locked-and-the-obvious-unlock-sets-the-wrong-attribute)
+> was validated by every warm reboot.
+
+**CHECK.** ✅ **Compare what the AP BROADCASTS against what it is CONFIGURED with — never one alone.**
+The configured side is any readback; the broadcast side has to come from the air or from the core's
+view of the registered cell.
+
+⇒ **If they disagree, reboot rather than re-apply.** Re-applying confirms and changes nothing, which
+costs you the next hour.
+⭐ **And generalise the question rather than the fix:** for any value you are about to write on a
+running cell, ask **"is this stored, or is it derived from something stored?"** A derived value has a
+moment of computation, and **writing its input after that moment is a no-op with a receipt.**
+
+---
+
+## 66. Two co-varying candidates cannot be separated on one unit — a second unit with a *different* identity is an instrument, not redundancy
+
+**Measured on ip.access nano3G hardware. The shape is general: it applies to any derivation you are
+trying to attribute, on any fleet where the units were configured alike.**
+
+**SYMPTOM.** You want to know which of two values a third value is derived from. You read all three
+on the unit you have. **They are consistent with the hypothesis.** They are also consistent with the
+*other* hypothesis, and nothing in the reading tells you that.
+
+**MECHANISM.** The two candidate inputs happen to hold **the same value** on that unit:
+
+```
+unit A     candidate X = 1     candidate Y = 1     derived = 1     <- consistent with BOTH
+unit B     candidate X = 1     candidate Y = 2     derived = 2     <- consistent with Y ONLY
+```
+
+⭐ **On unit A the question is not merely unanswered — it is unanswerable**, and it stays unanswerable
+no matter how many times you read it, how carefully, or over how many days. In the case that produced
+this trap the inference sat in the notes for **twelve days**, correctly flagged as untraced, and every
+observation taken in that window was compatible with it.
+
+⛔ **The failure mode is that the reading FEELS like confirmation.** You predicted the derived value
+from candidate X and the device agreed. It would have agreed with a prediction from candidate Y too.
+
+✅ **THE CHECK.** Before attributing a derivation, ask: **do my candidate inputs differ on the unit I
+am reading?** If they do not, **the reading cannot discriminate** — say so, and go and find a unit
+where they do. **One correctly-configured unit and one differently-configured unit are worth more
+than ten identical ones**, and a fleet configured from one template is a fleet of one instrument.
+
+📌 Related: trap 65 (a derived value is computed once at cell setup). The same derivation is at issue;
+this trap is about how you establish *what it derives from*.
+
+## 67. Get the distribution before calling it a storm — and check whether your own repair started it
+
+**Measured on a live core. The instrument is a per-hour histogram over the whole log, not a rate.**
+
+**SYMPTOM.** A counter is running far above what you expect. You name it a storm, attribute it to the
+system you are working on, and start eliminating causes. **Every cause you eliminate is real work and
+none of it converges**, because the framing is wrong in a way none of the eliminations can reach.
+
+**MECHANISM — TWO framings collapse into one, and both are wrong:**
+
+```
+what you say      "this unit has been flooding all night"
+what you measured  a RATE, inside a window you chose because the rate was high in it
+what the histogram says
+                   ~12/hour all day ................ the baseline
+                   873 in ONE hour .................. the flood
+                   and that hour is the hour YOU changed something
+```
+
+⭐⭐ **The flood began when the repair landed.** The unit had been up for an hour before that at **22
+in the hour** — indistinguishable from baseline. ⇒ **The storm was a product of the fix, not the
+condition the fix treated.** A rate cannot show you that; only the distribution can, because the
+distribution contains the moment *before*.
+
+✅ **THE CHECKS, in order:**
+1. **Histogram the whole log by hour before quoting any rate.** A rate is a claim about a window, and
+   you chose the window *because* of its contents.
+2. **Line up the onset against your own change log.** The most likely author of a brand-new anomaly is
+   the most recent change, and the most recent change is usually yours.
+3. **Measure a window with no actions of your own in it.** In the case that produced this trap, the
+   first "it's fixed" reading contained three events **that were the observer's own test**, and the
+   first "here's the cause" reading was taken from a window the observer had just polluted the same way.
+
+⛔ **AND A COROLLARY ON NAMING CAUSES.** An unfamiliar error line appeared in that polluted window and
+was announced as the engine of the flood. Counted afterwards: **1 occurrence in 649 events**, and it
+later occurred **twice in a window containing zero events of the kind it supposedly caused.**
+⭐ **NOVELTY IS NOT FREQUENCY.** A line is salient because you have not seen it before, which is a fact
+about your reading history and not about the system. **Count it before you name it.**
