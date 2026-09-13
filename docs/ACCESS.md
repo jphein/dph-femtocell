@@ -7,6 +7,32 @@ apply to it.**
 
 ---
 
+> ## 🎯 **WHICH ROUTE REACHES WHICH CHIP — READ THIS BEFORE PICKING ONE**
+> `[added 2026-09-13. This document listed six routes for months and never said which SoC each
+>  one lands on. A lane with Ralink root read the whole file looking for the way onward.]`
+>
+> | route | lands on | works on a COLD unit? |
+> |---|---|---|
+> | **1 — SSH to the radio processor** | **picoChip** `.186` | ⛔ **NO** — *"available once you have installed a key."* **It does not tell you how to install one.** |
+> | **2 — DMI console** | picoChip's attribute model | ⚠️ configures the cell. **Not a shell.** |
+> | **3 — the Ralink gateway** (telnet · `guest`/pw · IPC injection · `wizard` UDP 14677) | **Ralink** `.185` | ✅ **YES** — this is the one that works cold |
+> | **4 — serial console** | both had UART headers | ⚠️ case opening. **Not the path used here.** |
+> | **5 — the management plane** (TR-069/CWMP) | picoChip config | ⚠️ **config only. Not a shell** — but see PATH D |
+> | **6 — the nano3G's DMI** | ⛔ **a DIFFERENT DEVICE** | n/a to a DPH-151 |
+>
+> ### ⛔⛔ **SO THE HONEST SUMMARY: EVERY ROUTE THAT WORKS COLD LANDS ON THE *RALINK*.**
+> **There is no documented route that gets you a shell on the *picoChip* from scratch.** Route 1
+> presupposes the key; Routes 2 and 5 are configuration, not shells; Route 4 needs the case open.
+> ⇒ ⭐⭐⭐ **The chain that closes it is PATH D — the CWMP route TO a shell:**
+> ```
+> CMHS/ACS binds -> Download RPC -> sdphook -> post_swdl_hook runs it AS ROOT
+>                -> enables sshd + installs a key -> THEN Route 1 becomes available
+> ```
+> ⇒ **Route 1 is the DESTINATION, not an entry point.** ⚠️ **And PATH D is not yet demonstrated
+> end-to-end here** — it is assembled from measured parts. Say so when you cite it.
+> ⛔ **Its upstream hook installs a PUBLISHED private key** (tracked in a public third-party repo).
+> **Mint a fresh pair before it is ever driven.**
+
 ## There are two computers in the box
 
 On the DPH-151 and DPH-153 the unit is **two SoCs**, and confusing them wastes days:
