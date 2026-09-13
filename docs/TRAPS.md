@@ -2714,3 +2714,58 @@ necessarily a file the program consults.** **Read the code before editing the th
 blames.**
 
 ---
+
+## 69. Five of the components write no log at all unless the unit is in developer mode
+**Measured in a DPH-153 firmware extraction, and independently on a live ip.access sibling. The two
+halves come from different models, and that is stated rather than merged.**
+
+**SYMPTOM.** A process is misbehaving. You go for its log. **The file is empty, or it does not exist.**
+⇒ You conclude the process is dead, wedged, or never started — and you are now debugging the wrong
+thing, because **the process is fine and nothing was ever going to write that file.**
+
+**MECHANISM.** Each component's start script redirects its own output **only in developer mode**:
+
+```sh
+if [ "$OP_MODE" = "OP_DEVELOPER" ]
+then  ./$PROG >/tmp/$PROG.txt 2>&1 &     # the per-process log you are looking for
+else  ...                                 # started with NO redirect at all
+```
+
+⇒ ⭐ **This is not one component being awkward.** Measured in one firmware image, in five separate
+start scripts — the DMI agent, the radio-resource manager, the user-plane app, the L1 router and the
+SoIP router. **Every one of them is silent by default.**
+
+> ### ⭐⭐ AND THE DEFAULT IS "NOT DEVELOPER"
+> On a live sibling unit, `OP_MODE` is sourced from a file **that does not exist on a normal unit**,
+> falling through to the non-developer value. ⇒ **So the absent log is the SHIPPED behaviour, on
+> every component, on every unit nobody has deliberately switched over.**
+> ⚠️ **Which means a zero here is evidence about the MODE and nothing whatsoever about the process.**
+
+> ### ⛔ AND DO NOT SWITCH THE MODE TO GET THE LOG
+> `OP_MODE` gates more than logging — the same variable appears in the start path of five components.
+> ⇒ **Changing the operating mode of a unit in order to observe it changes what you are observing.**
+> **Find where the output actually goes instead.** With no redirect, a component's stderr follows
+> whatever the init system gave it — on the units here, the boot console log. **That file exists on a
+> normal unit and the per-process one does not.**
+
+**CHECK.** ✅ **Before treating an empty log as a symptom, find out which process is supposed to write
+it, and under what condition.**
+
+```sh
+grep -rn "$(basename <the log file> .txt)" /opt/*/*/*.sh    # who redirects into it, and inside what if
+```
+⇒ **If the writer is inside a mode test, the file's absence is configuration, not failure.**
+⭐ **The general form: a log file has a writer, and the writer has a condition. "No log" is a claim
+about the condition until you have checked it.**
+
+> ### 📋 PROVENANCE, because the two halves are from different models
+> ```
+> MEASURED   the five gates and the redirect form   -- in a DPH-153 firmware extraction
+> MEASURED   the default falling through to non-developer, and the per-process log
+>            absent while the component ran normally  -- on a live ip.access nano3G
+> NOT ESTABLISHED   where OP_MODE is set on the DPH-153 itself. Do not assume it is the
+>                   same file as the nano3G's; that is the cross-model inference this
+>                   repo cards elsewhere.
+> ```
+
+---
