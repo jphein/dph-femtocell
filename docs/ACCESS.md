@@ -39,6 +39,10 @@ includes 22, 80, 8080 and 20000. ⇒ **The SSH you reach at the unit's LAN addre
 picoChip's, not the Ralink's.** The Ralink's own SSH port is closed — because it has no SSH
 server at all (below).
 
+> ⚠️ **"NO SSH" IS NOT "NO REMOTE SHELL" — TWO READERS MADE THAT LEAP ON 2026-09-13.**
+> **The Ralink has `telnetd`, and it is reachable.** See Route 3 below. **Do not read this
+> paragraph as "the gateway SoC is unreachable"; it says only that the protocol is not SSH.**
+
 ---
 
 ## Route 1 — SSH to the radio processor
@@ -139,8 +143,23 @@ firmware image — ⚠️ this is a read of the IMAGE, not of a live device. If 
 installed at runtime this read would look identical and be wrong.]` The `/etc/ssh` directory
 is empty and dated 2011; there is no `sshd` and no dropbear; busybox has no ssh applets.
 
-What it does have is **`telnetd`, bound to the internal point-to-point address only** — so
-it is not reachable from your LAN, and every path to it goes through the picoChip.
+What it does have is **`telnetd`, bound to the internal point-to-point address only.**
+
+> ### 🔴🔴 **CORRECTED 2026-09-13 — THE INFERENCE THAT USED TO SIT HERE IS FALSE AND IT COST A LANE AN EVENING**
+> ~~*"so it is not reachable from your LAN, and every path to it goes through the picoChip."*~~
+> `[MEASURED 2026-09-13: root obtained on .106's Ralink from katana, by host route + telnet,
+>  WITHOUT touching the picoChip. This sentence is why nobody tried it for weeks.]`
+> ### ⭐⭐⭐ **A BIND ADDRESS DECIDES WHICH PACKETS A DAEMON *ACCEPTS*. *ROUTING* DECIDES WHICH PACKETS *ARRIVE*.**
+> **The Ralink owns BOTH the LAN address AND `192.168.157.185`.** So a host route pointed at the
+> LAN address is delivered **locally, to `telnetd`,** with no picoChip in the path:
+> ```sh
+> sudo ip route add 192.168.157.185/32 via <lan-ip>     # additive, reversible
+> telnet 192.168.157.185                                 # guest / 1qaz@WSX
+> ```
+> ⇒ ⛔ **"Bound to an address that is not on your LAN" is NOT "unreachable from your LAN."**
+> ⚠️ **The premise was true and stayed true** — `telnetd` really is bound `-b 192.168.157.185`.
+> **Only the conclusion was wrong**, which is why re-reading the sentence kept confirming it.
+> 📌 See [`BRINGUP.md`](BRINGUP.md) Phase 1b, and `~/Projects/microcell/keys/dph151/rroot.py`.
 
 > ### ⛔ And it structurally CANNOT keep an SSH server, which is why nobody should try
 > The Ralink's root filesystem is an **initramfs embedded in the kernel image**. There is no

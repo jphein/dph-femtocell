@@ -47,23 +47,97 @@ will not load on another** (the image loader gates on PCB number and rejects a m
 
 ## Phase 1 — Find it on the network, and knock
 
-Power on with Ethernet and find the DHCP lease. Then:
+> ### ⛔ **READ THIS BEFORE YOU SCAN. A PORT SCAN OF THE LAN ADDRESS MEASURES THE WRONG CHIP.**
+> `[MEASURED 2026-09-13 on .106 and .244. This cost a lane an evening on 2026-09-13 — it scanned
+>  the LAN face for an hour while the management side sat behind it needing ONE ROUTE.]`
+>
+> **A DPH-15x is TWO PROCESSORS on a `192.168.157.184/30` point-to-point link — exactly two
+> usable addresses:**
+> ```
+> 192.168.157.185   Ralink    OWNS THE LAN ADDRESS. Answers your ping. Runs the firewall.
+>                             DNATs 22/80/8080/20000 onward to .186.
+> 192.168.157.186   picoChip  management + radio. THE CHIP YOU ACTUALLY WANT.
+> ```
+> ⇒ ⭐⭐⭐ **`nmap <lan-ip>` interrogates the RALINK'S face, where the firewall is up.** A filtered
+> or closed result is a fact about the Ralink, **not** about the management processor behind it.
+> ⇒ **So the scan is not a decision procedure. It is a measurement of the wrong chip.**
+
+### Step 1a — get the DHCP lease
+
+Power on with Ethernet and find the lease. Call it `<ip>` below.
+
+### Step 1b — ⭐ ADD THE HOST ROUTE, AND TALK TO THE RALINK DIRECTLY
+
+**This is the step that was missing from every guide here until 2026-09-13.**
+
+```sh
+sudo ip route add 192.168.157.185/32 via <ip>
+```
+
+`[MEASURED — this is how .106 was rooted on 2026-09-13, over the network, no serial.]`
+**It is additive and it is reversible** (`sudo ip route del 192.168.157.185/32`). It does not touch
+the unit; it only teaches *your* host where the Ralink's internal address lives.
+
+> ### ⚠️ **WHY THIS WORKS WHEN `ACCESS.md` USED TO SAY IT COULD NOT**
+> The Ralink's `telnetd` is bound `-b 192.168.157.185` — its INTERNAL address. That is true, and
+> the inference everyone drew from it — *"so every path to it goes through the picoChip"* — is
+> **FALSE**. ⭐⭐ **A bind address decides which packets a daemon ACCEPTS. ROUTING decides which
+> packets ARRIVE.** The Ralink owns the LAN address *and* `.185`, so a `/32` via the LAN address is
+> delivered locally, straight to `telnetd`, **with no picoChip involved.**
+
+Then:
+
+```sh
+telnet 192.168.157.185          # login: guest   password: 1qaz@WSX
+```
+
+⇒ **If that opens, you have a shell on the gateway SoC and you do not need serial, the port scan,
+or the backdoor.** For a clean root shell in one step, the corpus already ships the tool:
+
+```sh
+~/Projects/microcell/keys/dph151/rroot.py 'id'
+```
+
+`[MEASURED 2026-09-13 on .106: root, BusyBox v1.8.2 (2012-04-20).]`
+Root without it: `rmm_client 192.168.157.185 cs_cmd "<command>"`.
+
+### Step 1c — only now, knock — and know what each answer means
 
 ```sh
 nmap -sT -p 22,23,80,443,8080,8090,20000 <ip>
 nmap -sU -p 14677 <ip>
 ```
 
-- **TCP 22** — SSH is expected. See [`ACCESS.md`](ACCESS.md); the SSH daemon is ancient and
-  a modern client will refuse it three times in a row for three different reasons.
+- **TCP 22** — DNATed through to the picoChip's `sshd`. See [`ACCESS.md`](ACCESS.md); the daemon is
+  ancient and a modern client will refuse it three times for three different reasons.
+  > ⛔ **PORT 22 HAS TWO GATES AND `nmap` CANNOT TELL THEM APART.** `[MEASURED, from `etc/init.d/sshd`
+  > and `rcS`]`
+  > ```
+  > firewall REJECT            -> icmp-port-unreachable   ("filtered")
+  > ACCEPT + loopback-only bind -> TCP RST                 ("closed")
+  > ACCEPT + 0.0.0.0 bind       -> SYN/ACK                 ("open")
+  > ```
+  > ⭐ **Only the ICMP error text separates gate 1 from gate 2.** A RST means the packet REACHED the
+  > picoChip and `sshd` was listening on `127.0.0.1:22` — `etc/init.d/sshd:64-68` binds to loopback
+  > unless `ENV_VERBOSE_CONSOLE_ENABLED = TRUE`. **That is not a firewall and no firewall edit fixes it.**
 - **TCP 8090** — the ip.access **DMI** management console. If this is open and
   unauthenticated you may be able to do everything below without a root shell.
-  **Try this first: it decides which of two worlds you are in.**
 - **UDP 14677** — the fail0verflow `wizard` backdoor (unauthenticated root command
   execution). Present on the 151 and reported still present on the 153. **A negative on a
   154 is a result worth writing down**, not a failure.
+  > ⚠️ `[MEASURED]` **The literal `14677` appears NOWHERE in the bank3/bank4 initramfs images** —
+  > decimal, hex `0x3955`, or byte-packed. Controls in the same search: `wizard` 8/10 hits, `bin`
+  > 118, `sh` 254. **The `/bin/wizard` ELF and its `telnetd -b %s` ARE present.** ⇒ The off switch
+  > is real (`cs_client set wizard/enable 0`); **the PORT NUMBER is not established from the image.**
 
-## Phase 2 — Serial console (if the network route does not open one)
+## Phase 2 — Serial console — ⚠️ **NOT THE PATH WE USED, AND PROBABLY NOT YOURS**
+
+> ### 🔴 **JP, 2026-09-13: *"my guide is wrong we didn't use serial we just did everythin gover the netowrk"***
+> **Every unit brought up here — `.244` and `.106` — was reached OVER THE NETWORK.** `.244` via the
+> CWMP/ACS path; `.106` via the Phase 1b host route + telnet. **No serial console was used on either.**
+> ⇒ **Do Phase 1b before you open the case.** This section is kept for a unit that will not
+> DHCP or answer on any port — a genuinely different failure from the one this guide used to send
+> you here for.
 
 Locate the UART pads. On the 151, fail0verflow used header **JP1** at **56700 baud** (try
 57600 as well). **Use a 3.3 V-only adapter.**
