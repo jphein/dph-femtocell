@@ -75,6 +75,89 @@ written in prose here would be correct exactly once, and this file has already o
 
 ---
 
+> ## 🔎 **FIND YOUR TRAP BY WHAT YOU WOULD SAY, NOT BY ITS TOPIC**
+> **71 traps, 2,874 lines.** ⭐ **This index is keyed on the SENTENCE YOU ARRIVE WITH** — the
+> corpus's measured lesson is that traps are written up under their *worked example* while readers
+> search with their *symptom*, and the two rarely share a word.
+>
+> ### 🔴 THE CELL WILL NOT COME UP / NO RADIO
+> | you would say | trap |
+> |---|---|
+> | "it registers on the core but there is no radio" | [10](#10-the-cell-registers-and-there-is-no-radio), [61](#61) |
+> | "everything is running and there is still no cell" | [54](#54), [57](#57) |
+> | "it came up LOCKED and unlocking did nothing" | [5](#5), [48](#48) |
+> | "it won't radiate and the error mentions GPS" | [48](#48) |
+> | "calls worked and then stopped" | [1](#1-iuh_enable--two-config-files-two-parsers-one-silent-failure) ⬅ **check this first, always** |
+> | "it registers then drops ~15 s later" | [25](#25) |
+>
+> ### 🔴 MY READ OR MY WRITE IS LYING TO ME
+> | you would say | trap |
+> |---|---|
+> | "I set it, read it back, and it is still wrong on the air" | [4](#4), [15](#15), [65](#65) |
+> | "the write succeeded and nothing changed" | [11](#11), [35](#35), [53](#53) |
+> | "my search returned zero" | [12](#12), [55](#55), [70](#70) |
+> | "two different checks agree, so it must be right" | [20](#20), [52](#52) |
+> | "the batch failed and I cannot see which attribute" | [37](#37) |
+> | "the console is mute" | [36](#36), [7](#7) |
+> | "the value came back as 0" | [35](#35), [70](#70) |
+>
+> ### 🔴 THE HANDSET SEES IT AND WILL NOT CONNECT
+> | you would say | trap |
+> |---|---|
+> | "shows the network, refuses to attach" | [50](#50) ⬅ **you are lying to it about your power**, [4](#4) |
+> | "three handsets, three different faults" | [64](#64) |
+> | "adding a second cell made it worse" | [46](#46) |
+>
+> ### ⛔ I AM ABOUT TO DO SOMETHING DESTRUCTIVE
+> | you are about to | trap |
+> |---|---|
+> | **type an `rmm_client` verb** | [71](#71) ⬅ `factory_reset` and `crash` are its neighbours |
+> | **boot the other firmware bank** | [31](#31) ⬅ **sticky. may remove every way back in** |
+> | **unpack firmware** | [32](#32) ⬅ overwrites YOUR filesystem |
+> | **open the case** | [41](#41) ⬅ can destroy the factory configuration |
+> | **press reset** | [49](#49) ⬅ reaches factory-restore sooner than the manual says |
+> | **correct the PLMN** | [33](#33) ⬅ silently removes a safety interlock |
+> | **stand up a security gateway** | [39](#39) ⬅ can take down your LAN and your own shell, [45](#45) |
+> | **stage a radio parameter** | [51](#51) ⬅ a loaded change: ANY reboot fires it |
+>
+> ### 🔴 THE DEVICE OR MY TOOLS ARE MISLEADING ME
+> | you would say | trap |
+> |---|---|
+> | "`show hnb` says it is connected" | [6](#6) ⬅ **lies in both directions** |
+> | "the log names the process that died" | [23](#23), [26](#26) |
+> | "the deploy passed its checksum" | [8](#8), [22](#22) |
+> | "the timestamp says…" | [29](#29) ⬅ no clock, so it is not a timestamp |
+> | "the crash file is zero bytes" | [43](#43) ⬅ that means healthy |
+> | "nothing is in the log" | [69](#69) ⬅ five components log nothing outside developer mode |
+> | "my TLS server cannot talk to it" | [24](#24), [38](#38), [40](#40) |
+> | "the hostnames still resolve" | [28](#28) |
+>
+> ### ⏱️ IT IS TAKING TOO LONG / I THINK IT IS DEAD
+> | you would say | trap |
+> |---|---|
+> | "it has been 8 minutes and nothing" | [21](#21) ⬅ **a cold boot takes ~16 min. Wait.** |
+> | "it keeps restarting for no reason" | [42](#42) ⬅ **check the barrel jack before the protocol** |
+> | "is this a storm?" | [67](#67) ⬅ get the distribution first, and check your own repair did not start it |
+>
+> ### 📌 CONFIG, PERSISTENCE AND BANKS
+> | you would say | trap |
+> |---|---|
+> | "which config bank is live?" | [2](#2) ⬅ **differs PER MODEL. Read it, never assume** |
+> | "my setting vanished after a reboot" | [18](#18), [19](#19), [44](#44) |
+> | "I edited the config file" | [17](#17) ⬅ it may be a decoy nothing reads |
+> | "packet data does not work" | [62](#62), [63](#63) |
+>
+> ### 🧠 ABOUT THE WORK ITSELF
+> **[47](#47)** working on the device changes the device · **[59](#59)** the manual may not cover your model ·
+> **[60](#60)** a corpus you are writing is not one you have read · **[66](#66)** two co-varying candidates
+> need a second unit · **[68](#68)** a model check admitting a device on another device's evidence ·
+> **[30](#30)** `--help` is an action · **[56](#56)** `sed -ie` and the backup you cannot confirm ·
+> **[58](#58)** backgrounding inside `$( )`
+>
+> ⚠️ **Anchors are GitHub-style slugs of each heading; a few long titles are linked by number only.
+> If a link misses, search the trap number with `## <n>.` — that always resolves.**
+
+
 ## 1. `IUH_ENABLE` — two config files, two parsers, one silent failure
 **Measured on an ip.access nano3G (train `563.16.0`), same firmware family as the DPH-151.**
 
