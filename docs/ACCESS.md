@@ -28,8 +28,29 @@ apply to it.**
 > CMHS/ACS binds -> Download RPC -> sdphook -> post_swdl_hook runs it AS ROOT
 >                -> enables sshd + installs a key -> THEN Route 1 becomes available
 > ```
-> ⇒ **Route 1 is the DESTINATION, not an entry point.** ⚠️ **And PATH D is not yet demonstrated
-> end-to-end here** — it is assembled from measured parts. Say so when you cite it.
+> ⇒ **Route 1 is the DESTINATION, not an entry point.**
+> ### ✅✅ **AND PATH D IS NOT A THEORY — IT IS HOW `.244`'s PICOCHIP ACTUALLY GOT ROOT.**
+> `[findings-dph151-root-baseline.md:1-4 — "first root baseline, measured 2026-09-05 21:59Z.
+>  READ OFF THE DEVICE OVER SSH AS uid=0 ON THE PICO (192.168.157.186, via the Ralink
+>  10.0.6.244:22 DNAT). Everything below is measured, not inferred." — and :8 attributes the
+>  nv_env write to "OUR v7 HOOK", :57 to "the hook installed JP's dph151-jp key".]`
+> ⚠️ **This page previously said PATH D was "assembled from measured parts". That hedge was
+> WRONG and it was mine** — it turns a demonstrated capability into a hypothesis, which is
+> exactly what stops the next reader using it.
+> ### ⛔ **TWO OBSTACLES, BOTH FROM THE SAME FILE, BOTH NAMED**
+> ```
+> :33  persistent_ssh.sh kills DslmSsp — THE MAIN APPLICATION. On a unit that is NOT
+>      mid-transaction it plausibly CAUSES the reboot it exists to prevent.
+>      ⇒ kill  rmmwd swdl_client post_swdl_hook  ONLY.
+> :47  the retry authenticated with cwmp_rce_key while the hook had installed dph151-jp.
+>      DIFFERENT KEYS, rc=255 six times. ⭐ A lost race and a rejected key are
+>      indistinguishable from outside — only the return code separated them.
+>      ✅ v8 installs BOTH public keys.
+> ```
+> ⏱️ **SSH opens for ~30–60 s and then the unit auto-reboots.** `persistent_ssh.sh` must run
+> **inside that window** or the service closes again.
+> ⛔ **The upstream hook installs a PUBLISHED private key** (tracked in a public third-party
+> repo). **Mint a fresh pair before driving it.**
 > ⛔ **Its upstream hook installs a PUBLISHED private key** (tracked in a public third-party repo).
 > **Mint a fresh pair before it is ever driven.**
 
@@ -126,8 +147,19 @@ server at all (below).
 > NOT a server-side bug — a same-endpoint control shows a working unit succeeding against the
 > identical IP, handler and server certificate.**
 
-📌 **Known to work on at least 4 DPH-153 units** (tempest, post 41). ⚠️ **The 153's JTAG/hardware
-half does NOT transfer to the 151 — but Route 0 needs none of it.**
+> ### ✅✅ **AND IT IS CONFIRMED ON A DPH-151 — BY THE PERSON WHO RAN IT**
+> `[JP, 2026-09-13, verbatim: **"the 153 exploit to access the pico worked on the 151 we did it
+>  alrday"** · and **"no we did it all over netork"**]`
+> ⇒ ⭐⭐⭐ **THE 153's PICO EXPLOIT WORKS ON THE 151. IT HAS BEEN DONE ON `10.0.6.244`, WHICH HAS A
+> LIVE ROOT SHELL ON BOTH CHIPS TODAY** (`ip202ff`, uid 0 — verified 2026-09-13).
+> ⛔ **THIS REPO'S OWN `reference/working-scripts/README.md` CARRIES THE OPPOSITE CAUTION:**
+> *"These target a **DPH-153**. Our unit is a **DPH-151**… tempest states plainly that the 151/154
+> have no reliable instructions."* ⇒ **That caution was correct WHEN WRITTEN and is now superseded
+> by our own operational result. It is the reason nobody here reached for this route for days.**
+> ⭐⭐ **The SOFTWARE half transfers. It is only the 153's JTAG/HARDWARE half that does not — and
+> Route 0 needs none of it.**
+
+📌 **Also known to work on at least 4 DPH-153 units** (tempest, post 41).
 
 ---
 
