@@ -1,8 +1,21 @@
-# Bring-up: from a boxed MicroCell to a call
+# Bring-up: DPH-151 — from a boxed MicroCell to a call
 
 **Scope: written from a DPH-151 (ip.access train `563.21.8`) brought up against an Osmocom
-core.** The DPH-153 route is reported to work the same way with different attribute values.
-**The DPH-154 is unproven** — see [`HARDWARE.md`](HARDWARE.md).
+core, carrying voice and SMS for four handsets and recovering unattended from a power cut.**
+**This page is the DPH-151 guide.** Every phase below was executed on one.
+
+> ### 🧭 FOUR TARGETS, FOUR GUIDES — pick yours before you read further
+> | target | guide | evidence class |
+> |---|---|---|
+> | **Cisco DPH-151** | **this page** | ✅ **proven here, end to end** |
+> | **ip.access nano3G S8** | [`BRINGUP-NANO3G.md`](BRINGUP-NANO3G.md) | ✅ **proven here, end to end** |
+> | **Cisco DPH-153** | [`BRINGUP-DPH153.md`](BRINGUP-DPH153.md) | ⚠️ **published route by someone else; not reproduced here** |
+> | **Cisco DPH-154** | [`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) | 🔴 **no route in. Four measured walls.** |
+>
+> ⭐ **Phases 4–8 below are the ip.access software stack and transfer between models** — attributes,
+> the unlock order, the transmission gate, power-cut recovery. **Phases 0–3 are hardware and access,
+> and those are where the models genuinely differ.** ⛔ **[`Trap 2`](TRAPS.md#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell)
+> is a worked example of a correct instruction for one model destroying another.**
 
 Read [`TRAPS.md`](TRAPS.md) first. Most of the time this takes is spent on the traps, not
 on the steps.

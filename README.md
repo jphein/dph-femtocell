@@ -1,4 +1,4 @@
-# Reusing AT&T MicroCell femtocells (Cisco DPH-151 / DPH-153 / DPH-154)
+# Private UMTS from retired femtocells — Cisco DPH-151 / DPH-153 / DPH-154 and the ip.access nano3G
 
 AT&T shut down its UMTS network on **2022-02-22**. The MicroCell femtocells sold to
 customers to fix indoor coverage stopped being able to do their job that day, and they
@@ -9,13 +9,35 @@ firmware**, they speak **Iuh** natively, and every value that binds one to AT&T 
 an editable placeholder. Pointed at an open-source core, one becomes a private UMTS cell.
 
 > ### What has actually been made to work
-> A **DPH-151** running as a private UMTS cell against an [Osmocom](https://osmocom.org)
-> core (`osmo-hnbgw` + `osmo-msc` + `osmo-mgw` + `osmo-hlr`), carrying **voice and SMS**
-> for four handsets, and **recovering unattended from a power cut in about 16 minutes**.
+> **Two devices, both taken end to end here, against the same [Osmocom](https://osmocom.org)
+> core** (`osmo-hnbgw` + `osmo-msc` + `osmo-mgw` + `osmo-hlr`):
+>
+> - A **Cisco DPH-151** as a private UMTS cell carrying **voice, SMS and packet data** for four
+>   handsets — **2.31 Mbit/s down, 0.28 Mbit/s up, measured** — and **recovering unattended from a
+>   power cut in about 16 minutes.** → [`docs/BRINGUP.md`](docs/BRINGUP.md)
+> - An **ip.access nano3G S8**, taken from a **sealed, un-commissioned box** through factory reset,
+>   commissioning, root, an Iuh transplant and first light, to **a second cell carrying voice
+>   alongside the first**, carrying **voice and packet data.**
+>   → [`docs/BRINGUP-NANO3G.md`](docs/BRINGUP-NANO3G.md)
+>
+> ⭐ **Packet data works on both** — `osmo-sgsn` + `osmo-ggsn`, real PDP contexts, real throughput.
+> **The traps that cost the most there are core-side, not radio-side** —
+> [62](docs/TRAPS.md#62-packet-data-depends-on-an-address-that-exists-at-runtime-and-in-no-configuration-file),
+> [63](docs/TRAPS.md#63-a-host-route-fixes-the-voice-symptom-and-cannot-fix-the-data-one-because-the-rejection-is-a-source-address-check)
+> and [64](docs/TRAPS.md#64-three-handsets-three-unrelated-faults-one-symptom--and-the-fix-is-a-log-filter).
 >
 > Independently, a **DPH-153AT** has been reported registering with `osmo-hnbgw` and
 > radiating UMTS after IPsec was disabled and its hardcoded NTP and HNB-GW addresses were
-> repointed (Osmocom Discourse, `tempest`).
+> repointed (Osmocom Discourse, `tempest`). **Reported, not reproduced here** —
+> [`docs/BRINGUP-DPH153.md`](docs/BRINGUP-DPH153.md).
+>
+> ⛔ **The DPH-154 has no known route in.** Four walls, each measured —
+> [`docs/BRINGUP-DPH154.md`](docs/BRINGUP-DPH154.md).
+>
+> ⭐ **The nano3G is not a footnote here.** It is ip.access's own product — the thing Cisco badged —
+> and it is the reference for the *software* half of every model in this repo. **Where the two
+> differ, both are stated.** It costs $180–200 against the MicroCell's $10, and
+> [`docs/ALTERNATIVES.md`](docs/ALTERNATIVES.md) covers when that is worth paying.
 
 This repo is the write-up: what these devices are, how to get into one, how to bring it
 up, and — most valuable of all — **the failure modes that cost us days**, in
@@ -64,9 +86,30 @@ where the database and the broadcast disagree).
 | GPS antenna | **probably not needed** — see [`docs/HARDWARE.md`](docs/HARDWARE.md). If you do fit one it must be **active**; a passive antenna will not lock and the failure is indistinguishable from the interlock being unbeatable. |
 | a core network | free software, but you need a machine to run it on |
 
-You also need **SIMs you can program** (and a reader) if you want handsets to treat the
-cell as home. That is core-network territory and out of scope here; Osmocom's own
-documentation and `pySim` cover it.
+### SIMs — what to buy, and what you do *not* need
+
+You need **SIMs you can program**, so handsets treat your cell as *home* rather than as a roaming
+network. **Two items, and neither is exotic:**
+
+| item | what | note |
+|---|---|---|
+| **Blank writable USIMs** | e.g. [Gialer 30-pack, writable/programmable USIM, 4G LTE / WCDMA / GSM, 2FF+3FF+4FF](https://www.amazon.com/dp/B08BWSS8L3) — the cards used here | multi-form-factor, so one card fits any handset |
+| **A PC/SC smartcard reader** | any ordinary CCID reader | ⭐ **NOT a special "SIM programmer".** The one used here is an **Alcor Micro AU9540**, driven by `pcscd` |
+
+⇒ ⭐ **There is no dedicated programmer and no soldering.** Writing is done in software with
+[`pySim`](https://osmocom.org/projects/pysim) — for these cards, the **`gialersim`** profile.
+
+> ### ⛔ THREE THINGS THAT WILL COST YOU A CARD IF NOBODY TELLS YOU
+> - **Write Milenage (K + OPc). Never COMP128v1.** A 3G/UMTS cell needs Milenage; COMP128v1 is a 2G
+>   algorithm and a card written that way will not authenticate here.
+> - **Identify the card by ICCID before every write.** Blank cards are **physically
+>   indistinguishable**, and writing the wrong one is not always recoverable.
+> - **There is a one-way door.** Card programming has irreversible steps — a wrong ADM key, or an
+>   algorithm binding written wrong, can lock a card permanently. **Read your tooling's warnings
+>   before the first write, not after.**
+
+📌 **The core-network side of this** — HLR entries, IMSI↔MSISDN, auth data — is Osmocom's
+documentation, not this repo's.
 
 ---
 
@@ -74,9 +117,13 @@ documentation and `pySim` cover it.
 
 | path | what it is |
 |---|---|
-| [`docs/HARDWARE.md`](docs/HARDWARE.md) | the three models, what differs, what to buy, what not to |
+| **[`docs/MATRIX.md`](docs/MATRIX.md)** | ⭐ **all four models side by side** — FCC power per band, silicon, HSUPA, tamper state, config-bank scheme |
+| [`docs/HARDWARE.md`](docs/HARDWARE.md) | the four models, what differs, what to buy, what not to |
 | [`docs/ACCESS.md`](docs/ACCESS.md) | getting a shell, a console, or a management interface |
-| [`docs/BRINGUP.md`](docs/BRINGUP.md) | commissioning → Iuh → a first call |
+| **[`docs/BRINGUP.md`](docs/BRINGUP.md)** | **DPH-151** — commissioning → Iuh → a first call. **Also the router to the other three.** |
+| **[`docs/BRINGUP-NANO3G.md`](docs/BRINGUP-NANO3G.md)** | **ip.access nano3G S8** — sealed box → root → a cell carrying voice |
+| **[`docs/BRINGUP-DPH153.md`](docs/BRINGUP-DPH153.md)** | **DPH-153** — the published route, and what transfers from here |
+| **[`docs/BRINGUP-DPH154.md`](docs/BRINGUP-DPH154.md)** | **DPH-154** — no route in; four measured walls, and what would reopen it |
 | [`docs/CONFIG.md`](docs/CONFIG.md) | the attributes that matter and what they do |
 | [`docs/TRAPS.md`](docs/TRAPS.md) | ⭐ **the failure modes. Read this before you debug anything.** |
 | [`docs/ALTERNATIVES.md`](docs/ALTERNATIVES.md) | when one of these is the wrong choice |
