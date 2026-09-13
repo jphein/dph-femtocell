@@ -267,19 +267,53 @@ on one DPH-151 — **every `rmm_client` verb failed while the port stayed open.*
 
 ---
 
-### ROUTE 3 — ACS / TR-069   `📋 last`
+### ⭐ ROUTE 3 — ACS / TR-069 → **PATH D**   `[✅ THIS IS HOW .244's PICOCHIP GOT ROOT]`
 
 ⭐ **CWMP gives READ *and* WRITE** — 543 parameters, identity and PLMN. ⛔ **It does NOT reach
 `IUH_ENABLE`, the `iapc-gw-shim`, or `picoinit`, so it cannot make a cell serve.**
-⇒ ✅ **Its value here is PATH D — the CWMP route TO a shell:**
+⇒ ✅ **Its value is PATH D — the CWMP route TO a shell, and it is the ONLY documented route that
+reaches the picoChip from scratch:**
 ```
-CMHS/ACS binds -> ACS issues Download RPC -> femto fetches an ip.access package (type 0x5007,
-  "sdphook") -> post_swdl_hook SOURCES IT AS ROOT -> enables sshd + installs a key
-  -> ssh root@192.168.157.186
+reboot -> device sends "1 BOOT", re-reads DNS -> management session completes
+       -> ACS issues Download RPC -> femto fetches the sdphook package (type 0x5007)
+       -> post_swdl_hook SOURCES IT AS ROOT -> enables sshd + installs a key
+       -> ssh root@192.168.157.186
 ```
-⛔ **Assert the payload's HASH before serving it. Never select it by path** — three paths carry the
-unversioned name and two hold a superseded payload. ⛔ **And the upstream hook installs a PUBLISHED
-private key; mint a fresh pair before ever using it.**
+`[findings-dph151-root-baseline.md:1-4 — "first root baseline, measured 2026-09-05 21:59Z…
+ read off the device over SSH as uid=0 on the pico"]`
+
+> ### ⏱️⏱️ **THE WINDOW IS 30–60 SECONDS AND THE UNIT CLOSES IT ITSELF. THIS IS A RACE.**
+> **SSH opens, then the unit AUTO-REBOOTS and shuts it off again.** ⇒ **Everything below must be
+> STAGED AND RUNNING BEFORE you power-cycle. You cannot set it up once the window is open.**
+> ```
+> 1. A CATCHER, already running: poll :22 every second, and TRY BOTH KEYS the instant it answers.
+> 2. On connect, IMMEDIATELY write the key to  /var/ipaccess/root_home/.ssh/authorized_keys
+>    ⭐ jffs2 — it SURVIVES the self-reboot. The rootfs does NOT.
+> 3. Set the two nv_env flags so sshd stays bound across later reboots:
+>       ENV_VERBOSE_CONSOLE_ENABLED=TRUE      ENV_FIREWALL_DISABLED=TRUE
+> ```
+> ### ⛔ **KILL ONLY THESE THREE. NOT `DslmSsp`.**
+> ```
+> ✅ killall rmmwd swdl_client post_swdl_hook
+> ⛔ DslmSsp is THE MAIN APPLICATION. The upstream persistent_ssh.sh kills it — that list is
+>    written for a unit ABOUT TO REBOOT from a pending SWDL transaction, where killing it
+>    PREVENTS the reboot. On an otherwise-healthy unit it PLAUSIBLY CAUSES the reboot it is
+>    meant to prevent.   [findings-dph151-root-baseline.md:33]
+> ```
+> ### ⛔ **INSTALL BOTH PUBLIC KEYS — THE v7 RUN FAILED ON EXACTLY THIS**
+> ```
+> the retry authenticated with  cwmp_rce_key   the hook had installed  dph151-jp
+> DIFFERENT KEYS -> rc=255, six consecutive times.
+> ⭐ A LOST RACE AND A REJECTED KEY ARE INDISTINGUISHABLE FROM OUTSIDE — both are "no shell".
+>   Only the RETURN CODE separates them, and it was visible only because the catcher logged rc.
+> ✅ v8 installs BOTH. Log the rc, always.   [findings-dph151-root-baseline.md:47]
+> ```
+
+⛔ **Assert the payload's HASH before serving it — never select it by path.** Three paths carry the
+unversioned name `rmm-selfclean.sdp` and two hold a **superseded** payload; the current one carries
+its version in the name, so a glob on the bare name **cannot reach it**.
+⛔ **And the upstream hook installs a PUBLISHED private key** (tracked in a public third-party
+repo). **Mint a fresh pair before ever driving this.**
 
 ---
 
