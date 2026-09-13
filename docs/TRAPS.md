@@ -2639,3 +2639,62 @@ was announced as the engine of the flood. Counted afterwards: **1 occurrence in 
 later occurred **twice in a window containing zero events of the kind it supposedly caused.**
 ⭐ **NOVELTY IS NOT FREQUENCY.** A line is salient because you have not seen it before, which is a fact
 about your reading history and not about the system. **Count it before you name it.**
+
+## 68. A model check admits a device on evidence gathered from a different device
+**Measured twice in this project, on opposite sides of the same law — once as a destructive
+configuration error, once as a permission guard that was written to prevent it.**
+
+**SYMPTOM.** You have two units of the same model. A tool, a runbook step or a safety check asks
+*"is this a supported model?"*, gets **yes**, and proceeds — **using a fact that was established on
+the other one.**
+
+**MECHANISM.** ⭐ **Model is a proxy for a capability that was measured once, on one box.** The proxy
+and the fact are identical right up until you own two, and then they come apart silently:
+
+```
+what the check asks      "is this a <model>?"                 -> a TYPE question
+what it needs to know    "has THIS UNIT's behaviour been      -> a PER-DEVICE question
+                          exercised here?"
+```
+
+⇒ **Nothing in the answer says which question was actually answered.**
+
+> ### ⭐⭐ THE TWO FACES, AND THEY POINT IN OPPOSITE DIRECTIONS
+> **As a configuration error —** which bank of firmware config is live is **per-device**. A correct
+> bank number for one unit is destructive on its sibling, and one model in this family has no
+> numbered banks at all. **Carrying the number across is the mistake.**
+> ⇒ [trap 2](TRAPS.md#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell).
+>
+> **As a permission error —** a tool that stages a **loaded change** (applied by any later reboot,
+> not only the one you intended) guarded itself with an explicit allow-list rather than a model
+> check, and said why in its own comments:
+> > *"MODEL IS NOT THE PRECONDITION, AND a model check ALONE WOULD WIDEN THIS TOOL … its real
+> > precondition is 'this DEVICE is deployed and its band behaviour has been exercised here', which
+> > is a per-device fact … a model check would admit [the second unit] **on the strength of a
+> > measurement taken on a DIFFERENT box.**"*
+> ⇒ ⭐ **The second unit would have passed a model check and failed the actual precondition.**
+
+> ### ⚠️ AND THE SUBTLE PART: READING THE ATTRIBUTE ON ONE UNIT STRENGTHENS THE GUARD
+> When the relevant capability attribute **was** finally read — on the first unit — the obvious
+> conclusion is *"good, now we know the model supports it."* **The opposite is true.** The attribute
+> is **readable and per-unit**, which means a model check is now demonstrably answering a question
+> the device can answer for itself. ⇒ **Evidence that a per-unit measurement is available is
+> evidence AGAINST substituting a type for it.**
+
+**CHECK.** ✅ **For any check that gates an action, ask what it would have to be true of to be
+sufficient — then ask whether the thing you measured is that.**
+
+- **If a capability is readable per unit, read it per unit.** A model is a cache of that read, taken
+  on hardware you are not holding.
+- **Prefer an explicit allow-list to a type check for anything irreversible.** An absent entry
+  refuses; a type check guesses, and guesses in the permissive direction.
+- ⛔ **When you promote a unit into an allow-list, promote it on the measurement, not on its
+  siblings.** "Same model as the one that works" is the exact inference this entry exists to stop.
+
+📌 **And a documentation corollary, learned the same evening.** The refusal message cited a doc, and
+the doc was then updated in the belief that the tool read it. **It did not** — the gate was a
+hardcoded list and the doc was the *justification*. ⇒ ⭐ **A file a program names in its output is not
+necessarily a file the program consults.** **Read the code before editing the thing the error message
+blames.**
+
+---
