@@ -279,20 +279,36 @@ subsequent "not found" is meaningless.**
 
 ## Phase 4 — Point it at your core
 
-Four settings. Read every one back afterwards — **the caller's log line that it sent a
-command is not evidence the callee accepted it.**
+> ### 🎯 **DO THIS**
+> ```
+> set ipsecEnable FALSE
+> set apNtpServerInfo ("<NTP-IP>")     # OPERATIONAL NTP tier
+> set defaultNtpServer ("<NTP-IP>")    # FACTORY-DEFAULT tier — a DIFFERENT tier, not a duplicate
+> set hnbGwAddress "<HNBGW-IP>"        # your osmo-hnbgw. read-write, max length 260
+>
+> get ipsecEnable                      # read back
+> get hnbGwAddress                     # read back
+> ```
+> ### ⚠️ **THE FOUR THINGS THAT BITE HERE — details below, but know these now**
+> ```
+> 1. SET BOTH NTP ATTRIBUTES.  Without working NTP the device does not even ATTEMPT the
+>    HNB-GW connection. Writing only one tier fails SILENTLY and looks like a broken gateway.
+> 2. DO NOT get apNtpServerInfo.  It errors on this hardware, and an erroring read is not a
+>    failed setting. Verify NTP BEHAVIOURALLY: is the gateway connection attempted at all?
+> 3. READ BACK THE BARE NAME, never a prefixed tier. A get of the tier you just wrote returns
+>    your value cheerfully and says NOTHING about what the device is doing. A night went into
+>    exactly that.
+> 4. AN NTP ADDRESS THAT RESOLVES IS NOT ONE THAT SYNCS. With no internet route a public NTP
+>    name resolves fine and never syncs. Point it somewhere the unit can actually reach.
+> ```
+> ⇒ ⭐ **Then REBOOT before you believe any of it** — an *empty* `lkg*` tier is not neutral and
+> has silently discarded a correctly-set value. [Phase 7](#phase-7--surviving-a-power-cut).
 
-```
-set ipsecEnable FALSE
-set apNtpServerInfo ("<NTP-IP>")     # the OPERATIONAL NTP attribute
-set defaultNtpServer ("<NTP-IP>")    # the FACTORY-DEFAULT tier -- a DIFFERENT tier, not a duplicate
-set hnbGwAddress "<HNBGW-IP>"        # your osmo-hnbgw, read-write, max length 260
+**Read every setting back afterwards** — **the caller's log line that it sent a command is not
+evidence the callee accepted it.**
 
-get ipsecEnable
-get hnbGwAddress
-```
-⚠️ **`get apNtpServerInfo` is deliberately not in that list** — see the NTP note below. On this
-hardware it errors, and an erroring read is not a failed setting.
+<details><summary><b>Why each of those four matters — the measured detail</b></summary>
+
 
 > ### ⭐ NTP is not a nicety — it gates the whole thing
 > Without working NTP the device **does not even attempt the HNB-GW connection**. And there
@@ -326,6 +342,8 @@ hardware it errors, and an erroring read is not a failed setting.
 > `lkg*` tier is not neutral, and a correctly-set value vanished at a reboot because of it —
 > detail in [`CONFIG.md`](CONFIG.md#the-four-tier-value-model). ⇒ **Reboot the unit before you believe your bring-up.**
 > [Phase 7](#phase-7--surviving-a-power-cut) is where that lands.
+
+</details>
 
 ## Phase 5 — Give the radio parameters, then unlock, then connect
 
