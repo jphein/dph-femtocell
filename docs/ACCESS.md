@@ -91,10 +91,12 @@ server at all (below).
    and TWO LAN IPs on your side (the ACS and CMHS must be on DIFFERENT addresses —
    the femto sends NO TLS SNI, so the handler and certificate are chosen BY DESTINATION IP).
 
-2. ./certpatch.sh <ONE AT&T CMHS FQDN>
-   ⭐ ONE, and it must be THE ONE YOUR UNIT ASKS FOR. They differ per unit:
-      "my unit likes looking up cmhsse-decatur.wireless.att.com"          [tempest]
-   ⇒ WATCH WHAT IT DIALS FIRST. Do not guess, and do not activate all eight.
+2. ./certpatch.sh  — IT BUILDS TWO CERTS FOR TWO DIFFERENT LEGS. THE RCE IS ON THE ACS LEG.
+     chain203.pem  ACS   femtocell.wireless.att.com   O=att, no OU        IP:10.0.0.228  <- THE TARGET
+     chain202.pem  CMHS  cmhs*.wireless.att.com       O=attmobility,TPE   IP:10.0.0.36
+   ⭐ tempest activates ONE CMHS FQDN and it differs per unit ("my unit likes looking up
+     cmhsse-decatur..."), but CMHS IS NEVER DEFEATED — IT IS BYPASSED. The shell comes from
+     the ACS/TR-069 leg. WATCH WHAT YOUR UNIT DIALS; do not guess and do not activate all eight.
 
 3. SERVE THE DOWNLOAD. The unit pulls it from the python server.
 
@@ -315,8 +317,21 @@ device — and you do, since it is on your network and its management hostnames 
 can answer as its management server without touching the device at all. See
 [`CONFIG.md`](CONFIG.md).
 
-⚠️ **It is not how root is obtained on this device**, despite a widely-repeated name that says
-otherwise. See the correction under Route 3.
+> ### 🔴🔴 **THIS SENTENCE IS TRUE OF THE *RALINK* AND FALSE OF THE *PICOCHIP*, AND THE AMBIGUITY COST AN EVENING**
+> `[reconciled 2026-09-13 after JP: "we have all the info there you are still guesiing"]`
+> ```
+> ACCESS.md Route 5 (here)           "TR-069 is NOT how root is obtained on this device"
+> reference/working-scripts/README   "Root on the PICOCHIP is obtained via RCE over CWMP/TR-069
+>                                     on the ACS leg, then an SSH key is planted."
+> ```
+> ⇒ ⭐⭐⭐ **BOTH ARE CORRECT AND THEY ARE ABOUT DIFFERENT PROCESSORS.** **The RALINK is rooted by
+> telnet + a vendor guest password + IPC injection (Route 3) — and calling THAT a "CWMP RCE" is the
+> misnomer.** **The PICOCHIP is rooted over the ACS/TR-069 leg — see [Route 0](#route-0).**
+> ⛔ **Neither document cited the other, so a reader arriving at Route 5 is told the management plane
+> is a dead end and sent away from the only route that produces a pico shell.**
+⚠️ **It is not how root is obtained ON THE RALINK**, despite a widely-repeated name that says
+otherwise. See the correction under Route 3 — **and [Route 0](#route-0) for the picoChip, where it
+IS the route.**
 
 The point for a reader is the *architecture*: the device is designed to be provisioned
 remotely by whoever answers those hostnames, and on your own network that is you.
