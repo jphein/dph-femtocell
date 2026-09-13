@@ -22,37 +22,48 @@ on the steps.
 
 ---
 
-> ## 🎯🎯 **FIRST, ANSWER THIS — THEY ARE DIFFERENT PROCEDURES AND THE GUIDES USED TO CONFLATE THEM**
-> ### **DO YOU WANT A *CONFIGURED CELL*, OR DO YOU WANT A *SHELL*?**
+> ## 🎯🎯 **STEP 1 IS ROOT SSH ON BOTH CHIPS. EVERYTHING ELSE WAITS ON IT.**
+> `[JP, 2026-09-13: **"get root ssh on both chips is the first step"** · **"you have to get shell
+>  in order to make them work so the guide is wrong"**]`
 > ```
-> A CONFIGURED CELL  -> TR-069 / CMHS is the vendor's own provisioning channel.
->                       NO shell. NO RCE ladder. NO key. The unit is ALREADY asking for it.
-> A PERSISTENT SHELL -> the RCE ladder. A DIFFERENT GOAL, and only worth it if you need
->                       to run commands the management channel cannot express.
+> Ralink   192.168.157.185   /32 host route + rroot.py        ✅ WORKS — done on .106
+> pico     192.168.157.186   <- Phase 3's real job. Harder.
 > ```
-> 🔴 **A lane spent an entire evening climbing the ladder before measuring that the cells were
-> already talking to us.** `[2026-09-13: .106 = 95 ACS sessions in 6 h; .244 = 1280]`
-> ⇒ ⭐⭐⭐ **BECAUSE THE GUIDES PRESENTED "GET ROOT" AS A PREREQUISITE FOR "CONFIGURE IT". IT IS NOT.**
-> ⚠️ **And the instrument lies reassuringly:** `TLS-OK clientcert=len=1006` is the loudest success
-> line in the ACS log, printed **1,375× in six hours**, and it certifies **THE TRANSPORT ONLY** —
-> so the log reads healthy while nothing provisions. **Every one ends `peer closed (state=init)`.**
-> ### ⭐ **THE PRECISE SHAPE, AND IT IS THE SAME ON BOTH UNITS** `[measured 2026-09-13]`
-> **BOTH units COMPLETE the TLS handshake, send ZERO APPLICATION BYTES, and hang up.**
-> ⇒ **Two handlers, two log strings, one silence.** ⛔ **There is NO TLS fault** — an earlier
-> *"29 % of handshakes fail"* reading was refuted: every apparent failure is the lower port of a
-> concurrent pair the device abandons, and **every solo connection succeeds.**
-> ⭐ **So do not debug the transport.** The transport works perfectly and carries nothing.
->
-> ### ⚠️ **A SEPARATE, REAL DEFECT ON `.106`: IT HAS NO TIME SOURCE** `[measured 2026-09-13]`
+> ### ⛔ **A CELL DOES NOT SERVE WITHOUT A SHELL. THIS IS NOT ONE OF TWO OPTIONS.**
+> **This guide used to ask *"do you want a configured cell, or a shell?"* as though they were
+> alternatives. THAT WAS WRONG AND IT IS REMOVED.** `[confirmed in code, not taken on authority:
+> `bringup-full.sh:82` drives EVERY step through `ap.sh`, an SSH exec on the device · the
+> `iapc-gw-shim` is a BINARY that must be compiled and installed · `picoinit` programs the
+> picoArray ON THE BOX · `findings-cmhsclient.md:1338`: **"NO CWMP PATH TO THAT FILE."**]`
 > ```
-> .106   418 x NTP attempts to AT&T servers — correctly BLOCKED by our egress rules. No clock.
-> .244   uses a LOCAL source (10.0.6.1), taken from hw_description.dat.       Clock OK.
+> CWMP / CMHS  gets you  reads (543 parameters), identity/PLMN writes, and — via PATH D —
+>                        THE ROUTE TO A SHELL.  It is the MEANS, not an alternative to the end.
+> A SHELL      gets you  IUH_ENABLE in the live config bank · the iapc-gw-shim installed ·
+>                        picoinit programming the picoArray · bringup-full.sh at all.
+> ⇒ EVERY PATH ENDS AT A SHELL. They differ only in HOW THEY REACH IT.
 > ```
-> ⛔ **NOT the cause of the provisioning silence** — ⭐ *a clock fails CONSISTENTLY, and this
-> symptom is intermittent across units that share it.* **Recorded as a standalone defect so the
-> next reader does not adopt it as an explanation, and does not re-discover it either.**
+> ⚠️ **The corpus says *"CWMP gives read AND write"* and that is true and narrower than it sounds:
+> it retires the shell requirement FOR READING CONFIG. It does not retire it for making a cell
+> serve.** ⭐ **That gap — documenting what CWMP CAN do in detail and never stating its LIMIT — is
+> how the wrong framing grew.**
 
----
+> ## ✅ **WHAT "DONE" LOOKS LIKE — MEASURED ON `.244`, A WORKING DPH-151**
+> `[read live 2026-09-13 while it was serving, uptime 3h22m. Diff your unit against this rather
+>  than guessing whether you are finished.]`
+> ```
+> live bank      /var/ipaccess/config -> config_bank_1     ⚠️ BANK 1 — the OPPOSITE of the nano3G.
+>                                                             ALWAYS read it, never assume.
+> IUH_ENABLE     uplayerapp.cfg = 1  AND  3gcntrl.cfg = 1  ⚠️ BOTH FILES, and they PARSE
+>                                                             DIFFERENTLY — see Phase 7.
+> iapc running   /opt/ipaccess/Iapc/iapc.563.21.8          ⚠️ the STOCK path. A DPH-151 is NOT
+>                                                             transplanted. The nano3Gs run
+>                                                             /var/ipaccess/iapc/ — DO NOT CARRY
+>                                                             THAT ACROSS.
+> persistence    /var/ipaccess/root_home/.ssh/authorized_keys
+> device config  /var/ipaccess/cisco/{DefaultFileVersion, cmhs.dat, cmhs_def_cfg.txt}
+>                ⭐ the EIGHT CMHS hostnames live ON THE DEVICE, in the WRITABLE partition —
+>                  live config you can change, not a firmware artefact you must work around.
+> ```
 
 ## ⛔ Before you plug anything in
 
@@ -178,13 +189,15 @@ Capture the whole boot log to a file. It is the single richest artefact you will
 names the boot order, the configuration mechanism, the inter-processor link, and exactly
 what fails when the operator's infrastructure is unreachable.
 
-## Phase 3 — Get a management channel
+## Phase 3 — Get a shell on the picoChip
+
+**Three candidate routes. They are not "ways to manage the device" — they are three ways to reach a pico shell.**
 
 > ### 🎯 **WHAT TO DO, IN ORDER. Stop at the first one that answers.**
 > ```
 > ROUTE 1  CMHS / XMPP        ✅ DEMONSTRATED on a DPH-151. Start here.
 > ROUTE 2  rmm_client telnetd ⚠️  only if Route 1 is dead. Its verb list is a loaded menu.
-> ROUTE 3  ACS / TR-069       📋 last. And it may remove the need for a shell entirely.
+> ROUTE 3  ACS / TR-069       📋 last. Via PATH D it also ends at a shell.
 > ```
 
 ### ⛔ READ THIS FIRST — IT COST US TWO SEPARATE EVENINGS
@@ -256,9 +269,17 @@ on one DPH-151 — **every `rmm_client` verb failed while the port stayed open.*
 
 ### ROUTE 3 — ACS / TR-069   `📋 last`
 
-⭐ **CWMP gives READ *and* WRITE.** ⇒ **If you only need to configure the cell, you may not need a
-shell at all** — a `SetParameterValues`, not a root prompt. **Decide which you actually want
-before climbing any ladder** (see the question at the top of this guide).
+⭐ **CWMP gives READ *and* WRITE** — 543 parameters, identity and PLMN. ⛔ **It does NOT reach
+`IUH_ENABLE`, the `iapc-gw-shim`, or `picoinit`, so it cannot make a cell serve.**
+⇒ ✅ **Its value here is PATH D — the CWMP route TO a shell:**
+```
+CMHS/ACS binds -> ACS issues Download RPC -> femto fetches an ip.access package (type 0x5007,
+  "sdphook") -> post_swdl_hook SOURCES IT AS ROOT -> enables sshd + installs a key
+  -> ssh root@192.168.157.186
+```
+⛔ **Assert the payload's HASH before serving it. Never select it by path** — three paths carry the
+unversioned name and two hold a superseded payload. ⛔ **And the upstream hook installs a PUBLISHED
+private key; mint a fresh pair before ever using it.**
 
 ---
 
