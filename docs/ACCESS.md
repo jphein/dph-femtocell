@@ -71,6 +71,64 @@ server at all (below).
 
 ---
 
+## Route 0 — **THE ONE THAT ACTUALLY WORKS, AND IT IS ALL OVER THE NETWORK**
+
+> ### 🎯 **THIS IS HOW A DPH GETS ROOT ON ITS PICOCHIP. NO JTAG. NO SERIAL. NO SOLDERING.**
+> `[JP, 2026-09-13, verbatim: **"no we did it all over netork"** · and Osmocom Discourse topic 2625
+>  post 41 (tempest → nickvsnetworking), recovered by JP because Anubis blocks automated fetch.
+>  Full text: `~/Projects/microcell/docs/reference/forum-extracts/post-41-tempest-2026-09-04.md`]`
+>
+> ⛔ **EVERY OTHER ROUTE ON THIS PAGE LANDS ON THE RALINK, OR NEEDS A KEY THAT IS ALREADY ON THE
+> PICO.** **Route 0 is the step that crosses between them, and it was missing from this document
+> until 2026-09-13 — which cost a lane an entire evening on Route 5, which this page says in bold
+> is *not* how root is obtained.**
+
+### The procedure
+
+```
+1. ROUTE + FIREWALL + TWO LAN IPs
+   a host route to 192.168.157.186/30 via the DPH's LAN IP, allowed through your firewall,
+   and TWO LAN IPs on your side (the ACS and CMHS must be on DIFFERENT addresses —
+   the femto sends NO TLS SNI, so the handler and certificate are chosen BY DESTINATION IP).
+
+2. ./certpatch.sh <ONE AT&T CMHS FQDN>
+   ⭐ ONE, and it must be THE ONE YOUR UNIT ASKS FOR. They differ per unit:
+      "my unit likes looking up cmhsse-decatur.wireless.att.com"          [tempest]
+   ⇒ WATCH WHAT IT DIALS FIRST. Do not guess, and do not activate all eight.
+
+3. SERVE THE DOWNLOAD. The unit pulls it from the python server.
+
+4. ⏱ SSH IS OPEN FOR ~30-60 SECONDS, AND THEN THE UNIT REBOOTS ITSELF.
+
+5. ./persistent_ssh.sh  — INSIDE THAT WINDOW.
+   ⛔ Without it the unit reboots and shuts the SSH server off again.
+```
+
+> ### ⏱ **THE 30-60 SECOND WINDOW IS THE WHOLE OPERATION — HAVE STEP 5 READY TO RUN BEFORE STEP 3.**
+> **The self-reboot is EXPECTED BEHAVIOUR, not a fault and not a sign you broke something.**
+> ⇒ **Plan it as a race you have already staged for, not as a step you perform when you see it.**
+
+> ### ⚠️ **THE CERTIFICATE DATES, AND THE ORIGINAL AUTHOR'S OWN DOUBT — KEPT BECAUSE IT IS HONEST**
+> The reason given is that **the Ralink's clock resets to 1/1/2000 whenever power is pulled**, so
+> certificate validity must start at 1/1/2000. ⚠️ **tempest is explicitly sceptical of that
+> reasoning:** *"I ran the date command over telnet, and it had no effect on the problem where the
+> DPH terminated the connection early, maybe it's something else? **But it does work**."*
+> ⇒ ⭐ **The BACKDATING IS LOAD-BEARING; the EXPLANATION for it is not established.** Do the
+> backdating; do not build on the reason.
+
+> ### 📋 **WHAT "IT TERMINATED THE CONNECTION EARLY" LOOKS LIKE — so you recognise it**
+> **Completes mutual TLS, presents its factory Cisco client certificate, sends ZERO application
+> bytes, and FINs at ~11-12 ms.** `[measured on the wire here 2026-09-13, and matching
+> findings-lead-howwegotin.md's description of the pre-fix state]`
+> ⇒ **That is the symptom Route 0 exists to cure. It is NOT a firewall, NOT a routing fault, and
+> NOT a server-side bug — a same-endpoint control shows a working unit succeeding against the
+> identical IP, handler and server certificate.**
+
+📌 **Known to work on at least 4 DPH-153 units** (tempest, post 41). ⚠️ **The 153's JTAG/hardware
+half does NOT transfer to the 151 — but Route 0 needs none of it.**
+
+---
+
 ## Route 1 — SSH to the radio processor
 
 This is the comfortable route, and it is available once you have installed a key.
