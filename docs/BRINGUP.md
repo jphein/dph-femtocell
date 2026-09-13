@@ -311,6 +311,36 @@ on one DPH-151 — **every `rmm_client` verb failed while the port stayed open.*
 > `cmhs*` name from `DefaultServerURLs`). **A unit that has NOT only ever dials its redirector.**
 > ⇒ ⭐ **Check which names it asks for in DNS. That one read separates the two cases** — and it
 > needs no shell, no reboot, and nothing on the device.
+>
+> ### ⛔⛔ **AND IF THE ANSWER IS "NEVER PROVISIONED", THE DOCUMENTED PATH ENDS HERE.**
+> **This is an OPEN DECISION, not a procedure. It is written down so the next reader inherits the
+> decision rather than re-deriving it at 23:30.** `[state as of 2026-09-13]`
+> ```
+> WHAT IS KNOWN
+>   the device asks its redirector and accepts no other conversation on that endpoint
+>   every transport-layer variable has been tested and eliminated (endpoint, handler,
+>     server cert, full chain, all three trust anchors, client cert, DNS, routing, NTP, firewall)
+>   .244 IS provisioned and .106 is not — so the difference is history, not hardware
+>
+> WHAT IS NOT KNOWN
+>   what a correct redirector RESPONSE looks like to this firmware. Nobody here has seen one.
+>   whether the device would accept a management URL it was handed, or only one issued
+>     by a party it already trusts
+> ```
+> ### 🔑 **THE DECISION, STATED PLAINLY**
+> ***Do you emulate the operator's REDIRECTOR — a protocol nobody here has observed — or do you
+> obtain a shell by a route that does not need the management plane at all?***
+> ```
+> EMULATE THE REDIRECTOR   no case opening, no hardware risk, works at scale if it works at all.
+>                          ⛔ BUT: an unobserved protocol, reverse-engineered against one unit,
+>                            on JP's production ACS.
+> A NON-MANAGEMENT ROUTE   serial/UART is the only one not yet eliminated on a cold unit.
+>                          ⛔ Case opening. ⚠️ Measure the pin voltage first — only the
+>                            Ralink's 3.3 V is established. See Phase 2.
+> ```
+> ⚠️ **Both are real options and this guide does not choose between them.** ⭐ **What it does say:
+> every CHEAP avenue is now closed by measurement rather than assumption, so whichever is picked
+> starts from a tested position instead of a hopeful one.**
 
 ### ⭐ ROUTE 3 — ACS / TR-069 → **PATH D**   `[✅ THIS IS HOW .244's PICOCHIP GOT ROOT]`
 
