@@ -267,6 +267,20 @@ on one DPH-151 — **every `rmm_client` verb failed while the port stayed open.*
 
 ---
 
+> ### ⚠️ **THE ACS LOG LIES REASSURINGLY — READ THIS BEFORE YOU TRUST IT**
+> `[restored 2026-09-13: my own edit 507ae00 deleted this block while replacing a neighbouring one.]`
+> **`TLS-OK clientcert=len=1006` is the loudest success line in the ACS log — printed 1,375× in six
+> hours — and it certifies THE TRANSPORT ONLY.** ⇒ **The log reads healthy while nothing provisions.
+> Every one of those sessions ends `peer closed (state=init)`.**
+>
+> ### ⭐ **THE PRECISE SHAPE, AND IT IS THE SAME ON BOTH UNITS** `[measured 2026-09-13]`
+> **BOTH units COMPLETE the TLS handshake, send ZERO APPLICATION BYTES, and hang up.**
+> ⇒ **Two handlers, two log strings, one silence.**
+> ⛔ **There is NO TLS fault.** An earlier *"29 % of handshakes fail"* reading was **refuted**:
+> every apparent failure is the lower port of a concurrent pair the device abandons, and **every
+> solo connection succeeds.**
+> ⇒ ⭐ **So do not debug the transport. It works perfectly and carries nothing.**
+
 ### ⭐ ROUTE 3 — ACS / TR-069 → **PATH D**   `[✅ THIS IS HOW .244's PICOCHIP GOT ROOT]`
 
 ⭐ **CWMP gives READ *and* WRITE** — 543 parameters, identity and PLMN. ⛔ **It does NOT reach
