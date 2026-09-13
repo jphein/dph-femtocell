@@ -36,6 +36,21 @@ on the steps.
 > ⚠️ **And the instrument lies reassuringly:** `TLS-OK clientcert=len=1006` is the loudest success
 > line in the ACS log, printed **1,375× in six hours**, and it certifies **THE TRANSPORT ONLY** —
 > so the log reads healthy while nothing provisions. **Every one ends `peer closed (state=init)`.**
+> ### ⭐ **THE PRECISE SHAPE, AND IT IS THE SAME ON BOTH UNITS** `[measured 2026-09-13]`
+> **BOTH units COMPLETE the TLS handshake, send ZERO APPLICATION BYTES, and hang up.**
+> ⇒ **Two handlers, two log strings, one silence.** ⛔ **There is NO TLS fault** — an earlier
+> *"29 % of handshakes fail"* reading was refuted: every apparent failure is the lower port of a
+> concurrent pair the device abandons, and **every solo connection succeeds.**
+> ⭐ **So do not debug the transport.** The transport works perfectly and carries nothing.
+>
+> ### ⚠️ **A SEPARATE, REAL DEFECT ON `.106`: IT HAS NO TIME SOURCE** `[measured 2026-09-13]`
+> ```
+> .106   418 x NTP attempts to AT&T servers — correctly BLOCKED by our egress rules. No clock.
+> .244   uses a LOCAL source (10.0.6.1), taken from hw_description.dat.       Clock OK.
+> ```
+> ⛔ **NOT the cause of the provisioning silence** — ⭐ *a clock fails CONSISTENTLY, and this
+> symptom is intermittent across units that share it.* **Recorded as a standalone defect so the
+> next reader does not adopt it as an explanation, and does not re-discover it either.**
 
 ---
 
