@@ -2769,3 +2769,65 @@ about the condition until you have checked it.**
 > ```
 
 ---
+
+## 70. A counter measures its own node, never the flow — and a zero from one can be the correct value
+**Measured on a working private UMTS network moving real traffic. Core-side, so it applies whichever
+femtocell you are using.**
+
+**SYMPTOM.** Packet data "does not work." The session exists, the bearer is up, radio bearers are
+assigned, the handset's modem transmits — **and the packet-core node you ask reports `User Data Bytes
+(In): 0`.** You conclude nothing is flowing.
+
+**MECHANISM.** ⭐ **With direct tunnel the user plane runs RNC ↔ gateway and never passes through the
+serving node at all.**
+
+```
+control plane   handset -- RNC -- SERVING NODE -- gateway     the node sees this
+user plane      handset -- RNC ------------------ gateway     the node never sees this
+```
+
+⇒ **The serving node cannot count bytes it does not carry.** ⇒ ⭐⭐ **No amount of traffic will ever
+move that counter. Zero is the CORRECT reading for a healthy direct-tunnel session.**
+
+> ### ☠️ AND THIS IS WORSE THAN A BROKEN TOOL, WHICH IS WHY IT DESERVES ITS OWN ENTRY
+> **A broken tool is caught by a positive control on the tool.** This one **passes every control you
+> would think to run**: the management interface answers, the session is listed, the counters are
+> present and correctly formatted, and **every neighbouring field is accurate** — the access point
+> name, the assigned address, the tunnel endpoints. ⇒ **Nothing is wrong with the instrument.**
+> ⭐⭐⭐ **The only wrong thing was the assumption that the bytes go past it.**
+> ⇒ 🎯 ***Ask what PATH the data takes before believing a counter on a node.***
+
+**CHECK.** ✅ **Measure at the endpoint, not at a waypoint you have not proven is on the path.**
+
+```sh
+# paired before/after on the handset's own interface — the cheapest decisive measurement
+<read interface counters>;  <generate known traffic>;  <read again>;  diff
+```
+⇒ **A delta on the device's own radio interface is a fact about the radio.** In the run this entry
+comes from, **a 1 MB download showed a ~1.09 MB receive delta** on the cellular interface while the
+serving node still read zero — and **that** settled it.
+⭐ **The rule that generalises: when two instruments disagree, prefer the one closest to the physical
+thing.** A byte counter on the interface that carries the bytes outranks a byte counter on a node
+that may not be in the path.
+
+> ### 📋 THREE SIBLINGS FROM THE SAME INVESTIGATION, ALL OF WHICH READ AS "NO TRAFFIC"
+> | what was read | why it was wrong |
+> |---|---|
+> | a **cumulative** counter, read **once** (`RX=30MB`) | quoted as evidence of *current* flow; **delta over 5 s was 0.** It was history. |
+> | a ping to an address **on the same /26** as the source | never entered the tunnel at all — it went to neighbour discovery. **100 % loss read as a dead tunnel.** |
+> | the wrong device entirely | the handset was camped on a **different cell** than the one under test. **Counting per-device rather than in aggregate settled it.** |
+>
+> ⇒ ⭐ **All three produced a confident zero, and none of them was a malfunction.**
+
+> ### ⚠️ A COROLLARY IF YOU REWRITE ADDRESSES ANYWHERE IN THE PATH
+> Where a packet-rewriting rule is in play, **downstream error messages name the REWRITTEN address,
+> not the original.** ⇒ **Grepping the logs for the address you started with returns nothing, and
+> that reads as "the fix stopped working" when it means the opposite.** **Grep for both, and know
+> which one a healthy system should be showing you.**
+
+📌 **And the discipline this entry exists to protect: "not tested" and "does not work" are different
+claims.** In this investigation two cells had never been tried at all — no sessions, no subscribers —
+and their silence was briefly read as failure. **An untested path produces the same zero as a broken
+one, and only the test tells you which you have.**
+
+---
