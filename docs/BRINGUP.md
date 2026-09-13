@@ -405,11 +405,37 @@ working over, and on our unit it caused a reboot.
 
 ## Phase 6 — Confirm, without lying to yourself
 
-On the core:
+> ### 🎯 **DO THIS — on the core**
+> ```sh
+> printf 'enable\nshow hnb\n' | nc -q1 127.0.0.1 4261
+> ```
+> ### ✅ **ACCEPT THE CELL ONLY WHEN ALL FOUR HOLD AT ONCE**
+> ```
+> 1. the output contains the literal token   HNB connected      (never judge by byte count)
+> 2. RemAddr <ip> ... State == SCTP_ACTIVE   an ALLOW-LIST — see below, this one is subtle
+> 3. operationalState = ENABLED
+> 4. uarfcnDownlink > 0
+> ```
+> ⇒ **A registration is not a working cell. Then attach a handset and check for a subscriber** —
+> with a control on the read, because **a zero from a failed read looks exactly like a real zero.**
 
-```sh
-printf 'enable\nshow hnb\n' | nc -q1 127.0.0.1 4261
-```
+> ### ☠️☠️ **TEST `SCTP_ACTIVE` AS AN ALLOW-LIST. "NOT INACTIVE" IS WRONG AND THIS GUIDE USED TO SAY IT.**
+> `[corrected 2026-09-13 — the kernel enumeration is COMPLETE and has FIVE members, not two]`
+> ```
+> SCTP_INACTIVE · SCTP_PF (== SCTP_POTENTIALLY_FAILED) · SCTP_ACTIVE ·
+> SCTP_UNCONFIRMED · SCTP_UNKNOWN (0xffff)
+> ```
+> ⇒ ⛔ **A deny-list built from the two states anyone has OBSERVED renders `SCTP_UNCONFIRMED` — a
+> path never confirmed — as GREEN.** ⭐ ***An allow-list is correct under ignorance, and you cannot
+> tell from inside how ignorant you are.***
+> ### ⛔ **AND THE ASSOCIATION STATE IS NOT THE PATH STATE — THEY DISAGREE, AND ONLY ONE IS LIVE**
+> `[measured: a cell at 100% packet loss with ARP failing, while show hnb read healthy]`
+> ```
+> SCTP-ASSOC: State SCTP_ESTABLISHED                      <- the ASSOCIATION's view. SURVIVES THE PEER.
+>  RemAddr 10.0.6.x:29169 State SCTP_POTENTIALLY_FAILED   <- the PATH's view. FAILS FIRST. USE THIS.
+> Uptime 1h01m · "3 HNB connected"                        <- none of these moved
+> ```
+> ⇒ **Read the indented `RemAddr … State`, not the association line above it.**
 
 > ### ⛔ `show hnb` alone is NOT sufficient. It fails in **both** directions.
 > - It reports the **context**, not the device: ours counted uptime for **three minutes**
@@ -419,19 +445,13 @@ printf 'enable\nshow hnb\n' | nc -q1 127.0.0.1 4261
 >   every one of those as a good read.
 >
 > ✅ **Require the literal token `HNB connected`, never a size.** Then confirm, one line
-> below in the *same* output, that the peer's SCTP state is **ACTIVE** and not INACTIVE.
+> below in the *same* output, that the peer's `RemAddr … State` is **exactly `SCTP_ACTIVE`**
+> (allow-list — see the box above; *"not INACTIVE"* is the form that was wrong here).
 > Retry on a token miss — a single clean read of that port means nothing.
 
-**A registration is not a working cell.** Accept it only when all three hold at once:
-
-```
-the core accepts an HNB-REGISTER-REQ after this boot
-operationalState = ENABLED
-uarfcnDownlink > 0
-```
-
-Then attach a handset and check for a subscriber, with a control on the read — a zero from
-a failed read looks exactly like a real zero.
+📌 **The acceptance criteria are in the box at the top of this phase.** One addition worth its own
+line: **the core must accept an `HNB-REGISTER-REQ` AFTER THIS BOOT** — a registration from a
+previous boot generation proves nothing about the unit in front of you.
 
 ## Phase 7 — Surviving a power cut
 
