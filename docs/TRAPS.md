@@ -2557,6 +2557,22 @@ what a handset reads. **They agree right up until you change the stored one on a
 > way [trap 5](TRAPS.md#5-a-cold-boot-leaves-the-cell-locked-and-the-obvious-unlock-sets-the-wrong-attribute)
 > was validated by every warm reboot.
 
+> ### ⭐⭐⭐ CONFIRMED AS A **CLASS**, NOT A ONE-OFF — PREDICTED FIRST, THEN MEASURED
+> **The prediction was made from this entry's mechanism, before the test was run**, on a completely
+> different attribute — the neighbour list:
+> ```
+>                  the INPUT you write          the ACTIVE list the cell uses
+> BEFORE reboot    written and verified ✅       EMPTY  ()
+> AFTER  reboot    unchanged            ✅       POPULATED, matching the input
+> ```
+> ⇒ ⭐ **Two unrelated values, one mechanism.** The cell identity is derived from its stored id; the
+> active neighbour list is derived from the static one. **Both are computed at cell setup and both
+> ignore a write made afterwards.**
+> ⇒ 🎯 **So this is not a quirk of one attribute — it is how this firmware treats derived state**,
+> and the right response to finding one instance is to **assume siblings and go looking**, not to
+> patch the instance. **A prediction that survives a test on an attribute you have never touched is
+> worth more than three more measurements of the original.**
+
 **CHECK.** ✅ **Compare what the AP BROADCASTS against what it is CONFIGURED with — never one alone.**
 The configured side is any readback; the broadcast side has to come from the air or from the core's
 view of the registered cell.
