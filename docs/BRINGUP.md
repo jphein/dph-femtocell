@@ -281,6 +281,37 @@ on one DPH-151 — **every `rmm_client` verb failed while the port stayed open.*
 > solo connection succeeds.**
 > ⇒ ⭐ **So do not debug the transport. It works perfectly and carries nothing.**
 
+> ## 🔴🔴 **IF THE DEVICE COMPLETES TLS AND SENDS NOTHING, IT MAY NEVER HAVE BEEN PROVISIONED — AND THAT IS NOT A FAULT YOU CAN FIX AT THE TRANSPORT**
+> `[measured 2026-09-13 on a factory DPH-151: completes mutual TLS with a valid factory Cisco
+>  certificate and closes 12–17 ms later having sent ZERO APPLICATION BYTES. Endpoint, handler,
+>  server cert, full chain, all three trust anchors, client cert, DNS, routing, NTP and firewall
+>  were each tested and each eliminated.]`
+>
+> ### ⭐⭐⭐ **A FACTORY UNIT HAS A *BOOTSTRAP* POINTER, NOT A *MANAGEMENT* POINTER**
+> ```
+> hw_description.dat  REDIRECTOR_URL  — where to ask "WHERE IS MY MANAGEMENT SERVER?"
+> provisioning        converts that into an actual management server URL
+> ⇒ a unit that never completed provisioning dials its REDIRECTOR and expects a REDIRECT.
+>   Answer it as though you ARE the management server and it closes without speaking.
+> ```
+> ### ⚠️ **AND `REDIRECTOR_URL` IS DEFINED TWICE IN `hw_description.dat`, WITH DIFFERENT VALUES**
+> ```
+> line 57-60   https://Femtocell.wireless.att.com:7547/acs
+> line 73-76   https://Femtocell.wireless.att.com            <- NO PORT ⇒ defaults to :443
+> ```
+> ⭐ **MEASURED 2026-09-13: the device dials `:443`** (16 observed connections) ⇒ **the loader takes
+> the SECOND, portless duplicate.** `[this settles a question findings-segw-trigger.md:223
+> explicitly left open: "whether the loader takes the first or the last duplicate is not
+> established here."]`
+> ⇒ ⛔ **Until that was measured, *"the device never dialled CWMP"* and *"the device dialled a
+> CLOSED PORT"* were indistinguishable from every observation anyone had taken.**
+>
+> ### ✅ **THE DISCRIMINATOR: DID THIS UNIT EVER GET PROVISIONED?**
+> **A unit that HAS been provisioned asks for its management server BY NAME** (on this family, a
+> `cmhs*` name from `DefaultServerURLs`). **A unit that has NOT only ever dials its redirector.**
+> ⇒ ⭐ **Check which names it asks for in DNS. That one read separates the two cases** — and it
+> needs no shell, no reboot, and nothing on the device.
+
 ### ⭐ ROUTE 3 — ACS / TR-069 → **PATH D**   `[✅ THIS IS HOW .244's PICOCHIP GOT ROOT]`
 
 ⭐ **CWMP gives READ *and* WRITE** — 543 parameters, identity and PLMN. ⛔ **It does NOT reach
