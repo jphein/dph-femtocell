@@ -78,9 +78,30 @@ you are working from public documentation rather than this repo.
 **Extra kit for this route:** a JTAG adapter (a J-Link clone is enough, around $21) plus a
 USB↔UART adapter.
 
-## DPH-154 — buy it to take apart, not to use
+## DPH-154 — there IS a way in, and **whatever you do, do not open the case**
 
-Every wall below was **measured**, not assumed:
+> ### 🔴 READ THIS BEFORE YOU UNSCREW ANYTHING
+> **Opening the case is how the radio gets lost.** The jumper pattern inside guards a **one-way
+> tamper latch in flash**, the pattern is **one-hot — one real jumper among blanks, six candidates**,
+> and a unit with the latch tripped **will provision, accept configuration, and refuse to transmit**:
+> ```
+> X_00000C_Tampered = 1        FAPService.Enabled  ->  REFUSED, FAULT 9003 / 9007
+> ```
+> ⇒ ⭐ **Every other instrument reads healthy. It looks exactly like a configuration mistake and it
+> is not one, and it is not undoable.** ✅ **Leaving jumpers off is safe; restoring a pattern from
+> memory is not.** 📌 [Trap 41](TRAPS.md#41-opening-the-case-can-destroy-a-factory-configuration).
+> ⇒ 🎯 **Buy one that has never been opened, and keep it that way — the working route needs no case
+> access at all.**
+
+⚠️ **An earlier version of this heading said "buy it to take apart, not to use."** That advice is
+**withdrawn**: it recommended the one action that permanently costs you the radio, and it was written
+before the access route below existed.
+
+✅ **ACCESS IS SOLVED** — by standing up the management server the unit is already looking for and
+letting its own software-download path do the work. **No exploit, no JTAG, no serial console, no
+case opening.** → **[`BRINGUP-DPH154.md`](BRINGUP-DPH154.md)**
+
+**The walls below are why that indirect route is the one that works.** Every one was **measured**:
 
 - **The `wizard` UDP backdoor is gone.** Port 14677 measured **closed**. This was the open
   question about the 154 and it now has a negative answer.
@@ -138,11 +159,13 @@ relative of one that was already solved and publicly documented.
 
 ### Which findings here came from a nano3G, and why that is worth knowing
 
-Traps in [`TRAPS.md`](TRAPS.md) state what they were measured on, and **24 of the 51 name a
-specific model** — several of them this one. (The rest name a *source* instead, and that file's
-header says which, and says not to assume an unattributed trap applies to your unit. An earlier
-version of this sentence claimed *every* trap named a device; it does not.) **Two of them are opposites across the two devices**, which is the best possible argument for
-reading the scope line rather than the instruction:
+Traps in [`TRAPS.md`](TRAPS.md) state what they were measured on, and **a substantial minority
+name a specific model** — several of them this one. (The rest name a *source* instead, and that
+file's header says which, and says not to assume an unattributed trap applies to your unit. An
+earlier version of this sentence claimed *every* trap named a device; it does not — **and a later
+one gave an exact count, which went stale as soon as more entries were added.** That file now
+carries the command instead of the number.) **Two of them are opposites across the two devices**,
+which is the best possible argument for reading the scope line rather than the instruction:
 
 - **[Trap 2 — which config bank is live](TRAPS.md#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell)**:
   on the nano3G measured here it was bank 2; on the DPH-151 it was bank 1, and that unit's bank 2

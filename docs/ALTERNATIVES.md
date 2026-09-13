@@ -12,7 +12,7 @@ honest comparison.
 | **ip.access nano3G** (S8 / E16 / S16) | ✅ proven, and it is the family Osmocom's own wiki documents | **$180–200** | highest certainty. **The band trap below is the real risk.** |
 | **DPH-151** | ✅ proven — this repo | **~$10** | 20× cheaper, and costs weeks of reverse engineering. ⚠️ part of the root route is not publicly available (see below). |
 | **DPH-153** | ✅ published route by someone else | ~$10 | **best public documentation.** Needs **JTAG and opening the case**. |
-| **DPH-154** | 🔴 no | ~$10 | **teardown only.** See [`HARDWARE.md`](HARDWARE.md). |
+| **DPH-154** | ⚠️ **access yes, radio conditional** | ~$10 | **No exploit needed** — emulate its management server and let its own software-download path in. ⛔ **But the radio is gated by a one-way tamper latch, and OPENING THE CASE IS WHAT TRIPS IT.** Buy one never opened, and do not open it. → [`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) |
 | **Any CDMA femtocell** (Verizon, Sprint, Airvana) | 🔴 no | cheap, abundant | **wrong air interface.** Osmocom has no CDMA core. Ruled out before band matters. |
 | **Band 1 stock** (Vodafone Sure Signal, SFR, most Huawei) | 🔴 no *for US handsets* | cheap, abundant | **wrong band.** Fine if your handsets are Band 1. |
 | **SDR, UMTS** | 🔴 no | — | **structural, not a maturity gap.** See below. |
