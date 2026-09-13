@@ -67,7 +67,7 @@ single most useful fact for legal containment.
 
 | | **DPH-151** | **DPH-153** | **DPH-154** | **nano3G S8** |
 |---|---|---|---|---|
-| **Processor** | picoChip PC7205 · ARM926EJ-S rev 5 ● | radio: PicoChip PC312-HXC · network: Ralink RT2 ● | baseband: picoChip (U-Boot is picoChip-patched) ◐ | picoChip PC7302 · ARMv6 ◐ |
+| **Processor** | **TWO SoCs** ● — radio/mgmt: picoChip PC7205 · ARM926EJ-S rev 5 ● · network/gateway: **Ralink** ● `[root shell obtained on a 151 at 192.168.157.185, BusyBox v1.8.2, 2026-09-13]` | radio: PicoChip PC312-HXC · network: Ralink RT2 ● | baseband: picoChip (U-Boot is picoChip-patched) ◐ | picoChip PC7302 · ARMv6 ◐ |
 | **RF front end** | — | — | transceiver **Analog Devices AD9365**, PAs AWB7125 ● | — |
 | **Memory** | 61,484 kB total · **no swap** ● | ⊘ | DRAM 128 MiB · NAND 256 MiB ● | ⊘ |
 | **Flash layout** | 15 MTD partitions, raw ● | ⊘ | `rwstore` mtd=8 · 11 MiB UBI ● | ⊘ |
@@ -77,6 +77,17 @@ single most useful fact for legal containment.
 > **Three models, three different answers, and the 154 does not use numbered banks at all.**
 > ⇒ **Read the symlink on your own unit. Never carry a bank number across models** —
 > [trap 2](TRAPS.md#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell).
+
+> ### 🔴 **CORRECTED 2026-09-13 — THE 151 ROW LISTED ONE SoC AND THE 151 HAS TWO.**
+> **This table gave the Ralink to the DPH-153 only, so the 151 read as a single-processor device.**
+> `[ACCESS.md:3-4 already said otherwise: "the two-processor architecture is established for the
+>  151 and 153". Two documents in this repo, opposite answers, and the TABLE is where people look.]`
+> ### ⛔ **AND THIS IS THE EXACT MISCONCEPTION THAT COST AN EVENING ON 2026-09-13**
+> **Believing the 151 is one chip makes `nmap <lan-ip>` look like a decision procedure.** It is not:
+> the **Ralink** owns the LAN address and runs the firewall, and the **picoChip** sits behind a DNAT.
+> ⇒ **Every port reading was a fact about the gateway SoC, presented as a fact about the unit.**
+> ✅ See [`BRINGUP.md`](BRINGUP.md) Phase 1 and [`ACCESS.md`](ACCESS.md) Route 3.
+> ⚠️ **The 154 is genuinely a different design — do NOT carry the two-SoC layout to it.**
 
 ⚠️ **On the 154's silicon:** an AD9365 transceiver and a picoChip part are **not contradictory** —
 the AD9365 is the RF transceiver and a picoChip part would be the baseband. **Different components.**
