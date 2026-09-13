@@ -22,6 +22,23 @@ on the steps.
 
 ---
 
+> ## 🎯🎯 **FIRST, ANSWER THIS — THEY ARE DIFFERENT PROCEDURES AND THE GUIDES USED TO CONFLATE THEM**
+> ### **DO YOU WANT A *CONFIGURED CELL*, OR DO YOU WANT A *SHELL*?**
+> ```
+> A CONFIGURED CELL  -> TR-069 / CMHS is the vendor's own provisioning channel.
+>                       NO shell. NO RCE ladder. NO key. The unit is ALREADY asking for it.
+> A PERSISTENT SHELL -> the RCE ladder. A DIFFERENT GOAL, and only worth it if you need
+>                       to run commands the management channel cannot express.
+> ```
+> 🔴 **A lane spent an entire evening climbing the ladder before measuring that the cells were
+> already talking to us.** `[2026-09-13: .106 = 95 ACS sessions in 6 h; .244 = 1280]`
+> ⇒ ⭐⭐⭐ **BECAUSE THE GUIDES PRESENTED "GET ROOT" AS A PREREQUISITE FOR "CONFIGURE IT". IT IS NOT.**
+> ⚠️ **And the instrument lies reassuringly:** `TLS-OK clientcert=len=1006` is the loudest success
+> line in the ACS log, printed **1,375× in six hours**, and it certifies **THE TRANSPORT ONLY** —
+> so the log reads healthy while nothing provisions. **Every one ends `peer closed (state=init)`.**
+
+---
+
 ## ⛔ Before you plug anything in
 
 **Isolate the unit.** On first boot the firmware does: DHCP → DNS lookups for its

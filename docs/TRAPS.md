@@ -2843,3 +2843,32 @@ and their silence was briefly read as failure. **An untested path produces the s
 one, and only the test tells you which you have.**
 
 ---
+
+
+## 71. `rmm_client` puts `factory_reset` and `crash` in the same verb list as `cs_cmd`, the one every runbook tells you to type
+
+**SYMPTOM.** None, until it is too late. `[measured on .106's Ralink, 2026-09-13]`
+
+```
+rmm_client <ip> <verb>:  reset  factory_reset  clear_tamper  do_software_download
+                         get_software_status  set_bandwidth  get_bandwidth  switch_fw_boot
+                         set_telnetd  set_port_fwd  get_uptime  cs_cmd  sleep  crash
+```
+
+⛔ **`cs_cmd` is the routine verb — it is how you run a command as root on the Ralink, and it is
+in every access note we have.** **`factory_reset` and `crash` sit in the same flat list**, with
+no confirmation, no `--force`, and nothing in the syntax to distinguish a read from a wipe.
+
+### ⭐⭐ THIS IS THE SAME SHAPE AS THIS FAMILY'S `reboot 1` TRAP
+***The destructive form is a NEIGHBOUR of the routine one.*** A typo, a shell-history recall, or
+a copied line with one word changed is the whole failure mode. ⇒ **On this device a verb list is
+not documentation — it is a loaded menu.**
+
+### ✅ WHAT TO DO
+- **Never paste an `rmm_client` line you have not read word by word.** The dangerous words are
+  ordinary English and look like the safe ones.
+- ⛔ **`factory_reset` on a provisioned unit destroys the configuration this repo exists to
+  reproduce** — and per the corpus's flash ruling, `post_swdl_hook` already wipes
+  `config_bank_$BANK/*`, so recovery is not a restore, it is a re-bring-up.
+- 📌 **`switch_fw_boot` is a third hazard hiding in plain sight**: a bank flip is STICKY and the
+  AP does not return on its own.
