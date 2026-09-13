@@ -162,6 +162,51 @@ setting most likely to brick a bring-up.**
 > and nothing in this repo suggests buying one to practise on. If the $10 unit is what you have,
 > the $10 unit is what this repo is about.
 
+### The S8's antennas are internal — and its status LED is the only witness that is not the device describing itself
+
+Two hardware facts that are not discoverable from a shell, both from the vendor's own installation
+manual. **They are stated here per-model on purpose**, because the manual revisions disagree with
+each other — see [trap 59](TRAPS.md#59-the-manual-for-your-device-family-may-not-cover-your-model-and-the-one-that-does-has-a-different-version-number).
+
+**Antennas.** The 2012 manual carries a CAUTION, verbatim:
+
+> **"Do not attempt to fit an external antenna or antenna cabling to the nano3G S8 AP."**
+
+⇒ **On the S8 there is nothing to attach and nothing that can have fallen off.** ⚠️ **The E8 is the
+model with removable covers and SMA connectors under the screw-on antennas** — if you are reading an
+older revision of the same manual, that is the section you will find, and it is not about your unit.
+
+**The Service LED.** Every other reading you can take is the device reporting on itself. The LED is
+driven hardware-side, and it **discriminates the one failure that looks healthiest from a shell** —
+a cell that is configured, acknowledged, and administratively locked:
+
+| Service LED | meaning |
+|---|---|
+| Off | not provisioned, no IP address |
+| **Green** | provisioned and unlocked — **connected and providing service** |
+| Flashing green, evenly, slowly | provisioned, but **lost connection to the controller** |
+| Flashing green, evenly, fast | reinitialised (short button press) |
+| **Off, with a short green blink every 3 s** | ⛔ **administratively LOCKED** |
+| Off, with short green blinks on | factory reset in progress |
+| On, with short green blinks off | software download in progress |
+
+> ### ⭐ Why that fifth row is worth walking to the device for
+> An unlock can be **acknowledged and not applied** —
+> [trap 5](TRAPS.md#5-a-cold-boot-leaves-the-cell-locked-and-the-obvious-unlock-sets-the-wrong-attribute),
+> **measured on a DPH-151**. A carrier that reads correct, a state that reads unlocked, and a cell
+> nobody can see is what that produces, **and the 3-second blink tells you so from across the room,
+> without trusting any attribute you just wrote.**
+>
+> ⛔ **Do not carry trap 5's mechanism to a nano3G.** On the nano3G the numeric unlock **does**
+> dispatch — measured in a working unit's own bring-up log, two runs, `1216` by number declined on
+> attempt 1 and confirmed on attempt 2. ⇒ **There, a decline is not a broken call; it is the device
+> telling you it is not ready yet, and it is the most informative signal you have.** ⚠️ **Forcing
+> the attribute past it removes the signal and leaves the underlying stall in place** — which is
+> why this row is worth reading off the LED rather than off the value you just wrote.
+> ⚠️ **The same LED table repeats the vendor's "more than 5 seconds" figure for the reset button.
+> That number is wrong** — measured at **3 s**, [trap 49](TRAPS.md#49-the-reset-button-reaches-factory-restore-sooner-than-the-manual-says).
+> **Read the patterns; do not read the hold times.**
+
 ---
 
 ## Firmware: where it comes from, and why none of it is here

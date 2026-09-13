@@ -2221,3 +2221,182 @@ anything long-lived**, and if any caller is a substitution, redirect at the subs
 > daemon start **before** that point, so a stall there should leave the box **pingable, with SSH
 > answering.** **It is not pingable at all.** ⇒ **Most likely cause, not proven cause**, and the
 > discrepancy is recorded rather than explained away.
+
+## 59. The manual for your device family may not cover your model, and the one that does has a different version number
+**Measured across three archived ip.access installation manuals for the same product family. The
+generalisation to other vendors is reasoning, not measurement, and is marked as such.**
+
+**SYMPTOM.** You want a hardware fact your device cannot tell you — what the status LED means,
+whether an antenna is internal or fitted. You open the installation manual for your AP family,
+find the section, and act on it. **The section is complete, well formatted, and about a different
+model.** Nothing in it is wrong; nothing in it is about your unit.
+
+**MECHANISM.** Vendors revise a manual across a product line's lifetime and **drop models as they
+add others**, keeping the document number. Two revisions of `N3G_INST_300`, measured:
+
+```
+FILE                                    "S8"   "S4"   "E8"
+N3G_INST_300_AP_Install_v7.0.txt          0      37     53      LED tables: S4, E8
+N3G_INST_300_v292_1.0_2012.txt           63       0     58      LED tables: E8/E16, S8, S16
+N3G_nano3GAP_Installation_Manual_2009     0       0      0      an earlier line entirely
+```
+
+⇒ ⭐ **The two are DISJOINT on S4 and S8 while sharing a document number.** The older revision has
+**no S8 content at all** — so a reader with an S8 gets a confident, complete-looking answer from
+the S4 or E8 table and never sees a warning, because from the document's point of view nothing is
+missing.
+
+> ### ☠️ And the two revisions give OPPOSITE instructions on the same subject
+> ```
+> v7.0  §3.3.3  "To fit external antennas, first remove the plastic cover ...
+>                Unscrew the antennas to expose the SMA connectors."      <- this is the E8
+> 2012  CAUTION "Do not attempt to fit an external antenna or antenna
+>                cabling to the nano3G S8 AP."                            <- this is the S8
+> ```
+> ⇒ **One document family, one subject, opposite instructions, and the discriminator is a model
+> suffix that appears nowhere in either sentence.** A reader who has only the first revision will
+> go looking for connectors that are not there, on a unit whose antennas are internal.
+
+**CHECK.** ✅ **Before reading any table, grep the manual for your exact model string and require a
+non-zero count.**
+
+```sh
+grep -c 'S8' manual.txt        # 0 => you have the wrong revision, not a missing feature
+```
+
+⇒ **A zero is the signal.** It costs one command and it is the only thing standing between
+"the manual says" and a fact about someone else's hardware. ⚠️ **And do it per section, not per
+document** — a manual can cover your model in the installation chapters and silently drop it from
+the troubleshooting ones.
+
+> ### 📋 Provenance
+> ```
+> MEASURED   three manual revisions, one product family, counts above, reproducible
+> MEASURED   the two contradicting antenna statements, quoted verbatim from each file
+> REASONING  that other vendors do the same. Common publishing practice, not measured here.
+> ```
+> ⚠️ **The counts are of the model STRING, not of meaningful coverage** — `S8` could in principle
+> appear only in a compatibility list. Here it does not: the 2012 revision carries a dedicated
+> `8.1.2 nano3G S8 AP LEDs` section. **Confirm the hits are substantive before trusting the number.**
+
+📌 This is the documentation-layer form of the same error
+[trap 2](#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell) records at
+the device layer: **a correct instruction for one model in a family destroys another.** There it
+is a config bank; here it is the page you read to find out.
+
+---
+
+## 60. A corpus you are writing is not a corpus you have read
+**Reported by the lane it happened to, on the evening this file reached 59 entries. The
+generalisation is theirs; the incident is recorded because they asked for it to be.**
+
+**SYMPTOM.** You spend an hour diagnosing a fault, concluding the hardware is at issue. **The
+answer is in a file in your own repository, which you have been actively adding to all evening.**
+You never opened it.
+
+**MECHANISM.** ⭐ **Authorship feels like knowledge.** Directing material *into* a document
+creates a strong and false sense of having its contents available. The feeling tracks **effort
+spent on the file**, not **facts retrievable from it** — and the two diverge fastest exactly when
+the file is growing quickly, which is also when it is most likely to contain what you need.
+
+```
+the lane had:     directed entries INTO this file the same evening
+the lane needed:  an entry already in it, on the exact verb that was failing
+the lane did:     an hour on a hardware hypothesis, and asked a human to inspect the unit
+```
+
+> ### 🔴 AND THE SECOND HALF, WHICH IS SHARPER AND WAS REPORTED BY THE SAME LANE AGAINST ITSELF
+> **Reading the corpus is not enough, because there are two kinds of answer and the wrong one
+> feels more authoritative.** Faced with a command that acknowledged and did nothing, the lane had:
+> ```
+> (a) the running script's OWN comment, three lines from the failure:
+>       "1216 is DECLINED when the AP is not yet ready"
+> (b) an entry in this file, measured on a DIFFERENT MODEL:
+>       "not dispatchable by number"
+> ```
+> ⇒ **It took (b).** It was general-sounding, it required no further work, and **it made the device
+> the problem rather than the device's state.** (a) was correct, and the control that settled it —
+> **a working unit's own bring-up log, showing the same numeric call succeeding** — was in a sibling
+> directory and never opened.
+> ⇒ ⭐⭐ ***A finding from elsewhere feels like knowledge; a comment in the file you are running
+> feels like noise.*** **Prefer the local, specific, boring source.** A general finding that
+> transfers is a claim about two devices; **a comment beside the failing line is a claim about
+> this one.**
+> ⛔ **And the cost was not just delay.** Believing the call was broken, the lane forced the value
+> by hand — **turning an informative decline into a silent one, and papering over the real stall.**
+> ⇒ **Acting on the wrong explanation destroyed the evidence for the right one.**
+
+> ### ⭐ Why it is worse than ordinary forgetting
+> A document you have never seen prompts you to go and look. **One you have been writing does
+> not** — it is already represented in your head as *handled*. ⇒ **The failure is silent and it
+> gets more likely as the file gets better**, because a growing file is evidence of attention,
+> and attention is what you are wrongly inferring recall from.
+> ⚠️ **It compounds on a team.** Where several people or lanes publish into one document,
+> **each one's contribution feels like coverage of the whole**, and nobody holds a reason to read
+> the parts they did not write. The file's own growth becomes the reason it goes unread.
+
+**CHECK.** ✅ **Search your own documentation FIRST, on the same terms you would search a
+stranger's — and do it before forming a hardware hypothesis, not after one fails.**
+
+```sh
+grep -rn -i '<the verb you just ran>' docs/     # before the second attempt, not the fifth
+```
+
+⇒ ⭐ **Treat "we wrote that up" as a reason to grep, not a reason to skip grepping.** The cost is
+one command; the alternative is re-deriving your own conclusions and asking someone to go and look
+at hardware that was never at fault.
+
+📌 **This file exists because of this trap, and is subject to it.** Its entries are written so a
+stranger can act on them — **read them as a stranger.**
+
+---
+## 61. The cell registers on the core with a perfect identity while its own MIB has none — because a shim supplies it
+
+**SYMPTOM.** The AP registers on Iuh, the gateway prints a complete, correct cell identity, bring-up
+exits 0, the radio LED is lit and a carrier is selected — **and no handset will camp on it.** Unlock
+(`action 1216`) is refused every time, acking each time and changing nothing.
+
+**WHAT IS ACTUALLY WRONG.** The AP has **no cell identity of its own**:
+```
+                        broken AP      working AP
+mcc   (1398)            ""             "999"
+mnc   (1399)            ""             "99"
+sac   (1583)            -1             1
+lacRacCandidateList (2048)  ({1,(0)})  ({10422,(99)})
+saiLac (2098)           -1             10422
+```
+**A cell with no PLMN, LAC or SAC cannot broadcast a selectable cell.** It transmits; a UE reads it
+and declines it.
+
+**WHY EVERY INSTRUMENT SAID IT WAS FINE.** The Iuh shim **hardcodes** the identity and writes it
+into the config object on every start. So the gateway's own view —
+`MCC 999 MNC 99 LAC 10422 SAC 2 CID 2` — is **correct and comes from the shim, not from the AP.**
+⇒ **The shim answers the identity question on behalf of an AP that has no identity.**
+⭐ **THE MISREADING THAT COSTS THE HOURS:** the documentation says the shim *"overwrites whatever
+OAM provisioned"*, which reads as *identity is handled*. It means the shim covers the **CORE** path.
+**The AIR path still reads the MIB.** Two consumers of one conceptual value, and the loud one masks
+the silent one's absence.
+
+**AND THE REFUSAL IS THE HONEST SIGNAL.** The vendor manual says: *"The AP will remain locked if it
+is not ready to provide service."* ⇒ **An AP with no identity is not ready, so the unlock is
+correctly refused.** Measured, same device, same session:
+```
+before provisioning:  action 1216 -> ack'd -> rrmAdminState LOC_LOCKED    (6 times, 2 operators)
+after  provisioning:  action 1216 -> ack'd -> rrmAdminState LOC_UNLOCKED  (FIRST fire)
+```
+⛔ **Do not force it.** Writing `rrmAdminState = LOC_UNLOCKED` directly succeeds, reads back
+correct, and leaves the cell exactly as unusable — **it destroys the one signal telling you what is
+wrong.** A repeated refusal is a diagnosis, not an obstacle.
+
+**THE CHECK.** Before blaming the radio, read the identity **out of the AP**, never off the core:
+```
+get 1398   get 1399   get 1583   get 2048   get 2098
+```
+Any of `""`, `-1`, or a default-looking `({1,(0)})` means the cell is unprovisioned. **Copy a
+working unit's values and change only what must differ — the SAC and cell id.**
+
+**THE GENERAL FORM.** ⭐ *When component A supplies a value on behalf of component B, every check
+that reads A will pass while B is empty.* Ask **which component answers the question your
+instrument asks**, and read the value from the one that has to **use** it.
+
+---
