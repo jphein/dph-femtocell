@@ -2778,16 +2778,28 @@ femtocell you are using.**
 assigned, the handset's modem transmits — **and the packet-core node you ask reports `User Data Bytes
 (In): 0`.** You conclude nothing is flowing.
 
-**MECHANISM.** ⭐ **With direct tunnel the user plane runs RNC ↔ gateway and never passes through the
-serving node at all.**
+**WHAT IS MEASURED.** ⭐ **A 1 MB download completed over the air while the serving node's
+per-context byte counters read `0`.** ⇒ **That counter does not track this path. It is not a verdict
+on whether data is flowing, and no amount of traffic moved it.**
 
-```
-control plane   handset -- RNC -- SERVING NODE -- gateway     the node sees this
-user plane      handset -- RNC ------------------ gateway     the node never sees this
-```
-
-⇒ **The serving node cannot count bytes it does not carry.** ⇒ ⭐⭐ **No amount of traffic will ever
-move that counter. Zero is the CORRECT reading for a healthy direct-tunnel session.**
+> ### ⛔ THE *EXPLANATION* IS NOT MEASURED, AND THIS ENTRY ORIGINALLY STATED IT AS IF IT WERE
+> **Two mechanisms fit every observation equally well:**
+> ```
+> (a) DIRECT TUNNEL     the user plane runs RNC -- gateway and skips the serving node
+>                       handset -- RNC -- SERVING NODE -- gateway   control plane
+>                       handset -- RNC ------------------ gateway   user plane
+> (b) THE COUNTERS ARE SIMPLY NOT WIRED in this mode -- present, formatted, never incremented
+> ```
+> ⚠️ **(a) was asserted first and could not be substantiated:** the serving node's config carries no
+> direct-tunnel setting anyone could point to, and its status output names no such mode. **(b) has a
+> sibling already in this repo** — a packet counter elsewhere in the stack with **no writer at all**.
+> ⇒ ⭐⭐ **The OPERATIONAL RULE IS IDENTICAL UNDER BOTH**, which is why the entry is still worth
+> having: **do not use that counter as a verdict.** ⛔ **But the mechanism is not safe to cite.**
+>
+> 🎯 **And the reason this correction is in the entry rather than quietly applied:** the mechanism is
+> the **quotable** part and the measurement is the **true** part, **and the quotable part travels
+> further.** This one reached a second document within twenty minutes of being invented, sourced to
+> nothing but itself. **Compression drops detail; translation drops qualifiers.**
 
 > ### ☠️ AND THIS IS WORSE THAN A BROKEN TOOL, WHICH IS WHY IT DESERVES ITS OWN ENTRY
 > **A broken tool is caught by a positive control on the tool.** This one **passes every control you
