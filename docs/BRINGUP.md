@@ -510,8 +510,9 @@ previous boot generation proves nothing about the unit in front of you.
 
 ## Phase 7 — Surviving a power cut
 
-> ### ⏱️ **BEFORE ANYTHING ELSE: DO NOT CALL A COLD BOOT FAILED BEFORE T+20 MINUTES.**
-> `[measured across TEN cold boots on our unit]`
+> ### ⏱️ **BEFORE ANYTHING ELSE: DO NOT CALL A COLD BOOT OF *THE AP* FAILED BEFORE T+20 MINUTES.**
+> `[measured across TEN cold boots OF THE AP. ⛔ SCOPE ADDED 2026-09-13 — see the box below;
+>  this curve does NOT describe a restart of the CORE.]`
 > ```
 >  ~5 min   the core reaps the stale SCTP association from the previous life
 > ~11 min   NAT state clears and the AP's SCTP INIT finally gets through
@@ -522,6 +523,22 @@ previous boot generation proves nothing about the unit in front of you.
 > moved — quote both, never just the total.**
 > ⚠️ One 2006-era handset was consistently last and **could not be hurried**: 96 s to 609 s
 > behind the others.
+>
+> ### ⛔⛔ **THIS CURVE IS FOR AN *AP* REBOOT. A *CORE* RESTART RECOVERS IN ABOUT A MINUTE.**
+> `[measured 2026-09-13: exchange restarted; "1 HNB connected" at T+3, and one AP re-registered
+>  INSIDE A MINUTE. I quoted the T+20 figure at that event and it was the wrong curve.]`
+> ```
+> AP cold boot    the AP's OWN stale association must be reaped BY THE CORE, NAT must
+>                 clear, then the AP re-INITs                              -> ~16 min
+> CORE restart    the APs never went down. They re-INIT against a core with NO stale
+>                 state to reap, because it just lost all of it            -> ~1 min
+> ```
+> ⇒ ⭐⭐⭐ **The ~5 min reap term is about state THE RESTARTING SIDE IS HOLDING. A core that has
+> just rebooted holds none — so the term that dominates the AP curve does not exist.**
+> ⇒ ⭐⭐ ***SCOPE A RECOVERY CURVE TO WHICH SIDE REBOOTED.*** **This is the per-device scoping rule
+> with a different axis: a measured, honest number applied to the wrong EVENT CLASS.**
+> ✅ **WHAT HOLDS ON BOTH CURVES: do not intervene, and do not let a bring-up fire into the
+> recovery window** — re-running one against a recovering cell tears it down either way.
 
 > ### 🎯 **DO THIS**
 > ```
