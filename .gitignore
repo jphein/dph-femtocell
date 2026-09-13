@@ -9,3 +9,5 @@ _site/
 # at $HOME/.config/dph-femtocell/patterns.txt, precisely so it needs no
 # exemption here. This entry is belt-and-braces against a copy landing in-tree.
 patterns.txt
+__pycache__/
+*.pyc
