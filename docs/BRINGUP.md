@@ -562,8 +562,20 @@ previous boot generation proves nothing about the unit in front of you.
 > AP cold boot    the AP's OWN stale association must be reaped BY THE CORE, NAT must
 >                 clear, then the AP re-INITs                              -> ~16 min
 > CORE restart    the APs never went down. They re-INIT against a core with NO stale
->                 state to reap, because it just lost all of it            -> ~1 min
+>                 state to reap, because it just lost all of it            -> MINUTES
 > ```
+> ### 📋 **THE WARM-REBOOT CURVE, MEASURED** `[lucid-console154, 2026-09-13, exchange restart]`
+> ```
+>  +75 s     all five osmo units ACTIVE
+>  +1.5 min  first AP re-registered
+>  +4 min    both APs up
+> +14 min    both SCTP_ESTABLISHED *AND* per-path SCTP_ACTIVE — FULLY LIVE
+> ```
+> ⇒ ⛔ **"~1 minute" is as wrong as "~16 minutes", in the other direction.** **A cell APPEARS at
+> ~1.5 min and is not FULLY LIVE until ~14.** ⭐ **Which number you quote depends on which
+> question you are answering: *"is it back?"* is minutes; *"can I trust it?"* is ~14.**
+> ⚠️ **I first wrote `~1 min` here from a single observation of the first cell returning. That is
+> the healthiest-interval error: I sampled the fastest term and called it the recovery.**
 > ⇒ ⭐⭐⭐ **The ~5 min reap term is about state THE RESTARTING SIDE IS HOLDING. A core that has
 > just rebooted holds none — so the term that dominates the AP curve does not exist.**
 > ⇒ ⭐⭐ ***SCOPE A RECOVERY CURVE TO WHICH SIDE REBOOTED.*** **This is the per-device scoping rule
