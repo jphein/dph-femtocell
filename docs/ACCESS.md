@@ -344,22 +344,30 @@ operator's infrastructure is unreachable. **Capture it to a file the first time.
 
 ## Route 5 — the management plane itself
 
-> ### 🔴🔴 **READ THIS BEFORE THE ROUTE. THE ONE-LINE VERDICT BELOW IS FALSE AND IT COST A LANE AN EVENING.**
-> ⛔ **This route's *"TR-069 is NOT how root is obtained on this device"* is WRONG.**
-> ✅ ***TR-069 IS HOW ROOT IS OBTAINED.*** **`persistent_ssh.sh:6` → `ssh -i cwmp_rce_key
-> root@192.168.157.186`. Root on the picoChip comes from RCE over CWMP/TR-069 on the ACS leg,
-> then an SSH key is planted. CMHS is never defeated — it is BYPASSED.**
-> 📌 `[findings-dph151-root-baseline.md:1-4 — "first root baseline, measured 2026-09-05 21:59Z…
->  read off the device over SSH as uid=0 on the pico"; :8 credits "OUR v7 HOOK".]`
+> ### ⚠️ **READ THE RECONCILIATION EIGHT LINES BELOW BEFORE ACTING ON THIS ROUTE'S VERDICT.**
+> **Short form: *"TR-069 is not how root is obtained"* is TRUE OF THE RALINK and FALSE OF THE
+> PICOCHIP.** ⇒ **For a pico shell, TR-069 IS the route** — `persistent_ssh.sh:6` runs
+> `ssh -i cwmp_rce_key root@192.168.157.186`, and that is how `.244` first got root
+> `[findings-dph151-root-baseline.md:1-4]`. **See [Route 0](#route-0).**
 >
-> ### ⭐⭐⭐ **AND WHY THIS BANNER IS HERE RATHER THAN WHERE THE RECONCILIATION ALREADY WAS**
-> **This file ALREADY contained the correction — ~115 lines BELOW, under *"reconciled 2026-09-13
-> after JP: 'we have all the info there you are still guesiing'"*.** ⇒ **A lane read this document
-> END TO END and still acted on the false verdict, because the reader meets the ERROR first and
-> stops there.** ⭐ ***A correction placed downstream of its error is invisible to everyone who
-> believes the error.*** ⇒ **Put the retraction AT the claim, not in the reconciliation section.**
-
-
+> ### 🔴 **CORRECTION TO MY OWN BANNER, WHICH STOOD HERE FOR FOUR MINUTES**
+> `[nebula-librarian3 — three errors in one edit, all mine, none caught by my own review]`
+> ```
+> 1. I wrote "TR-069 IS how root is obtained" FLATLY. The reconciliation below already said it
+>    better: BOTH claims are correct and they are ABOUT DIFFERENT PROCESSORS. My version would
+>    send someone to CWMP for a RALINK shell, where it is the WRONG route.
+> 2. I wrote that the correction sat "~115 lines BELOW". IT IS EIGHT. I estimated a distance
+>    instead of counting it -- the relative-coordinate error this corpus cards -- inside a
+>    banner whose entire subject was placement.
+> 3. My diagnosis followed from that wrong number: "a correction downstream of its error is
+>    invisible". At eight lines and clearly written, that explains nothing.
+> ```
+> ⭐⭐ **THE REAL EXPLANATION IS AMBIGUITY, NOT DISTANCE, and the reconciliation already named it:
+> *"THIS SENTENCE IS TRUE OF THE RALINK AND FALSE OF THE PICOCHIP, AND THE AMBIGUITY COST AN
+> EVENING."*** ⇒ **On a two-processor device, a sentence true of one chip and false of the other
+> is read as whichever chip the reader has in mind.**
+> ⛔ **I "fixed" a document that had already fixed itself, less accurately, and justified it with
+> a number I had not measured.**
 
 The TR-069 / CWMP stack is a legitimate **configuration** path. If you control DNS for the
 device — and you do, since it is on your network and its management hostnames are dead — you
