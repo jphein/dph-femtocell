@@ -180,19 +180,102 @@ what fails when the operator's infrastructure is unreachable.
 
 ## Phase 3 — Get a management channel
 
-See [`ACCESS.md`](ACCESS.md). You need to be able to issue **DMI** get/set/action commands
-on the radio processor. Everything below is expressed in those terms.
+> ### 🎯 **WHAT TO DO, IN ORDER. Stop at the first one that answers.**
+> ```
+> ROUTE 1  CMHS / XMPP        ✅ DEMONSTRATED on a DPH-151. Start here.
+> ROUTE 2  rmm_client telnetd ⚠️  only if Route 1 is dead. Its verb list is a loaded menu.
+> ROUTE 3  ACS / TR-069       📋 last. And it may remove the need for a shell entirely.
+> ```
+
+### ⛔ READ THIS FIRST — IT COST US TWO SEPARATE EVENINGS
+
+**1. The device only re-reads DNS and re-dials AT BOOT.**
+⇒ **Every DNS change you make is INERT until you power-cycle the unit.** Change everything you
+intend to change, *then* reboot once. `[measured — "~24 hours of null results" in the corpus]`
+
+**2. `femtocell.wireless.att.com` is NOT a management server.**
+It is `Device.ManagementServer.X_00000C_CDPBaseURL` — the **file-download** host.
+⇒ **Answering it gets you a completed TLS handshake, zero application bytes, and a hang-up.**
+That is the documented wrong role, and it looks exactly like a broken server.
+
+**3. The femto sends NO TLS SNI.** ⇒ The server picks **handler AND certificate by DESTINATION
+IP**. **Each role needs its own address.** A name pointed at the wrong IP lands on the wrong
+handler and closes silently.
+
+---
+
+### ⭐ ROUTE 1 — CMHS / XMPP  `[✅ DEMONSTRATED on a DPH-151]`
+
+**The management channel is the EIGHT `cmhs*` servers in the device's own config**
+(`/opt/cisco/cmhs_def_cfg.txt`, `…MHS.Config.DefaultServerURLs`):
+
+```
+cmhsse-decatur        cmhsse-lake-mary          <- SE      cmhsce-carrollton   cmhsce-hazelwood   <- CE
+cmhsne-rochelle-park  cmhsne-columbia           <- NE      cmhswe-santa-clara  cmhswe-santa-ana   <- WE
+                                    all .wireless.att.com
+```
+
+**DO THIS:**
+1. Point **all eight** names at your CMHS endpoint.
+2. Serve `certs/cmhs/cmhs-multisan.pem` + `.key` (covers all eight).
+   ⛔ **Do NOT regenerate it.** `mk-cmhs-cert.sh` mints a NEW key every run, which pairs with
+   nothing already deployed.
+3. **POWER-CYCLE THE UNIT.** Nothing above takes effect until you do.
+
+**✅ WHAT SUCCESS LOOKS LIKE** `[measured on the wire, held >100 s]`:
+```
+SASL EXTERNAL -> <success>
+bind -> jid = <OUI>-<SN>@cmhsce-carrollton/wan     *** BOUND ***
+presence / CMHSStatus received
+ping -> pong
+```
+
+> ⚠️ **`XMPPDomainName` is EMPTY, so the client derives its XMPP domain from the FIRST LABEL of
+> the FQDN it dialled.** ⇒ **Answer the wrong name and it derives the wrong domain** — which
+> predicts the silent-close symptom exactly.
+
+---
+
+### ROUTE 2 — `rmm_client <pico> set_telnetd`   ⚠️ only if Route 1 is dead
+
+> ### ☠️ **PASTE THIS VERB. NEVER TYPE IT.**
+> `rmm_client`'s verbs live in one flat list with no confirmation and no `--force`:
+> ```
+> reset  factory_reset  clear_tamper  do_software_download  get_software_status
+> set_bandwidth  get_bandwidth  switch_fw_boot  set_telnetd  set_port_fwd
+> get_uptime  cs_cmd  sleep  crash
+> ```
+> ⛔ **`factory_reset` and `crash` are neighbours of the verb you want.** `switch_fw_boot` is a
+> **sticky** bank flip the AP does not recover from on its own. Full detail: [`TRAPS.md`](TRAPS.md) trap 71.
+
+⚠️ **This route may not exist on your unit.** The RMM responder on tcp/3001 was recorded **DOWN**
+on one DPH-151 — **every `rmm_client` verb failed while the port stayed open.**
+⭐ **Open and RSTing is not the same as serving.** A successful connect does not mean a responder.
+
+---
+
+### ROUTE 3 — ACS / TR-069   `📋 last`
+
+⭐ **CWMP gives READ *and* WRITE.** ⇒ **If you only need to configure the cell, you may not need a
+shell at all** — a `SetParameterValues`, not a root prompt. **Decide which you actually want
+before climbing any ladder** (see the question at the top of this guide).
+
+---
+
+### ONCE YOU HAVE A CHANNEL — verify the transport before trusting any silence
+
+You need to issue **DMI** get/set/action commands on the radio processor; everything in Phases
+4–6 is expressed in those terms. See [`ACCESS.md`](ACCESS.md).
 
 > ⚠️ **Use the transport that answers, not the one that looks right.** On our DPH-151 the
-> `-u 8090` telnet front end **accepts input and never answers a `get`** — bare LF, CRLF
-> and Telnet linemode negotiation all return a banner and a `dmi>` prompt and no result —
-> while the local one-shot client returns answers to the identical commands. The commands
-> are byte-identical; only the transport differs. **Verify your transport with a known-good
-> read before trusting a silence.**
+> `-u 8090` telnet front end **accepts input and never answers a `get`** — bare LF, CRLF and
+> Telnet linemode negotiation all return a banner and a `dmi>` prompt and no result — while the
+> local one-shot client returns answers to the identical commands. **The commands are
+> byte-identical; only the transport differs.**
 
-**Positive control for the transport:** read an attribute you know exists, e.g.
-`get hnbGwAddress`. If that comes back, a later miss means the attribute name is wrong. If
-it does not, your transport is dead and every subsequent "not found" is meaningless.
+✅ **Positive control:** read an attribute you know exists — `get hnbGwAddress`. If it comes back,
+a later miss means the attribute NAME is wrong. **If it does not, your transport is dead and every
+subsequent "not found" is meaningless.**
 
 ## Phase 4 — Point it at your core
 
