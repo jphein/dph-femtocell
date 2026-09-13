@@ -344,6 +344,23 @@ operator's infrastructure is unreachable. **Capture it to a file the first time.
 
 ## Route 5 — the management plane itself
 
+> ### 🔴🔴 **READ THIS BEFORE THE ROUTE. THE ONE-LINE VERDICT BELOW IS FALSE AND IT COST A LANE AN EVENING.**
+> ⛔ **This route's *"TR-069 is NOT how root is obtained on this device"* is WRONG.**
+> ✅ ***TR-069 IS HOW ROOT IS OBTAINED.*** **`persistent_ssh.sh:6` → `ssh -i cwmp_rce_key
+> root@192.168.157.186`. Root on the picoChip comes from RCE over CWMP/TR-069 on the ACS leg,
+> then an SSH key is planted. CMHS is never defeated — it is BYPASSED.**
+> 📌 `[findings-dph151-root-baseline.md:1-4 — "first root baseline, measured 2026-09-05 21:59Z…
+>  read off the device over SSH as uid=0 on the pico"; :8 credits "OUR v7 HOOK".]`
+>
+> ### ⭐⭐⭐ **AND WHY THIS BANNER IS HERE RATHER THAN WHERE THE RECONCILIATION ALREADY WAS**
+> **This file ALREADY contained the correction — ~115 lines BELOW, under *"reconciled 2026-09-13
+> after JP: 'we have all the info there you are still guesiing'"*.** ⇒ **A lane read this document
+> END TO END and still acted on the false verdict, because the reader meets the ERROR first and
+> stops there.** ⭐ ***A correction placed downstream of its error is invisible to everyone who
+> believes the error.*** ⇒ **Put the retraction AT the claim, not in the reconciliation section.**
+
+
+
 The TR-069 / CWMP stack is a legitimate **configuration** path. If you control DNS for the
 device — and you do, since it is on your network and its management hostnames are dead — you
 can answer as its management server without touching the device at all. See
