@@ -206,10 +206,19 @@ what fails when the operator's infrastructure is unreachable.
 ⇒ **Every DNS change you make is INERT until you power-cycle the unit.** Change everything you
 intend to change, *then* reboot once. `[measured — "~24 hours of null results" in the corpus]`
 
-**2. `femtocell.wireless.att.com` is NOT a management server.**
-It is `Device.ManagementServer.X_00000C_CDPBaseURL` — the **file-download** host.
-⇒ **Answering it gets you a completed TLS handshake, zero application bytes, and a hang-up.**
-That is the documented wrong role, and it looks exactly like a broken server.
+**2. ⛔ ~~`femtocell.wireless.att.com` is NOT a management server… answering it gets you a completed
+TLS handshake, zero application bytes, and a hang-up.~~ RETRACTED 2026-09-13.**
+`[lucid-console154, 0437e55, disproving their own mechanism; verified independently.]`
+```
+385 CWMP Informs in 9 days, ALL of them [ACS/femtocell] on 10.0.6.21
+⇒ the address that name resolves to here IS A FULLY WORKING CWMP ENDPOINT.
+.244 (WORKING) shows 19,352 silent closes AND 100 Informs
+⇒ a completed TLS handshake followed by a silent close is NORMAL. It is a POLL, not a rejection.
+```
+⭐ **What is still true:** `femtocell.wireless.att.com` **IS** `CDPBaseURL` in the device's own
+`cmhs_def_cfg.txt`. ⇒ ⭐⭐ ***But a name's role in the VENDOR'S CONFIG and the role of whatever YOU
+POINT IT AT are different facts, and this guide conflated them.***
+⛔ **Do not diagnose a fault from a single silent connection.** The healthy unit produced 19,352.
 
 **3. The femto sends NO TLS SNI.** ⇒ The server picks **handler AND certificate by DESTINATION
 IP**. **Each role needs its own address.** A name pointed at the wrong IP lands on the wrong
@@ -281,7 +290,44 @@ on one DPH-151 — **every `rmm_client` verb failed while the port stayed open.*
 > solo connection succeeds.**
 > ⇒ ⭐ **So do not debug the transport. It works perfectly and carries nothing.**
 
-> ## 🔴🔴 **IF THE DEVICE COMPLETES TLS AND SENDS NOTHING, IT MAY NEVER HAVE BEEN PROVISIONED — AND THAT IS NOT A FAULT YOU CAN FIX AT THE TRANSPORT**
+> ## 🔴🔴 **A DEVICE THAT COMPLETES TLS AND SENDS NOTHING — WHAT IS MEASURED, AND WHAT WAS RETRACTED**
+> ### ⛔⛔ **RETRACTED 2026-09-13 ~23:57: THE 12–17 ms "TLS-OK THEN CLOSE" IS *NORMAL*. THE WORKING DEVICE DOES IT TOO.**
+> `[lucid-console154, 0437e55, disproving their own earlier mechanism. Verified independently here.]`
+> ```
+> .244 (WORKING)   19,352 peer-closed events   AND   100 CWMP Informs
+>                  one traced tuple: TLS-OK 15:48:37.062 -> closed .077 (15 ms, nothing sent)
+>                  ...5.5 min later, SAME endpoint -> CWMP Inform -> ACS sends GetParameterNames
+> ⇒ a silent close is an IDLE/POLL CONNECTION, NOT A REJECTION.
+> ```
+> ⇒ ⛔ **So "completes TLS and says nothing" is NOT by itself a fault.** **Do not diagnose from a
+> single silent connection — the healthy device produced 19,352 of them.**
+>
+> ### 🔴 **AND `10.0.6.21` IS THE ACS, NOT A "FILE-DOWNLOAD HOST". THIS GUIDE SAID OTHERWISE.**
+> ```
+> 385 CWMP Informs in 9 days   ALL of them  [ACS/femtocell]   ⇒ .21 is a FULLY WORKING CWMP endpoint
+> ```
+> ⚠️ **`femtocell.wireless.att.com` IS `CDPBaseURL` in the device's own `cmhs_def_cfg.txt` — that
+> part is measured and stands.** ⛔ **But the IP it resolves to here is our working ACS, so
+> "answering that name is the wrong role" was WRONG.** ⇒ ***A name's role in the vendor's config
+> and the role of whatever you point it at are different facts.***
+>
+> ### ✅ **WHAT SURVIVES, AND IT IS THE ANOMALY RATHER THAN THE EXPLANATION**
+> ```
+> .106   0 Informs in 9 days      .244  100      .127  284
+> .106   never resolves a cmhs* name, ever                    [openwrt-f8]
+> .106   ONE destination          .244  THREE
+> ```
+> ⇒ ⭐ **`.106` is dialling a FULLY WORKING CWMP ENDPOINT AND DECLINING TO SPEAK ON IT.** **The
+> asymmetry was never in doubt; the *why* was wrong.**
+> ### 🔑 **THE LEADING CANDIDATE — team-lead's, and STILL UNMEASURED**
+> **`ipaSslValidateTa` checks whether the peer sent a copy of one of the device's OWN TRUST
+> ANCHORS — chain MEMBERSHIP, not identity — and it runs AFTER the handshake, which is exactly
+> where `.106` stops.** ⚠️ **The 2026-09-04 experiment that "definitively closed" server-cert
+> identity varied CN and SAN, which `ipaSslValidateTa` never looks at.** ⛔ **Stated as a
+> candidate. Nobody has measured it.**
+> ### ⛔ **AND "IT ACCEPTED OUR CERTIFICATE" IS UNSUPPORTED EITHER WAY**
+> **In TLS the client sends its certificate AFTER receiving the server's — so completing a
+> handshake is not evidence the device accepted your chain.**
 > `[measured 2026-09-13 on a factory DPH-151: completes mutual TLS with a valid factory Cisco
 >  certificate and closes 12–17 ms later having sent ZERO APPLICATION BYTES. Endpoint, handler,
 >  server cert, full chain, all three trust anchors, client cert, DNS, routing, NTP and firewall
