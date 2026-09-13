@@ -476,6 +476,27 @@ previous boot generation proves nothing about the unit in front of you.
 
 ## Phase 7 — Surviving a power cut
 
+> ### ⏱️ **BEFORE ANYTHING ELSE: DO NOT CALL A COLD BOOT FAILED BEFORE T+20 MINUTES.**
+> `[measured across TEN cold boots on our unit]`
+> ```
+>  ~5 min   the core reaps the stale SCTP association from the previous life
+> ~11 min   NAT state clears and the AP's SCTP INIT finally gets through
+> ~16 min   the cell registers; handsets follow within about a minute
+> ```
+> ⇒ **A unit that looks dead at T+8 is behaving normally.** ⭐ **The ~11 min term is remarkably
+> stable; the FIRST one is what varies (3m09s–5m22s). If a boot runs long, that is the term that
+> moved — quote both, never just the total.**
+> ⚠️ One 2006-era handset was consistently last and **could not be hurried**: 96 s to 609 s
+> behind the others.
+
+> ### 🎯 **DO THIS**
+> ```
+> 1. Put every script under  /var/ipaccess/   — the ONLY writable store that survives a power
+>    cycle (jffs2). /var/run is tmpfs and clears at boot.
+> 2. Make the script LOG that it ran, and when.
+> 3. Make it REFUSE to run if a healthy association already exists (with an override flag).
+> ```
+
 Whatever you script, put it somewhere durable. On our DPH-151 the only writable store that
 survives a power cycle is a **jffs2 partition mounted at `/var/ipaccess`**; anything under
 `/var/run` is tmpfs and clears at boot (which is what you want for a lock file, and exactly
@@ -490,18 +511,6 @@ files, two different parsers, one silent failure — and
 where **which bank is live differs per model**, and guessing kills the cell. **Read the live
 bank; never assume it.**
 
-> ### ⛔ Do not call a cold boot failed before **T+20 minutes**
-> Measured across ten cold boots on our unit:
-> ```
-> ~5 min   the core reaps the stale SCTP association from the previous life
-> ~11 min  the NAT state clears and the AP's SCTP INIT finally gets through
-> ~16 min  the cell registers; handsets follow within about a minute
-> ```
-> The second term is remarkably stable; **the first one is what varies** (we saw 3m09s and
-> 5m22s). If a boot runs long, that is the term that moved. Quote both, never just the
-> total. One 2006-era handset was consistently last and could not be hurried — 96 s to
-> 609 s after the others.
-
 Two things worth building in, both learned the hard way:
 
 - **Log that your recovery script ran, and when.** A self-healing fix that acts silently
@@ -513,6 +522,21 @@ Two things worth building in, both learned the hard way:
 
 ## Phase 8 — A call
 
-At this point the cell is an ordinary HNB on your core. Everything else — subscribers,
+> ### ✅ **YOU ARE DONE WHEN ALL OF THESE ARE TRUE**
+> ```
+> root SSH on BOTH chips          Ralink .185 and pico .186        <- Step 1, the whole point
+> the .244 table matches          see "WHAT DONE LOOKS LIKE" above
+> show hnb                        HNB connected + RemAddr State == SCTP_ACTIVE
+> operationalState = ENABLED  ·  uarfcnDownlink > 0
+> a handset attaches              and the core shows the subscriber
+> it survives a power cut         re-check at T+20, not T+8
+> ```
+
+**At this point the cell is an ordinary HNB on your core.** Everything else — subscribers,
 voice, SMS, packet data — is core-network work and belongs to the Osmocom documentation,
 not to this repo.
+
+⚠️ **One thing that is NOT core-network work and does belong here:** if calls stop later with no
+other explanation, **check `IUH_ENABLE` before anything else.** The AP regenerates the config bank
+on a bank failover, a software download, or a factory restore — and the key goes with it. See
+[trap 1](TRAPS.md#1-iuh_enable--two-config-files-two-parsers-one-silent-failure).
