@@ -302,9 +302,27 @@ changes nothing.
 > 📌 [trap 61](TRAPS.md#61-the-cell-registers-on-the-core-with-a-perfect-identity-while-its-own-mib-has-none--because-a-shim-supplies-it).
 
 ⚠️ **And once it is on air, "no handset camps" may not be a fault at all.** If another cell is
-already serving them, an idle handset has no reason to reselect, and **nothing in this project has
-ever configured a neighbour relation** — so handsets on the other cell are not told this one exists.
-**Power is a blunt lever for that; a neighbour list is the real one, and it is untested here.**
+already serving them, **an idle handset has no reason to reselect** — and if it has not been told
+this cell exists, it will not go looking. **Power is a blunt lever for that; a neighbour list is the
+real one.**
+
+> ### ⭐ CONFIGURING ONE — AND THE GOTCHA THAT MAKES IT LOOK LIKE IT DID NOT WORK
+> ```
+> the STATIC list you write     an INPUT      -> write it, verify it, and it will read back fine
+> the ACTIVE list the cell uses  DERIVED      -> populated at CELL SETUP, from the static one
+> ```
+> ⇒ ⛔ **Writing the static list on a running cell leaves the active list EMPTY, and every readback
+> of what you wrote confirms.** ✅ **A reboot populates it** — measured on both cells, before and
+> after. 📌 This is [trap 65](TRAPS.md#65-a-derived-value-is-computed-once-at-cell-setup-so-provisioning-a-running-ap-changes-the-database-and-not-the-air)
+> and it was **predicted from the cell-identity case before it was tested here**, which is the best
+> reason to treat derived-at-setup as a class rather than a quirk.
+> ⚠️ **Each cell's list needs the OTHER cell's parameters**, not its own — an easy one to get
+> backwards. And **whether the list survives a reboot the way the static one does is measured; how
+> it behaves across a factory restore is not.**
+
+⛔ **A neighbour list is for reselection and handover. It does not make a cell attractive to a
+handset that is already happily camped elsewhere** — that is signal strength's job, and the two get
+conflated constantly.
 
 ---
 
@@ -324,8 +342,10 @@ through a dead peer for minutes.** `SCTP_ESTABLISHED` is the positive test.
 
 ## What is still open on this device
 
-- **Neighbour relations and handover.** Never configured here. **Assume a call does not survive
-  moving between cells until you have proven otherwise.**
+- **Handover.** ⚠️ **Neighbour relations ARE now configured** — see the note below — **but a call has
+  still never been observed surviving a move between cells.** Two cells have carried **separate legs
+  of one call concurrently**, which is not the same thing. **Assume a call does not survive moving
+  between cells until you have watched one do it.**
 - **Whether the access-control list survives a reboot.** Measured **not** to on our unit, while
   nothing consulted it. **Measure it before relying on closed access.**
 - **One unexplained ~90-minute outage** after an edit to the boot payload, from which the unit
