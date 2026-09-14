@@ -929,13 +929,30 @@ LIVE file.** ⭐ **On 563 the entire gate is `if [ "$ENV_..." = "" ]`, so that f
 :22 / :80     pico DROPS at its OWN firewall     conntrack: SYN_SENT … [UNREPLIED]
               ⭐ NOT an RST. The "Connection refused" katana sees is synthesised elsewhere --
                  so it is NOT evidence that sshd is down. It is evidence of a DROP.
-:8090         NO DNAT on the Ralink              ⇒ DMI-over-telnet unreachable whatever the pico does
+:8090         NO DNAT on the Ralink   ⚠️ TRUE, AND NOT THE BINDING CONSTRAINT — see below
 :3001         accepts TCP, application NEVER replies (get_uptime AND get_software_status)
               controls: .185 -> "Uptime is: 4371 seconds"   .190 -> "failed ipc connect"
               ⇒ three distinct outcomes, so the instrument discriminates. MUTE, not down.
 udp/69 tftp   pico's tftpd NOT running -- it exists only during an upgrade flow
 rmm_client 192.168.157.185 set_telnetd 1   -> "The response: 80"   NO PORT OPENED, either chip
 ```
+
+> ### 🔴 **CORRECTED 2026-09-14 — `:8090` IS SHUT BECAUSE **NOTHING IS LISTENING**, NOT BECAUSE OF THE DNAT.**
+> `[nebula-librarian3. I corrected this exact framing in BRINGUP.md two hours earlier and left THIS
+>  mention standing — this corpus's own law, fired on the person enforcing it.]`
+> ```
+> etc/init.d/opnormal:258-259   (563 tree — OUR train)
+>   if [ ${ENV_START_DMI_TELNET:-"FALSE"} == "TRUE" ]; then     ⬅ DEFAULTS TO FALSE WHEN UNSET
+> ENV_START_DMI_TELNET in every nv_env.sh held here: 0 · 0 · 0
+> MEASURED: :8090 probed WITH A PORT-FORWARD IN PLACE -> still closed   [team-lead 2026-09-14]
+>           :8090 also not listening on .244                            [lucid-console154]
+> ```
+> ⇒ ⛔ **`ipa-dmi -u 8090` NEVER STARTS, so there is nothing on the far side of any DNAT.**
+> ⇒ ☠️ **"No DNAT" sends you to the FIREWALL when the fault is in the BOOT SCRIPT.** ⭐ ***A true
+> statement one level above the real constraint is worse than a false one: it survives checking.***
+> ⇒ ⚠️ **And "unreachable whatever the pico does" is the wrong shape** — it is unreachable
+> **BECAUSE OF** what the pico does, or rather does not: start the listener.
+> ✅ **It is 151-WIDE, not a `.106` fault** — shut on both units. 📌 Full table: [`BRINGUP.md`](BRINGUP.md) §3.
 ### ⭐ **AND THE PICO IS DEMONSTRABLY ALIVE, WHICH KILLS THE "UN-STARTED UNIT" READING**
 ```
 udp src=192.168.157.186 dst=192.168.157.185 dport=53    <- IT IS ACTIVELY RESOLVING NAMES
