@@ -1,5 +1,17 @@
 # Bring-up: ip.access nano3G S8 — from a sealed box to a call
 
+> ## 1️⃣ **BEFORE STEP ONE — CONFIRM WHICH UNIT YOU ARE HOLDING: [`MATRIX.md`](MATRIX.md)**
+> **This guide is for the ip.access nano3G: one SoC · live bank `config_bank_2` · **563** train · DMI on `:8090` WORKS**
+> ⇒ ⛔ **If your unit is not that, STOP — the other models differ in ways that have cost this
+> project days: bank numbering is REVERSED between the 151 and the nano3G, the 154 has no banks
+> at all, and a 579 measurement is not a 563 fact.**
+> ✅ **[`MATRIX.md`](MATRIX.md) is the identification table** — `## Identity`, `## Silicon and RF`,
+> `## Capability`, `## Access and state`. **Read it first; it is 166 lines and it is the only
+> document that tells you WHICH machine you have before you type anything.**
+> 📌 **POINTER, NOT A COPY.** `[Wired in 2026-09-14: MATRIX.md existed and NO guide referenced it —
+> the identification step was written and orphaned.]`
+
+
 > ### 📋 EVIDENCE CLASS — read this before the steps
 > **Every phase below was executed end to end on a stock, un-commissioned nano3G S8 (part
 > `QGGIPA237B`, ip.access train `563.16.0`) and produced a cell carrying voice.** It is written from

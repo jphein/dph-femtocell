@@ -1,5 +1,17 @@
 # Bring-up: Cisco DPH-154 — the provider-emulation route, and the one bit that stops it
 
+> ## 1️⃣ **BEFORE STEP ONE — CONFIRM WHICH UNIT YOU ARE HOLDING: [`MATRIX.md`](MATRIX.md)**
+> **This guide is for the DPH-154: **no config banks at all** · **579** train · ⛔ JP: DO NOT OPEN IT**
+> ⇒ ⛔ **If your unit is not that, STOP — the other models differ in ways that have cost this
+> project days: bank numbering is REVERSED between the 151 and the nano3G, the 154 has no banks
+> at all, and a 579 measurement is not a 563 fact.**
+> ✅ **[`MATRIX.md`](MATRIX.md) is the identification table** — `## Identity`, `## Silicon and RF`,
+> `## Capability`, `## Access and state`. **Read it first; it is 166 lines and it is the only
+> document that tells you WHICH machine you have before you type anything.**
+> 📌 **POINTER, NOT A COPY.** `[Wired in 2026-09-14: MATRIX.md existed and NO guide referenced it —
+> the identification step was written and orphaned.]`
+
+
 > ### 📋 EVIDENCE CLASS — and it is genuinely two different answers
 > ✅ **ACCESS IS SOLVED.** There is a working route into a DPH-154 that needs **no memory-corruption
 > exploit, no JTAG, no case opening and no serial console** — you stand up the management server the

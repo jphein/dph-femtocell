@@ -1,5 +1,17 @@
 # Bring-up: DPH-151 — from a boxed MicroCell to a call
 
+> ## 1️⃣ **BEFORE STEP ONE — CONFIRM WHICH UNIT YOU ARE HOLDING: [`MATRIX.md`](MATRIX.md)**
+> **This guide is for the DPH-151: two SoCs (Ralink `.185` + picoChip `.186`) · live bank `config_bank_1` · **563** train**
+> ⇒ ⛔ **If your unit is not that, STOP — the other models differ in ways that have cost this
+> project days: bank numbering is REVERSED between the 151 and the nano3G, the 154 has no banks
+> at all, and a 579 measurement is not a 563 fact.**
+> ✅ **[`MATRIX.md`](MATRIX.md) is the identification table** — `## Identity`, `## Silicon and RF`,
+> `## Capability`, `## Access and state`. **Read it first; it is 166 lines and it is the only
+> document that tells you WHICH machine you have before you type anything.**
+> 📌 **POINTER, NOT A COPY.** `[Wired in 2026-09-14: MATRIX.md existed and NO guide referenced it —
+> the identification step was written and orphaned.]`
+
+
 **Scope: written from a DPH-151 (ip.access train `563.21.8`) brought up against an Osmocom
 core, carrying voice and SMS for four handsets and recovering unattended from a power cut.**
 **This page is the DPH-151 guide.** Every phase below was executed on one.

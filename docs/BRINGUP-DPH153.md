@@ -1,5 +1,17 @@
 # Bring-up: Cisco DPH-153 — the published route, and what this repo can and cannot tell you
 
+> ## 1️⃣ **BEFORE STEP ONE — CONFIRM WHICH UNIT YOU ARE HOLDING: [`MATRIX.md`](MATRIX.md)**
+> **This guide is for the DPH-153: the donor archive's train · board code `224F`**
+> ⇒ ⛔ **If your unit is not that, STOP — the other models differ in ways that have cost this
+> project days: bank numbering is REVERSED between the 151 and the nano3G, the 154 has no banks
+> at all, and a 579 measurement is not a 563 fact.**
+> ✅ **[`MATRIX.md`](MATRIX.md) is the identification table** — `## Identity`, `## Silicon and RF`,
+> `## Capability`, `## Access and state`. **Read it first; it is 166 lines and it is the only
+> document that tells you WHICH machine you have before you type anything.**
+> 📌 **POINTER, NOT A COPY.** `[Wired in 2026-09-14: MATRIX.md existed and NO guide referenced it —
+> the identification step was written and orphaned.]`
+
+
 > ### 📋 EVIDENCE CLASS — read this first, it is the whole point of this page
 > ⛔ **This repo has not brought up a DPH-153.** Nothing below is a measurement taken here.
 > **The route is someone else's**, published independently and first, and it is the better-supported
