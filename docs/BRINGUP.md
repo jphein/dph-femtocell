@@ -200,6 +200,21 @@ what fails when the operator's infrastructure is unreachable.
 > ROUTE 3  ACS / TR-069       📋 last. Via PATH D it also ends at a shell.
 > ```
 
+> ## 🎯 **AND IF YOUR UNIT REBOOTS AND SENDS NO INFORM — STOP HERE. IT IS PROBABLY NOT BROKEN.**
+> ### **⇒ [`microcell/docs/findings/findings-106-never-provisioned-2026-09-13.md`](../../microcell/docs/findings/findings-106-never-provisioned-2026-09-13.md)**
+> **A unit with a BOOTSTRAP pointer and no MANAGEMENT pointer asks the redirector *"where is my
+> management server?"*, gets answered as though the redirector IS the server, and closes with
+> nothing to say.** ⇒ ***A DECISION WITH NO WORK, not a timeout — and no number of power cycles
+> changes it.***
+> ### ✅ **THE DISCRIMINATOR IS ONE DNS OBSERVATION, FREE, NO SHELL, NO DEVICE CONTACT:**
+> ***Does the unit EVER ask for a `cmhs*` name?*** ⛔ **NOT *which* names differ — an unprovisioned
+> and a provisioned unit BOTH query `femtocell.*`.** ⭐ **The asymmetry lives in the part nobody
+> lists.** 📌 **A provisioned unit also dials THREE hosts; an unprovisioned one dials ONE.**
+> ⚠️ **POINTER, NOT A COPY — the evidence, the bounds and the two fix routes are in that file.**
+> **This block exists only so you arrive there before spending an evening, which is what it cost
+> twice.** `[2026-09-13: written that morning, named for its conclusion, and re-derived that night
+> at the cost of a power cycle. The corpus knew; nobody could find it.]`
+
 ### ⛔ READ THIS FIRST — IT COST US TWO SEPARATE EVENINGS
 
 **1. The device only re-reads DNS and re-dials AT BOOT.**
