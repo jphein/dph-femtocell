@@ -734,6 +734,35 @@ grep -q pounce-rce /var/ipaccess/root_home/.ssh/authorized_keys 2>/dev/null || \
 /opt/ipaccess/bin/setnv_env.sh ENV_START_DMI_TELNET TRUE
 iptables -I INPUT 1 -p tcp --dport 22 -j ACCEPT
 ```
+
+> ## 🔴🔴🔴 **THE KEY IN THAT COMMAND HAS ITS PRIVATE HALF ON PUBLIC GITHUB. DO NOT REUSE IT.**
+> `[nebula-librarian3, 2026-09-13, measured offline. Identity by HASH, not by the comment string.]`
+> ```
+> selfclean_hook_jp.sh installs TWO keys:
+>    38cb81eb65f12ad1   "dph151-jp"                   <- JP's own. Fine.
+>    b22d85d26763594a   "cwmp_rce_proof pounce-rce"   <- 🔴 THIS ONE
+>
+> ssh-keygen -y -f microcell/tmp/DPH153-AT/cwmp_rce_key   ->  b22d85d26763594a   EXACT MATCH
+> git -C microcell/tmp/DPH153-AT remote -v
+>    origin  https://github.com/nickvsnetworking/DPH153-AT.git          <- PUBLIC REPO
+> ```
+> ⇒ ⛔ **ANY UNIT PROVISIONED WITH THIS ACCEPTS ROOT SSH FROM A KEY ANYONE CAN `git clone`.**
+> ⇒ ⚠️ **`.244` IS PROBABLY ALREADY IN THAT STATE** — this very command is the recovered record of
+> it. **Its live `authorized_keys` has NOT been read; that is a one-line check and it has not
+> been done.**
+> ### ☠️ **WHY THIS WAS NOT OBVIOUS, AND IT IS A NAMING TRAP**
+> **The standing rule in `2g/CLAUDE.md` names `selfclean_hook.sh` as the dangerous one. This is
+> `selfclean_hook_jp.sh` — ONE SUFFIX APART, and `_jp` reads like the SAFE variant.** ⛔ **It is the
+> public hook **PLUS** JP's key, not INSTEAD OF it.** ⇒ ***A rule that names a FILE does not reach
+> a copy of that file under another name.***
+> ⭐ **And the comment string `pounce-rce` looks bespoke — locally coined, one-off, ours.** **It is
+> not.** ⇒ ***Path is position, hash is identity*** — this corpus's own law, applied to a key.
+> ### ✅ **THE FIX IS ONE LINE, AND A CLEAN REPLACEMENT ALREADY EXISTS**
+> **Delete the `pounce-rce` line from the hook and install only JP's key** — or the keypair minted
+> 2026-09-13 at `~/Projects/microcell/keys/dph151/dph151_nebula_2026-09-13` (RSA-2048, `0600`,
+> private half has never left katana). ⛔ **Do not serve the two-key hook to another unit.**
+> 📌 **Raised to JP directly on 2026-09-13. This banner records it; it does not decide it.**
+
 ⚠️ **THAT IS THE PERSISTENCE STEP, NOT THE ENTRY.** The `.dbg` shows it delivered **over SSH to
 `10.0.6.244:22`, answered by `dropbear_0.50`** — i.e. the pico's sshd was ALREADY listening when
 this ran. ⛔ **Do not read it as the way in.** `ENV_START_DMI_TELNET TRUE` is what opens `:8090`.
@@ -756,6 +785,7 @@ ACS Download RPC  ->  rmm-selfclean.sdp  ->  post_swdl_hook runs the hook AS ROO
      microcell/build/dph151/rmm-selfclean.sdp     (4450 B, one 0x5007 hook item, 3 CRCs verified)
   the hook then:
      installs authorized_keys (dph151-jp + pounce-rce) in /var/ipaccess/root_home/.ssh
+   🔴 pounce-rce = THE PUBLIC-GITHUB KEY. See the red banner above before serving this.
      setnv_env.sh ENV_VERBOSE_CONSOLE_ENABLED TRUE   -> rcS.d/S10sshd binds 0.0.0.0:22
      opmode.sh re-asserts it EVERY boot, AFTER init_nv_env resets nv_env->FALSE
 ```
