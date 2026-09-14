@@ -745,6 +745,17 @@ guide. This section exists so it cannot be lost a third time.]`**
 > ⇒ 🎯 **So "persistent SSH on BOTH chips" has exactly ONE blocker, and it is the same blocker as
 > everything else on this device: ROOT ON THE PICO.** ⛔ **Do not plan the Ralink half as separate
 > work.**
+> ### ⭐⭐ **AND A THIRD REASON, WHICH REVERSES AN ASSUMPTION WORTH NAMING: THE TOOLING IS ON THE PICO.**
+> `[lucid-console154, 2026-09-14, after an evening blocked on the Ralink's missing utilities]`
+> ```
+> Ralink   busybox v1.8.2 — NO nc · NO timeout · no id/tr/head/tail/awk/find. tftp only, and
+>          TFTP GIVES REACH, NOT ENUMERATION (an RRQ is answered only by a TFTP server).
+> pico     nc · ssh · telnet · wget
+> ```
+> ⇒ ⛔ **"Use the Ralink as the platform to scan the pico from" is BACKWARDS.** ⇒ **The Ralink is the
+> chip with root and no tools; the pico is the chip with tools and no access.** ⇒ ⭐ **Every tooling
+> problem on this device dissolves the moment there is a pico shell — so tool-building on the Ralink
+> is work that a successful pico root makes unnecessary.**
 > ⚠️ **Three prerequisites, ONE now cleared:** ✅ the telnet path works (measured on `.106`,
 > 2026-09-14) · ⛔ **a static mipsel/MIPS-II/uClibc dropbear actually BUILDING — UNVERIFIED** ·
 > ⛔ **free ramfs space on the Ralink — UNMEASURED.**
