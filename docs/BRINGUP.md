@@ -211,6 +211,26 @@ what fails when the operator's infrastructure is unreachable.
 > and a provisioned unit BOTH query `femtocell.*`.** ⭐ **The asymmetry lives in the part nobody
 > lists.** 📌 **A provisioned unit also dials THREE hosts; an unprovisioned one dials ONE.**
 > ⚠️ **POINTER, NOT A COPY — the evidence, the bounds and the two fix routes are in that file.**
+> ### 🔴🔴 **ITS CENTRAL CLAIM IS NOW CONTRADICTED — 2026-09-14. DO NOT ACT ON IT.**
+> `[team-lead, reading 151#1's OWN stored config — the WORKING unit.]`
+> ```
+> 151#1 (.244, WORKING)   management-server fields: EMPTY   ← the same "missing pointer"
+> 151#2 (.106, SILENT)    management-server fields: EMPTY
+> ⇒ IF BOTH ARE EMPTY, AN EMPTY MANAGEMENT POINTER CANNOT BE THE DIFFERENCE BETWEEN THEM.
+> ```
+> ⇒ ⛔ **The finding's cause — *"it has a bootstrap pointer and no management pointer"* — is refuted
+> BY THE WORKING UNIT.** ⚠️ **`dslg_cur_cfg` on `.244` is almost entirely the device describing
+> ITSELF** — module versions, GPS firmware, tamper flag — **not operator provisioning.**
+> ### ✅ **WHAT SURVIVES, AND IT IS STILL REAL — THE *OBSERVATION*, NOT THE *EXPLANATION***
+> **`.244` queries `cmhs*` names and dials three hosts; `.106` queries only `femtocell` and dials
+> one.** ⇒ **That asymmetry is measured and unexplained.** ⛔ **What is dead is the account of WHY.**
+> ⇒ ⭐⭐ ***A finding can have a correct discriminator and a wrong cause, and the discriminator keeps
+> working after the cause dies*** — which is exactly why this block is qualified rather than deleted.
+> 📌 **And a unit-history difference is alive but currently unreadable:** `.244` carries a previous
+> owner's stored GPS fix at a real Washington State deployment site ⇒ **it was deployed somewhere.**
+> **The equivalent read on `.106` needs a shell we do not have.**
+>
+> ### 📕 **THE EARLIER QUALIFICATION, KEPT — ITS TIER POINT STILL STANDS INDEPENDENTLY:**
 > ### 🔴 **QUALIFIED 2026-09-14, WITHIN THE HOUR — READ IT AS A CANDIDATE, NOT A CONCLUSION.**
 > `[nebula-librarian3, who added this pointer and then found the gap. Findability is not neutral —
 >  it AMPLIFIES whatever it points at, so a pointer to an untested conclusion is worse than none.]`
