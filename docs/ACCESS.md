@@ -912,3 +912,53 @@ first: that step does not exist, and four of us spent an evening looking for it.
 taken upstream is attributed to the LAN IP, not to the picoChip that made it.** ⭐ ***A NAT'd
 measurement names the translated host, and nothing in the data says otherwise*** — one lane's
 correct DNS capture sat misattributed for days because of exactly this.
+
+### ⭐⭐⭐ **A DPH-151 INFORMS AT BOOT. "IT NEVER INFORMS" AND "IT HAS HAD NOTHING TO SAY SINCE IT BOOTED" PRODUCE IDENTICAL LOGS.**
+`[2026-09-13, ~6 hours lost to reading the first one. 151#2 = 10.0.6.106.]`
+```
+209 sessions · TLS-OK, valid client cert · ZERO application bytes · ~12 ms close · 0 Informs
+```
+**Read as a fault all afternoon. It is ORDINARY IDLE BEHAVIOUR.** A CWMP client re-reads DNS and
+re-dials **AT BOOT** (`1 BOOT` Inform); between boots it polls and has nothing to say.
+⇒ ✅ **TO GET A SESSION FROM A QUIET DPH, POWER-CYCLE IT.** There is no cleverer RPC: every
+management write is an RPC, every RPC rides a session, and the CPE opens the session.
+
+### ⛔ **AND THE PREMISE THAT RAN THE WHOLE INVESTIGATION WAS FALSE — CHECKED ON THE *WORKING* UNIT**
+*"151#2 has no management-server pointer"* drove a redirector theory, a cert theory, and a claim
+that the two units genuinely differ. **Read from 151#1's own root shell:**
+```
+tr069_cur_cfg.xml.gz   AcsUrl = https://femtocell.wireless.att.com:443/acs
+                       EnableCWMP = true · PeriodicInformEnabled = true · Interval = 900
+md5(cur_cfg) == md5(def_cfg)      <- 151#1 IS RUNNING PURE FACTORY DEFAULTS
+```
+⇒ ⭐⭐ **THE FACTORY DEFAULT ALREADY CONTAINS THE ACS URL. 151#1 carries no more pointer than
+151#2 does.** Same model, same train (`563.21.8`), same config, same destination (`.21:443`), same
+client-cert CA (`Femtocell CPE Sub CA`), same certs served.
+⇒ ⭐⭐⭐ **THE CHECK THAT SETTLED A BROKEN UNIT WAS ON THE WORKING ONE** — and nobody looked there
+for hours, *because the working unit was not the problem.*
+
+### 📋 **EXCLUDED BY MEASUREMENT, SO NOBODY RE-RUNS THEM**
+```
+server cert / chain / CA      both bundles carry IDENTICAL anchors, certs 2-6. Both leaves
+                              self-signed, so chain membership cannot separate them.
+client-cert vintage           all three units issue from CN=Femtocell CPE Sub CA
+our dispatch / wrong handler  .106 lands on ACS/femtocell correctly, 209/209
+our ACS dropping it           read_http() returns None ONLY on recv()==empty. Malformed input
+                              would BLOCK, not return. So "peer closed" is a REAL close.
+server-speaks-first deadlock  greeted it with an unprompted HTTP 204 (scoped to .106): it closed
+                              9 ms later, still silent. IT IS NOT WAITING FOR US.
+diagupload as a "read"        it is TWO SetParameterValues RPCs -- inside the session we lack.
+                              ⚠️ And its landing endpoint :8082 was DOWN: a trigger fired at a dead
+                              endpoint yields the SAME ABSENCE as a device that never answered.
+```
+
+### 🔴 **AND A DEFECT IN OUR OWN ACS THAT DISARMED THE EXPLOIT FOR DAYS**
+`.selfclean_sent` was written at **queue-build** AND at the **send site**. The build-time write
+always won, so the arm burned before a byte went out. **The log printed `FIRED` and
+`session continues` while the measured send count was ZERO.** A 2026-09-05 fix meant to MOVE that
+write had COPIED it.
+⇒ ⭐ ***A log that says nothing invites investigation. A log that says the wrong thing ends it.***
+✅ Fixed 2026-09-13: one write site remains, at the Download branch. **The marker now records a SEND.**
+⚠️ **ORDER WAS LOAD-BEARING:** a power cycle BEFORE this fix would have produced a BOOT Inform,
+burned the arm, sent nothing, and read as *"the method does not work on this unit"* — burying the
+real defect deeper.
