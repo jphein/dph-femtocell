@@ -709,10 +709,18 @@ guide. This section exists so it cannot be lost a third time.]`**
 > `[lucid-console154, 25ad49f, live. This closes the discrepancy flagged below — which was real,
 >  and whose resolution is that I was reading the wrong startup path.]`
 > ```
-> #telnetd commented in rcS      ✅ TRUE — and rcS is NOT what starts it
-> telnetd -b 192.168.157.185     started by INIT, from the INITRAMFS in the SIGNED IMAGE
-> ⇒ firmware-guaranteed. Survived today's reboot. A reboot CANNOT remove it.
+> ✅ MEASURED TWICE   telnetd present AFTER a reboot — the ~15:50 reboot, and again after the
+>                    2026-09-14 power cycle. It CAME BACK BOTH TIMES.
+> ✅ MEASURED         #telnetd IS commented in rcS  ⇒  rcS is NOT what starts it
+> ⚠️ INFERRED         that it comes from the INITRAMFS specifically. The "started by init" reading
+>                    was taken from `ps` WITHOUT CHECKING PPID — and a daemon whose launcher has
+>                    exited is REPARENTED to init and looks identical.
 > ```
+> ⇒ ✅ **WHAT YOU CAN RELY ON: something in the boot path restarts it, and it has survived two
+> reboots.** ⛔ **WHAT IS NOT ESTABLISHED: that the something is the initramfs.** ⚠️ **The
+> difference is operational — an initramfs binary is firmware-guaranteed and unremovable; a boot
+> script or a stored OEM state could be CHANGED.**
+> ⭐ **So do not plan on *"a reboot cannot remove it"*. Plan on *"it has come back twice."***
 > ⇒ ⭐⭐⭐ **SO THE TWO HALVES SEPARATE CLEANLY, AND THIS IS THE SENTENCE TO REMEMBER:**
 > ```
 > ✅ persistent Ralink ACCESS   ALREADY EXISTS — telnetd from the signed image + a firmware credential
