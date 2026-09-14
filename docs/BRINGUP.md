@@ -692,9 +692,25 @@ guide. This section exists so it cannot be lost a third time.]`**
 > Ralink  /var, /tmp     =  ramfs (initramfs)    ⇒ RAM. Wiped every boot, and the firmware
 >                                                   ships NO sshd and NO dropbear at all.
 > ```
-> ⇒ **Persistence on the pico is a FILE. Persistence on the Ralink would be a FIRMWARE CHANGE** —
-> or a re-push from the pico every boot, which is proposed and unbuilt
+> ⇒ **Persistence on the pico is a FILE. Persistent SSH on the Ralink would be a FIRMWARE CHANGE** —
+> or a re-push from the pico every boot, proposed and unbuilt
 > (`microcell/docs/findings/findings-morpheus3gkeep-ralink-ssh.md`).
+> ### ⭐⭐⭐ **BUT DO NOT READ THAT AS "RALINK ACCESS IS LOST AT REBOOT" — IT IS NOT.**
+> > ***"The telnetd is not persistent. THE MEANS OF CREATING IT IS."***
+> > `[findings-nebulatopology-ralink-ssh.md:91 — `wizard` is in the firmware image]`
+> ```
+> telnetd on .185:23            ramfs-resident — dies on reboot, persists nothing
+> wizard + guest / 1qaz@WSX     IN THE SIGNED IMAGE ⇒ a reboot CANNOT remove them
+> ⇒ measured still open on .185:23 AFTER a reboot   [lucid-console154, 2026-09-14]
+> ```
+> ⇒ ⭐⭐ **Two observations that look contradictory — *"dies on reboot"* and *"still open after a
+> reboot"* — are BOTH TRUE, because the firmware RECREATES it.** ⇒ ***What you lose at reboot is a
+> CONVENIENCE, not ACCESS.***
+> ⇒ ✅ **SO "persistent SSH on the Ralink" is a COMFORT GOAL, not a capability one.** **If the aim is
+> durable access to that chip, you already have it: telnet + a firmware-class credential.**
+> ⛔ **AND THE DISTINCTION THAT KEEPS BITING:** ***an account is not a service, and a service is not
+> its means of creation.*** **All three are separately present or absent here, and conflating any
+> two of them has produced a wrong answer tonight.**
 
 ### THE THREE PARTS — all on the pico, all in `/var/ipaccess` (persistent)
 ```
