@@ -980,3 +980,49 @@ write had COPIED it.
 ⚠️ **ORDER WAS LOAD-BEARING:** a power cycle BEFORE this fix would have produced a BOOT Inform,
 burned the arm, sent nothing, and read as *"the method does not work on this unit"* — burying the
 real defect deeper.
+
+### ✅✅ **THE CHAIN IS DEMONSTRATED ON A DPH-151 — CENSUS, NOT A SAMPLE**
+`[exchange dph153-acs journal, all boots, 2026-09-13]`
+```
+CENSUS of all 385 CWMP Informs, by OUI:
+  100   2026-09-05   OUI 445829   = 151#1   <- A DPH-151. IT INFORMED 100 TIMES.
+  285   2026-09-11   OUI 481D70   = the DPH-154
+
+EventCodes actually observed:
+   38   ['X 00000C SW_UPGRADE','M Download','7 TRANSFER COMPLETE','1 BOOT']  <- THE EXPLOIT WORKING
+   18   ['X 00000C NON_CLEAN_SHUTDOWN_COLD','1 BOOT']                        <- A POWER CYCLE
+    8   ['1 BOOT']            2  ['X 00000C SW_FAULT_APP_FAILURE','1 BOOT']
+  306   ['2 PERIODIC']
+```
+⇒ ✅ **`1 BOOT` Informs are real (71 of them) and `NON_CLEAN_SHUTDOWN_COLD + 1 BOOT` is the
+power-cycle signature.** ⇒ ✅ **AND THE DEVICE KEEPS ITS OWN RECEIPT:** `151#1`'s
+`/var/ipaccess/selfclean_hook.log` is dated **Sep 5 23:41**, `=== selfclean v6 uptime=13551s ===`,
+with `nv_env.sh.pre-dph151` and `.pre-dph151-jp` beside it — **the same day as its 100 Informs.**
+⇒ ⭐⭐⭐ **TR-069 -> Download -> `post_swdl_hook` AS ROOT IS PROVEN ON THIS MODEL, END TO END.**
+
+### ☠️ **AND HOW THIS WAS NEARLY LOST: A TAIL SAMPLE READ AS A CENSUS**
+**I read the LAST 3 Informs, saw the 154's OUI, and reported *"neither DPH-151 has ever
+Informed — the path has never worked on this model."*** **The 100 I needed were at the OTHER END
+of a chronologically-sorted file.**
+⇒ ⭐⭐ ***Sorting by time makes a tail sample unrepresentative of WHO, not merely of HOW MANY.***
+**A random sample would have found the 151 immediately; the time-ordered one could not, by
+construction.** ⛔ **The conclusion drawn was not "we have less data than we thought" but "the
+method does not work" — a sampling artefact promoted to a property of the system.**
+📌 **This is the corpus's own *print-the-total* rule, broken by the person quoting it to three
+other lanes in the same hour.** ✅ **`uniq -c` over the WHOLE field is one command and cannot lie
+the same way.**
+
+### 📋 **THE PROCEDURE, THEN — FOR A QUIET DPH-151 WITH NO SHELL**
+```
+1. ARM      .selfclean_arm.<peer> present, .selfclean_sent.<peer> ABSENT
+            ⚠️ verify the marker is written ONLY at the send site -- a build-time write burns the
+               arm before anything is sent, and the log prints FIRED while sending zero bytes
+2. VERIFY   the payload BY HASH, never by path.  v10 = c77d57af24d2a32a3f786ad646cf3498
+            ⛔ v9 strips ~21 of 24 ENV_ vars -- DO NOT SERVE.  ⛔ v8 + selfclean_hook_jp.sh carry
+               a key whose PRIVATE half is on public GitHub.  v10 is clean.
+3. SERVE    the download host must be UP (:8081) before the cycle, not after
+4. POWER-CYCLE THE UNIT   -> NON_CLEAN_SHUTDOWN_COLD + 1 BOOT Inform -> Download fires
+5. TWO REBOOTS            -> $( ) runs in a subshell, so sshd starts with the OLD value on the
+                             first. ⛔ CHECKING SSH AFTER ONE REBOOT RECORDS A WORKING PAYLOAD
+                             AS A FAILURE.
+```
