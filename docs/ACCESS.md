@@ -1063,3 +1063,36 @@ check cannot be satisfied by the wrong container.**
    `SDP_URL` was **already wired to the traversal**. ⇒ **The analysis was correct and never reached
    the thing it was about**, because nobody re-read the config line the decision was supposed to
    govern. ✅ **After deciding between two paths, READ THE LINE THAT SELECTS ONE.**
+
+### ⚠️ **THE PACKED `.sdp` AND THE `.sh` BESIDE IT ARE DIFFERENT OBJECTS — AND *REBUILD FROM SOURCE* MAKES IT WORSE**
+`[measured 2026-09-13, two lanes independently]`
+```
+                        rmm-selfclean.sdp (4450)   selfclean_hook_jp.sh
+pounce-rce                      0                          1
+the public-repo key material    0                          1
+dph151-jp                       1                          3
+the packed script installs:  dph151-jp ONLY
+```
+⇒ **The SDP was packed from an EARLIER hook than the `.sh` sitting next to it.** The script on disk
+has drifted AHEAD of the artefact, so `selfclean_hook_jp.sh` *looks* like the source of
+`rmm-selfclean.sdp` while being a later, **less safe** version.
+⇒ ☠️ **ANYONE WHO "REFRESHES" THE SDP BY REPACKING THAT `.sh` ADDS A KEY WHOSE PRIVATE HALF IS ON
+PUBLIC GITHUB — a key the current artefact does not contain.** ⭐ **The safe artefact and the unsafe
+source share a name-stem, and *rebuild from source* is the move that makes it worse** — the
+opposite of the usual instinct.
+✅ **Check the ARTEFACT's contents, never the file named like it.** ⛔ **Two lanes independently
+concluded "the proven SDP carries `pounce-rce`" by reading the `.sh`; both were wrong.**
+
+### ✅ **AND THE KEY IDENTITY, SETTLED — no rebuild is needed for key reasons**
+```
+~/.ssh/dph151_id_rsa  derives  AAAAB3NzaC1yc2EAAAADAQABAAABAQDj/k0rNLqx9iNH6qqOQgUXstKErZ172nCI
+rmm-selfclean.sdp     installs AAAAB3NzaC1yc2EAAAADAQABAAABAQDj/k0rNLqx9iNH6qqOQgUXstKErZ172nCI
+                                                                              ^ EXACT MATCH
+```
+⇒ **The key installed and the key you authenticate with are the same one** — which closes the v7
+`rc=255` failure mode *by construction*, not by luck. **That failure was never a lost race; it was
+a key mismatch, and it cost six retries because a mismatch and a missed window look identical.**
+⚠️ **AND USE `ssh-keygen -lf` AS A KEY'S IDENTITY, NEVER A HAND-ROLLED HASH OF A GREP'd BLOB** — a
+lane quoted a fingerprint computed through a pipe (trailing newline) and got a different number for
+the same key. ⭐ ***A hash of a string is a hash of how you piped it.*** **And a fingerprint
+mismatch on a key reads as "wrong key, do not trust" — the exact misread that cost those retries.**
