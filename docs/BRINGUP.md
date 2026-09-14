@@ -259,6 +259,20 @@ commissioning UI's file field, carrying the same `set` lines. ✅ **Use this whe
 which on a DPH-151 it is, because the Ralink has no DNAT for that port.**
 ⭐ **Once root persists, DELETE `init.dmi`** and `:8090` listens natively.
 
+> ### ⛔ **BOUND ON ROUTE B, MEASURED ON `.106` THE SAME NIGHT — THE DOOR MAY BE SHUT TOO.**
+> `[lucid-console154, live measurement on 151#2. I wrote this route from the nano3G guide; they
+>  measured its precondition on the unit it was aimed at.]`
+> **The commissioning-UI file upload rides `:80`. On a DPH-151 that port IS DNAT'd through to the
+> pico — and `.106`'s pico REFUSES it exactly as it refuses `:22`.**
+> ⇒ ⚠️ **So *"use Route B when `:8090` is closed"* is a real route with an UNMET PRECONDITION on
+> this unit.** ⭐ **Reachability is MEASURED; the upload itself is UNTESTED.**
+> ⇒ ⭐⭐ **The honest statement: `:8090` and `:80` are DIFFERENT doors, and on `.106` BOTH are shut.
+> Route B is not refuted — it is BLOCKED HERE, for the same reason `:22` is.**
+> 📌 **The bound is INSIDE the claim rather than beneath it, deliberately:** ***a bound in an
+> adjacent sentence is not attached to the number.*** **A route recovered from ANOTHER DEVICE'S
+> guide arrives with its preconditions unmeasured on yours** — *same sink, different door, and the
+> second door needs its own measurement.*
+
 > ### ⚠️ **DEVICE SCOPE ON ITEMS 4-6 — READ BEFORE RELYING ON THEM**
 > **These three are measured on the ip.access nano3G and are written up in
 > [`BRINGUP-NANO3G.md`](BRINGUP-NANO3G.md) Phase 3.** ⭐ **The transfer case is unusually strong and
