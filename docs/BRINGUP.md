@@ -77,6 +77,36 @@ on the steps.
 >                  live config you can change, not a firmware artefact you must work around.
 > ```
 
+## 3️⃣ ⛔ **WHAT IS MEASURED SHUT — READ BEFORE YOU SPEND AN EVENING**
+
+**Every row is a MEASUREMENT on a DPH-151, with its date and who took it. None is an inference.**
+⭐ **The point of this section is that a settled NO is worth more than an open maybe: it converts
+*"try X"* from an afternoon into a closed question, and names what would have to CHANGE to reopen it.**
+
+| route | verdict | measured | what would reopen it |
+|---|---|---|---|
+| **DMI `:8090` listener** | ⛔ **never started** | `opnormal:258` gates it on `${ENV_START_DMI_TELNET:-"FALSE"}`; absent from every `nv_env.sh` held. Probed with a **port-forward in place** and still closed `[team-lead 2026-09-14]`; **also not listening on `.244`** `[lucid-console154]` ⇒ **151-wide, not a `.106` fault** | writing `ENV_START_DMI_TELNET TRUE` — which needs the shell this route was meant to get you |
+| **`:80` commissioning-UI upload** | ⛔ **refused** | DNAT'd through to the pico, which refuses it exactly as `:22` `[lucid-console154 2026-09-14]` | unknown — the refusal is the pico's |
+| **`init.dmi` runner** | ⛔ **unreachable** | needs a FILE on the pico; **the Ralink cannot reach the pico's filesystem by any route** — no mount, no nfs/cifs/9p client, tftp times out with the local file never created `[team-lead 2026-09-14, with root]` | a filesystem path to the pico, or serial |
+| **`init_nv_env` clobbering your flags (PATH A)** | ✅ **cannot fire** | reachable only via `activate_fs`, gated on `case $FNAME in fs.bin)`; a hook-only SDP has no filesystem image `[morpheus-iuh154 2026-09-14]` ⚠️ **579 tree; 563 copy unread** | a download that installs a filesystem |
+| **every certificate theory** (CN · chain · issuer · vintage) | ⛔ **excluded structurally** | the device FINs with **no TLS alert** ⇒ TLS succeeded and the refusal is ABOVE it (`acs_tr069.py:91`, since 2026-09-11). **The previous owner independently tried THREE CNs across two days — all failed identically** `[donor README]` | nothing — a chain swap cannot fix a layer that already succeeds |
+
+> ### ⚠️ **AND ONE THAT IS *NOT* SHUT, RECORDED SO NOBODY RETIRES IT BY MISTAKE**
+> **The cert-CN swap was attempted 2026-09-14 and MEASURED NOTHING** — the dial cited as its result
+> predated the swap by three minutes, and during the window the cert was live the device did not
+> connect at all. ⇒ ***UNTESTED, not refuted.*** **It is excluded by the structural argument above,
+> not by that experiment.**
+
+> ### 📌 **THE THREE DMI DOORS IN DETAIL ARE IN PHASE 3 — POINTER, NOT A COPY**
+> **Each is closed for its own reason, which is the useful part: not one assumption carried across
+> three ports.** ⇒ **See Phase 3 item 6.**
+> ⭐ **AND A POSITIVE-CONTROL WARNING FOR ANYONE MINING THE DONOR CAPTURES:** ⛔ **`151prov.pcapng`
+> and `151full.pcapng` are NOT a positive control** — 150 mutual-TLS handshakes, **zero application
+> bytes**, device-initiated FIN 8.7 ms after the server's `Finished`. ***An instrument that has
+> never once shown a success.*** `[nebula-provpcap 2026-09-05, donor README]`
+
+---
+
 ## ⛔ Before you plug anything in
 
 **Isolate the unit.** On first boot the firmware does: DHCP → DNS lookups for its
