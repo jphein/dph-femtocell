@@ -331,12 +331,38 @@ conflated constantly.
 ```
 uarfcnDownlink (1684)        a real UARFCN, never -1        <- THE transmission gate
 Service LED                  solid green                     <- hardware-side, independent
-core: registration state     SCTP_ESTABLISHED                <- not a connection COUNT
+core: registration state     RemAddr ... State SCTP_ACTIVE   <- THE PATH's view. Use THIS.
+                             (SCTP_ESTABLISHED is NOT enough -- see below)
 ```
 ⛔ **On the core, do not grep for a connected-count string.** The obvious pattern **matches the
 negative sentence too** — `"No HNB connected"` contains `"HNB connected"`. **Digit-anchor it, or
 test the negative first.** And a count is not liveness: **a stale association prints a healthy count
-through a dead peer for minutes.** `SCTP_ESTABLISHED` is the positive test.
+through a dead peer for minutes.** ~~`SCTP_ESTABLISHED` is the positive test.~~
+
+> ### 🔴 **`SCTP_ESTABLISHED` IS NOT LIVENESS EITHER — THE REPLACEMENT THIS PAGE BLESSED LIES THE SAME WAY.**
+> `[measured 2026-09-13. The correction reached `BRINGUP.md` and `2g/CLAUDE.md` and NOT this file --
+>  two siblings in one repo, one corrected, one left reading as confirmation. Carried across by
+>  nebula-librarian3.]`
+> ```
+> ping <cell>  100% loss, ARP FAILED        CONTROL: three other hosts ✅ -- only that cell
+> show hnb, THE SAME MOMENT:
+>   SCTP-ASSOC: State SCTP_ESTABLISHED                    <- the ASSOCIATION's view. SURVIVES THE PEER.
+>    RemAddr <cell>:29169 State SCTP_POTENTIALLY_FAILED   <- the PATH's view. FAILS FIRST. USE THIS.
+>   Uptime 1h01m · IuPS active:1 · "3 HNB connected"      <- NONE of these moved
+> ```
+> ⇒ ⭐⭐⭐ **The ASSOCIATION state is the association's own view and OUTLIVES THE PEER. The
+> per-address `RemAddr ... State` is the PATH's view and fails first.**
+> ✅ **TEST `RemAddr ... State == SCTP_ACTIVE` — AN ALLOW-LIST, NOT A DENY-LIST.**
+> ⛔ **A deny-list built from the two states anyone has OBSERVED renders `SCTP_UNCONFIRMED` — a path
+> never confirmed — as GREEN.** The kernel enumeration is complete and has five members:
+> `SCTP_INACTIVE · SCTP_PF (== SCTP_POTENTIALLY_FAILED) · SCTP_ACTIVE · SCTP_UNCONFIRMED ·
+> SCTP_UNKNOWN`. ⇒ ⭐ ***An allow-list is correct under ignorance, and you cannot tell from inside
+> how ignorant you are.***
+> ⚠️ **AND THE PATH STATE IS DISPLAY-ONLY** — `spinfo_state` appears only in `hnbgw_vty.c`, so the
+> core will page a peer it knows is not answering. **It is a better instrument, not a fix.**
+> ⭐⭐ **Found only because ICMP, run for an unrelated reason, disagreed. Every field in `show hnb`
+> was self-consistent.** ⇒ ***A self-consistent instrument cannot detect its own staleness; only a
+> second, independent one can.***
 
 ---
 
