@@ -271,7 +271,26 @@ else if [ "$ENV_START_DMI_TELNET" == TRUE ]; then ipa-dmi -u 8090 &   # the LIST
 `dmistart start` appearing to do nothing.** **An `init.dmi` sitting on disk SUPPRESSES the listener.**
 ⇒ 🎯 **AND IT IS ALSO A ROUTE IN THAT NEEDS NO `:8090` AT ALL: upload an `init.dmi`** through the
 commissioning UI's file field, carrying the same `set` lines. ✅ **Use this when `:8090` is closed —
-which on a DPH-151 it is, because the Ralink has no DNAT for that port.**
+which on a DPH-151 it is.**
+> ### 🔴 **CORRECTED — "no DNAT" IS TRUE AND IS *NOT* THE BINDING CONSTRAINT. THE LISTENER WAS NEVER STARTED.**
+> `[nebula-librarian3 2026-09-14, verified on the 563 tree — OUR train — not inferred from the 154.]`
+> ```
+> etc/init.d/opnormal:258-259   (563, apcfg-x)
+>   # init.dmi script not present - check to see if ENV_START_DMI_TELNET is defined
+>   if [ ${ENV_START_DMI_TELNET:-"FALSE"} == "TRUE" ]; then     ⬅ DEFAULTS TO FALSE WHEN UNSET
+> ENV_START_DMI_TELNET in every nv_env.sh we hold: pico-fs 0 · femto-ssh/stage 0 · 154 rwstore 0
+> ```
+> ⇒ ⭐⭐⭐ **UNSET ⇒ `"FALSE"` ⇒ `ipa-dmi -u 8090` NEVER STARTS ⇒ NOTHING IS LISTENING — from the LAN
+> *or from inside the unit*.** ⇒ ⛔ **EVEN WITH A DNAT THERE IS NOTHING ON THE OTHER END.**
+> ⇒ ☠️ **So "no DNAT" sends you to the FIREWALL when the fault is in the BOOT SCRIPT.** ⭐ ***A true
+> statement one level above the real constraint is worse than a false one: it survives checking.***
+> ✅ **AND IT RELOCATES THE QUESTION IN A USEFUL DIRECTION:** the `init.dmi` RUNNER branch needs **no
+> listener, no `ENV_START_DMI_TELNET`, and no port** — only a FILE at `/var/ipaccess/init.dmi` on the
+> pico. ⇒ **With Ralink root the question becomes *"can the Ralink WRITE to the pico's filesystem?"*
+> rather than *"can we reach a PORT?"*** — and the `:80` bound below does not apply to that route.
+> ⛔ **BOUND: `opnormal` read from the 44-file 563 subset and the 579 tree; `nv_env.sh` absence is
+> from DONOR/DUMP copies. `.106`'s own files are UNREAD.** ⇒ **Strong prediction, not a measurement
+> of the unit.**
 ⭐ **Once root persists, DELETE `init.dmi`** and `:8090` listens natively.
 
 > ### ⛔ **BOUND ON ROUTE B, MEASURED ON `.106` THE SAME NIGHT — THE DOOR MAY BE SHUT TOO.**
