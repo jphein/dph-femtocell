@@ -725,7 +725,28 @@ guide. This section exists so it cannot be lost a third time.]`**
 >            Ralink rootfs images held here (rootfs3:54 · rootfs4:56), whose inittabs run
 >            rcS as sysinit. ⇒ THE FIRMWARE I CAN READ DOES NOT START IT, AND IT IS RUNNING.
 > ```
-> ### ✅ **RESOLVED 2026-09-14 — `telnetd` IS IN THE INITRAMFS, STARTED BY INIT. `rcS` IS THE WRONG FILE TO LOOK IN.**
+> ### 🔴 **REFUTED 2026-09-14 — IT IS **NOT** INIT-STARTED AND **NOT** THE INITRAMFS. IT WAS REPARENTED.**
+> `[lucid-console154 closed their own bound against their own claim, on the live box.]`
+> ```
+> LIVE .106:  telnetd PPID = 1        AND   #telnetd IS commented out in the LIVE rcS
+> ⇒ init did NOT start it. A daemon whose launcher EXITED is REPARENTED to init and
+>   is indistinguishable from an init-started one by PPID alone.
+> ```
+> ⇒ ⛔ **So *"started by init, therefore firmware-restored"* is DEAD, and with it *"a reboot cannot
+> remove it."*** ⭐ **PPID 1 is not evidence of parentage — it is evidence of ORPHANHOOD OR parentage,
+> and the two are identical from outside.**
+> ### ⭐⭐ **THE NEW CANDIDATE, AND IT CHANGES THE CLASS OF THE ANSWER**
+> **`rmm_client`'s verb list contains `set_telnetd`** ⇒ **persistence would be via the CONFIG STORE,
+> not the firmware image.** ⇒ ⚠️ ***A config-store value CAN BE CHANGED. A firmware binary cannot.***
+> **So the durability of our only foothold on that chip rests on a stored setting, not a guarantee —
+> and nobody has read that setting.** ⛔ **UNMEASURED. Do not plan on it either way.**
+> ### ✅ **WHAT SURVIVES, AND IT IS STRONGER THAN BEFORE**
+> **telnetd returned after TWO reboots today, both times as PID 986** ⇒ **whatever starts it is
+> deterministic and boot-time.** ⭐ **The empirical claim gained a second observation while the
+> mechanism lost its explanation** — ***which is the normal shape of progress, not a setback.***
+> 📌 **And a note on my own part in this: my `rcS` images agreed with the live box — and they were
+> still the WRONG SPECIMEN** (2011 Ralink OEM firmware). ⇒ ***Being right for the wrong reason is
+> not being right***, and I withdrew that evidence correctly even though its conclusion held.
 > `[lucid-console154, 25ad49f, live. This closes the discrepancy flagged below — which was real,
 >  and whose resolution is that I was reading the wrong startup path.]`
 > ```
