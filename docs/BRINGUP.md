@@ -412,7 +412,7 @@ which on a DPH-151 it is.**
 > `563` TRAIN** (`HARDWARE.md:143`). ⇒ **The DPH-153's `579` is a different train and these should
 > NOT be carried there.**
 > ⛔ **What does NOT transfer is the TRANSPORT.** The nano3G reaches the DMI console on `:8090`
-> directly; **the DPH-151's Ralink has no DNAT for `:8090`.** ⇒ ***Same sink, same attribute, same
+> directly; **the DPH-151's Ralink has no DNAT for `:8090`** — ⚠️ **and that is TRUE but NOT the binding constraint: THE LISTENER IS NEVER STARTED. See the correction above in this same file (§ *"CORRECTED — 'no DNAT' IS TRUE AND IS NOT THE BINDING CONSTRAINT"*).** ⇒ ***Same sink, same attribute, same
 > train — different door.*** **That is exactly why item 6's `init.dmi` route matters here.**
 
 ### ⭐ ROUTE 1 — CMHS / XMPP  `[✅ DEMONSTRATED on a DPH-151]`
