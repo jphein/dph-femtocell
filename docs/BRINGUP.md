@@ -98,6 +98,26 @@ on the steps.
 > connect at all. ⇒ ***UNTESTED, not refuted.*** **It is excluded by the structural argument above,
 > not by that experiment.**
 
+### ✅ **AND ITS COMPLEMENT — WHAT IS STILL *OPEN*. A SHUT-LIST ALONE TELLS YOU WHERE NOT TO GO.**
+`[surfaces enumerated by lucid-console154, 2026-09-14, in 2g/docs/findings/PLAN-106-post-reboot.md
+ §4 "so nobody re-derives it". Lifted here because that file is a SESSION PLAN and this is the
+ durable home — a surface list in an ephemeral document is lost the moment the session closes.]`
+```
+udp 1024:65535   THE ONLY UNEXPLORED RANGE. The pico firewall permits it from .185.
+                 ⛔ needs a real UDP client ⇒ do it FROM THE PICO. The Ralink's tftp gives
+                    REACH, NOT ENUMERATION — an RRQ is answered only by a TFTP server.
+tcp 20000        ⭐ THE FOURTH DNAT, AND IT IS UNNAMED. "80, 22, 8080, 20000 all DNAT to
+                 192.168.157.186" [findings-dph151.md:113]. Three were worked all evening;
+                 20000 has never been touched.
+tcp 3016 · 2345  OBSERVED LISTENING ON 0.0.0.0 — not loopback — on .244's pico.
+                 ⇒ what becomes reachable on .106 the MOMENT its firewall opens.
+udp 5050         netannounce. ⚠️ CMHS-side (present in cmhs, absent in DslmSsp) ⇒ a hit is
+                 NOT progress on the Inform problem. Reachability only.
+```
+⇒ ⭐⭐ **`tcp 20000` is the sharpest of these: a DNAT we have had documented all along, on a unit
+we spent a night failing to reach through the other three.** ⇒ ***Three of four were worked to
+exhaustion and the fourth was never named out loud.***
+
 > ### 📌 **THE THREE DMI DOORS IN DETAIL ARE IN PHASE 3 — POINTER, NOT A COPY**
 > **Each is closed for its own reason, which is the useful part: not one assumption carried across
 > three ports.** ⇒ **See Phase 3 item 6.**
