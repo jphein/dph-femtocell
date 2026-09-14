@@ -743,3 +743,59 @@ this ran. ⛔ **Do not read it as the way in.** `ENV_START_DMI_TELNET TRUE` is w
 demonstrated: `rmm_client … do_software_download` / `switch_fw_boot` (the swdl path, where
 `post_swdl_hook` runs as root — ⚠️ it also `rm -rf`s the config bank, so stage a payload FIRST),
 or the pico's own outbound ACS leg per Route 0.
+
+---
+
+## ⭐⭐⭐ **HOW ROOT IS ACTUALLY OBTAINED — AND WHY THE RCE LADDER IS THE WRONG LADDER**
+
+> ### 🎯 **`TR-069 IS how root is obtained.`** `[dph-femtocell 1352a84]` **No shell, no JTAG, no serial.**
+
+```
+ACS Download RPC  ->  rmm-selfclean.sdp  ->  post_swdl_hook runs the hook AS ROOT on the PICO
+     microcell/build/dph151/selfclean_hook_jp.sh  (the payload, 6892 B)
+     microcell/build/dph151/rmm-selfclean.sdp     (4450 B, one 0x5007 hook item, 3 CRCs verified)
+  the hook then:
+     installs authorized_keys (dph151-jp + pounce-rce) in /var/ipaccess/root_home/.ssh
+     setnv_env.sh ENV_VERBOSE_CONSOLE_ENABLED TRUE   -> rcS.d/S10sshd binds 0.0.0.0:22
+     opmode.sh re-asserts it EVERY boot, AFTER init_nv_env resets nv_env->FALSE
+```
+
+### ⛔ **AND THE DISTINCTION THAT COST AN ENTIRE EVENING**
+```
+PROVISIONING a DPH-151   -> TR-069. Needs NO shell, NO RCE, NO key.
+PERSISTENT SSH on it     -> the RCE ladder. A DIFFERENT GOAL.
+```
+⭐ ***"We have been climbing the wrong ladder."*** `[findings-151b-pico-access-and-acs-init.md §3]`
+**Anyone whose goal is "configure the cell" should never touch the ladder at all.**
+
+### 🔴 **THE BLOCKER WAS OURS, NOT THE DEVICE'S — AND `TLS-OK` IS THE TRAP**
+`[measured on exchange, 6-hour window, BOTH units]`
+```
+10.0.6.106  95 sessions   10.0.6.244  1280 sessions
+every one:  -> 10.0.6.20:443 [CMHS/other] · TLS-OK clientcert=len=1006 · peer closed (state=init)
+```
+**The cells reach us, authenticate with a valid client cert, and OUR ACS never advances past
+`init`.** ⇒ ⭐⭐ **`TLS-OK` is the loudest success line in the log and it certifies the TRANSPORT
+ONLY. The session dies one state later, and a transport receipt reads like a provisioning receipt.**
+
+**THE MECHANISM: one IP cannot serve both roles.** `ctx` is chosen by `getsockname()` because these
+devices send **no TLS SNI**, and the dispatch has **no branch for `10.0.6.20`** — it falls to
+`else: chan="CMHS/other"`. A CWMP device that lands there is answered with an **XMPP stream
+header**, which it cannot parse, so it closes at `state=init`.
+```
+femtocell.wireless.att.com          -> 10.0.6.21   ✅ ACS handler
+dpewe-santa-clara.wireless.att.com  -> 10.0.6.21   ✅ ACS handler
+cmhswe-santa-clara.wireless.att.com -> 10.0.6.20   ⛔ NO BRANCH -> else -> CMHS
+```
+✅ **DNS has since been corrected for `femtocell`, which is why `.244` now lands 385 Informs on
+`.21`.** ⚠️ **Two findings that looked contradictory — "0 Informs, ever" and "385 Informs, all
+ACS" — are the SAME endpoint before and after a DNS change.** ⭐ **When two careful measurements of
+one system disagree, check whether the system changed between them before doubting either.**
+
+### ⛔ **THE RECORD WAS PARTLY DELETED, AND JP WAS RIGHT TO ASK**
+`0959849` removed `tools/access/dph151-unlock-and-patch.sh` and `dph151-finish-bringup.sh` as
+*"unheadered scratch duplicates"*. **They were not duplicates** — the first is the only copy of the
+working post-shell bring-up (`set hnbCId 7938`, `rrmUnlock`/`unlock`, `localSelectCellParams`,
+`establishPermanentHnbGwConnection`) plus the watchdog patch that teaches it the cell-level
+`action unlock` it never had. **Restored in `78ee691`.**
+⭐ ***"Duplicate" is a claim about CONTENT and the commit made it from the FILENAME.***
