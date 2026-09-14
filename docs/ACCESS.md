@@ -1026,3 +1026,40 @@ the same way.**
                              first. ⛔ CHECKING SSH AFTER ONE REBOOT RECORDS A WORKING PAYLOAD
                              AS A FAILURE.
 ```
+
+### ☠️☠️☠️ **VERIFY-BY-HASH AUTHENTICATES BYTES, NOT THEIR NATURE — AND IT NEARLY BRICKED THE SPARE**
+`[caught 2026-09-13 ~17:5x PDT, with a power cycle already green-lit. Nothing fired.]`
+```
+                        size     header                       verdict
+rmm-selfclean.sdp       4450 B   " SDP\0..."   1 IMAG item    ✅ the build that ROOTED 151#1
+rmm-selfclean-v7.sdp    6252 B   " SDP\0..."                  ✅ valid container
+rmm-selfclean-v8.sdp    7208 B   " SDP\0..."                  ✅ valid container
+rmm-selfclean-v10.sdp  10240 B   "../../../var/\0\0\0"        🔴 NOT AN SDP. A ustar TAR.
+                                 entries: ../../../var/ipaccess/opmode.sh (6424 B)
+                                 its own comment: "Landed by tar path traversal"
+acs_tr069.py:11  SDP_URL = ".../rmm-selfclean-v10.sdp"        <- WHAT THE ACS SHIPS
+```
+⇒ **The armed payload was the TAR TRAVERSAL, not the proven SDP hook.** It overwrites
+`/var/ipaccess/opmode.sh` — **sourced at boot, on a unit with no shell.** Extraction happens
+**during** transfer, so a partial write commits every completed entry, and **no backup exists**
+because the traversal overwrites before any payload of ours runs. ⇒ **Silent, fail-closed,
+unrecoverable lockout.**
+
+### ⛔ **THE RULE I FOLLOWED IS THE ONE THAT FAILED ME**
+**This corpus says *select a payload BY HASH, never by path*. I did. The hash MATCHED**
+(`c77d57af24d2a32a3f786ad646cf3498`) **— because it was the correct hash OF THE WRONG KIND OF
+THING.** It certified the file was un-tampered and free of the public-GitHub key — **both true,
+and neither is "this is an SDP".**
+⇒ ⭐⭐⭐ ***INTEGRITY AND IDENTITY ARE DIFFERENT PROPERTIES. A HASH ONLY EVER SPEAKS TO THE FIRST.***
+✅ **THE CHECK THAT WORKS IS FOUR BYTES:** `head -c 4 <file>` must read `" SDP"`. **A container
+check cannot be satisfied by the wrong container.**
+
+### ⚠️ **AND TWO COMPOUNDING FAILURES WORTH THE SAME ATTENTION**
+1. **`acs_tr069.py:6` reads `# v7: adds FS_VARIANT="224A"` — DIRECTLY ABOVE THE v10 PATH.**
+   **The file changed underneath its own annotation.** ⭐ *A comment names the version it was
+   written for, never the version in the line beneath it.*
+2. **A DECISION AND A CONFIGURATION DISAGREED SILENTLY.** A lane analysed both delivery paths and
+   ruled *"take the .sdp, the traversal buys a weaker primitive at much higher risk"* — while
+   `SDP_URL` was **already wired to the traversal**. ⇒ **The analysis was correct and never reached
+   the thing it was about**, because nobody re-read the config line the decision was supposed to
+   govern. ✅ **After deciding between two paths, READ THE LINE THAT SELECTS ONE.**
