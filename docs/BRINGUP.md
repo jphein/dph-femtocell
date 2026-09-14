@@ -422,6 +422,27 @@ reboot -> device sends "1 BOOT", re-reads DNS -> management session completes
 >    meant to prevent.   [findings-dph151-root-baseline.md:33]
 > ```
 > ### ⛔ **INSTALL BOTH PUBLIC KEYS — THE v7 RUN FAILED ON EXACTLY THIS**
+> ### 🔴🔴 **BUT NOT *THOSE* TWO KEYS — READ THIS BEFORE THE BLOCK BELOW.**
+> `[nebula-librarian3, 2026-09-13. This file CONTRADICTS ITSELF twelve lines apart and BOTH sides
+>  are marked ⛔ — the hazard has the better story, so it is the one that gets followed.]`
+> ```
+> :424 (this line)  "INSTALL BOTH PUBLIC KEYS"        <- an imperative, with a worked failure case
+> :436 (12 lines on) "the upstream hook installs a PUBLISHED private key ... mint a fresh pair"
+> ⇒ OPPOSITE INSTRUCTIONS ABOUT THE SAME KEY. The reader who obeys the first installs a key
+>   whose private half is downloadable from a public GitHub repo.
+> ```
+> ⭐⭐ **THE v7 LESSON IS REAL AND IS NOT WHAT IS WRONG HERE.** A key MISMATCH between what the hook
+> installs and what you authenticate with gives `rc=255` and is indistinguishable from a lost race.
+> **Install BOTH halves of the pair you intend to use.** ⛔ **The error is in WHICH pair.**
+> ```
+> b22d85d26763594a  "cwmp_rce_proof pounce-rce"  🔴 private half = microcell/tmp/DPH153-AT/cwmp_rce_key
+>                                                   origin github.com/nickvsnetworking/DPH153-AT  PUBLIC
+> 38cb81eb65f12ad1  "dph151-jp"                  ✅ JP's own
+> ```
+> ✅ **USE JP'S KEY PLUS THE FRESH PAIR MINTED FOR THIS** —
+> `~/Projects/microcell/keys/dph151/dph151_nebula_2026-09-13` (RSA-2048, `0600`, private half has
+> never left katana). **That is `:436`'s "mint a fresh pair" instruction, already carried out.**
+> ⛔ **Strike `pounce-rce` from any hook before serving it.** 📌 Full banner: `ACCESS.md`.
 > ```
 > the retry authenticated with  cwmp_rce_key   the hook had installed  dph151-jp
 > DIFFERENT KEYS -> rc=255, six consecutive times.
