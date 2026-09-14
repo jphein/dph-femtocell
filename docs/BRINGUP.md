@@ -211,6 +211,27 @@ what fails when the operator's infrastructure is unreachable.
 > and a provisioned unit BOTH query `femtocell.*`.** ⭐ **The asymmetry lives in the part nobody
 > lists.** 📌 **A provisioned unit also dials THREE hosts; an unprovisioned one dials ONE.**
 > ⚠️ **POINTER, NOT A COPY — the evidence, the bounds and the two fix routes are in that file.**
+> ### 🔴 **QUALIFIED 2026-09-14, WITHIN THE HOUR — READ IT AS A CANDIDATE, NOT A CONCLUSION.**
+> `[nebula-librarian3, who added this pointer and then found the gap. Findability is not neutral —
+>  it AMPLIFIES whatever it points at, so a pointer to an untested conclusion is worse than none.]`
+> ⛔ **THAT FINDING'S DISCRIMINATOR IS BUILT ENTIRELY ON `cmhs*` NAMES AND NEVER CONSIDERS `dpe*`**
+> (`'dpe'` → 0 hits in it; `'cmhs'` → 3, so the reader works). **And the corpus is explicit that
+> these are DIFFERENT TIERS:**
+> ```
+> cmhs*   = the CMHS / XMPP MANAGEMENT tier
+> dpewe-* = Cisco DPE = Device Provisioning Engine = THE CWMP/ACS TIER — the one that carries Download
+>           findings-lead-cwmp-breakthrough.md:18-20  "dpewe- is not one of them"
+> ```
+> ⇒ ⭐⭐⭐ ***"Does it ever ask for a `cmhs*` name?" CANNOT answer "can it do CWMP?"*** **A unit that
+> never asks for `cmhs*` may be perfectly capable of CWMP.**
+> ### ⚠️ **AND A SECOND EXPLANATION FITS EVERY OBSERVATION IN THAT FILE, UNTESTED:**
+> **151#1 came to talk because TWO BUGS ON OUR SIDE were fixed — `dpewe-santa-clara` resolving to the
+> CMHS box, and an ACS cert with the WRONG CN.** `[findings-lead-cwmp-breakthrough.md]` ⇒ **NOT
+> provisioning history, NOT anything installed on the device.** ⇒ ***So "never provisioned" and "hitting
+> the same our-side bug class" are BOTH consistent with the data, and only the first was tested.***
+> ✅ **THE THREE QUESTIONS THAT SEPARATE THEM, none needing a power cycle:**
+> **1.** does the unit query a `dpe*` name at all? **2.** does our DNS answer it, and to the RIGHT box?
+> **3.** does that box's cert carry the CN the unit expects?
 > **This block exists only so you arrive there before spending an evening, which is what it cost
 > twice.** `[2026-09-13: written that morning, named for its conclusion, and re-derived that night
 > at the cost of a power cycle. The corpus knew; nobody could find it.]`
