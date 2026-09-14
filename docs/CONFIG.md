@@ -133,9 +133,33 @@ the job, and the other half is the part that gets missed.**
 > ```
 > **The vendor's own management library says so**, of the parameters NWL chooses between:
 > *"It is applicable if Cell Parameter Selection Method is set to Auto, otherwise its value is
-> ignored."* A unit that has never run a network-listen scan has an empty scan-result store —
+> ignored."* ~~A unit that has never run a network-listen scan has an empty scan-result store~~ —
 > so **in AUTO the select action acknowledges and selects nothing, with or without a candidate
 > list.**
+>
+> ### 🔴 **THE CONCLUSION STANDS; THE REASON ABOVE IS REFUTED. MEASURED 2026-09-13.**
+> `[2g/CLAUDE.md, both nano3G cells, read BY NUMBER. The correction landed in that repo and not in
+>  this one -- a cross-repo instance of "a correction that updates one mention leaves the others
+>  reading as confirmation." Carried across 2026-09-13 by nebula-librarian3.]`
+> ```
+> nextRfScanTime (scheduled)              2026-09-13T03:43:00Z
+> AP#1  savedNwlResults_001 (2609) = {(), "2026-09-13T03:43:05Z", ""}
+> AP#2  savedNwlResults_001 (2609) = {(), "2026-09-13T03:44:04Z", ""}
+> ```
+> ⇒ ⭐⭐⭐ **THE SCAN FIRED ON TIME, ON BOTH CELLS, AND STAMPED AN *EMPTY* RESULT SET.**
+> ⇒ ⛔ **So an empty store does NOT mean "never scanned."** *"Network Listen never scans"* is
+> **FALSE**; the correct statement is ***"Network Listen SCANS ON SCHEDULE AND RETURNS NOTHING."***
+> ⭐⭐ **Those are DIFFERENT FAULTS WITH DIFFERENT CAUSES** — the first sends you to *"why won't it
+> start?"*, the second to *"why can't it hear?"* **Only the second is the real one.**
+> ⚠️ **Candidate cause, offered as a candidate and NOT as the answer:** the firmware carries
+> *"Ignoring NWL test action as AP is not locked"* ⇒ **a cell may be DEAF WHILE TRANSMITTING**, so
+> an unlocked scheduled scan would run, complete and store nothing. ⛔ **UNMEASURED.**
+> ### ⭐ **WHY THIS MATTERED ENOUGH TO CORRECT A REASON BEHIND A CORRECT INSTRUCTION**
+> **Use `CONFIGURED` — that advice is unchanged and right.** ⛔ **But a reader who ever has to debug
+> `AUTO` inherits the premise, reads an empty store as "the scan never ran", and goes hunting for
+> why it will not start.** ⇒ ***A true warning resting on a false reason sends the next person to
+> the wrong question*** — and this corpus's own law: *it gets dismissed by the first person who
+> checks the reason.*
 >
 > ⭐ **The wrong mechanism produces the right symptom, which is what makes it expensive.**
 > Populate the list, leave the method at `AUTO`, and the identical failure comes back — and it
