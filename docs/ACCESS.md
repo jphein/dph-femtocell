@@ -847,3 +847,38 @@ control the moment you succeed on it.***
 LIVE file.** ⭐ **On 563 the entire gate is `if [ "$ENV_..." = "" ]`, so that file IS the decision:**
 **PRESENT-AND-FALSE and ABSENT are different answers and they select different levers.**
 ⇒ ***Read the target device before choosing a lever from a different one.***
+
+### 🔴 **RALINK ROOT DOES NOT REACH THE PICO — MEASURED, WITH THE FAILED ATTEMPTS RECORDED**
+`[.106, 2026-09-14 ~00:2xZ. Root on the Ralink throughout; every probe below run FROM it.]`
+```
+:22 / :80     pico DROPS at its OWN firewall     conntrack: SYN_SENT … [UNREPLIED]
+              ⭐ NOT an RST. The "Connection refused" katana sees is synthesised elsewhere --
+                 so it is NOT evidence that sshd is down. It is evidence of a DROP.
+:8090         NO DNAT on the Ralink              ⇒ DMI-over-telnet unreachable whatever the pico does
+:3001         accepts TCP, application NEVER replies (get_uptime AND get_software_status)
+              controls: .185 -> "Uptime is: 4371 seconds"   .190 -> "failed ipc connect"
+              ⇒ three distinct outcomes, so the instrument discriminates. MUTE, not down.
+udp/69 tftp   pico's tftpd NOT running -- it exists only during an upgrade flow
+rmm_client 192.168.157.185 set_telnetd 1   -> "The response: 80"   NO PORT OPENED, either chip
+```
+### ⭐ **AND THE PICO IS DEMONSTRABLY ALIVE, WHICH KILLS THE "UN-STARTED UNIT" READING**
+```
+udp src=192.168.157.186 dst=192.168.157.185 dport=53    <- IT IS ACTIVELY RESOLVING NAMES
+ICMP replies · TCP accepted on 3001 · ARP present
+```
+⇒ **It is running and trying to reach things. It refuses every channel we can reach, which is a
+DIFFERENT FAULT from a stalled boot and sends you somewhere else entirely.**
+
+### ⛔ **SO: ROOT ON THE RALINK BUYS RECONNAISSANCE AND THE DNS/GATEWAY POSITION. IT DOES NOT BUY A
+### WRITE TO THE PICO'S FILESYSTEM.** **Anyone planning `Ralink root -> pico root` should read this
+first: that step does not exist, and four of us spent an evening looking for it.**
+
+### ✅ **WHAT THE RALINK *DOES* BUY — AND IT IS THE CONTAINMENT POINT**
+`/etc/dhcpd0.cfg`: `start 192.168.157.186 · end 192.168.157.186` (a ONE-ADDRESS pool),
+`opt router 192.168.157.185` · `opt dns 192.168.157.185`, `/30`.
+⇒ ⭐⭐ **The Ralink IS the pico's gateway AND its resolver, on a link with exactly one client.**
+**A redirect applied HERE reaches only this unit — no shared DNS change, no risk to any other cell.**
+📌 **And the pico's traffic leaves MASQUERADED as the unit's LAN address** ⇒ **a DNS measurement
+taken upstream is attributed to the LAN IP, not to the picoChip that made it.** ⭐ ***A NAT'd
+measurement names the translated host, and nothing in the data says otherwise*** — one lane's
+correct DNS capture sat misattributed for days because of exactly this.
