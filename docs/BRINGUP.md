@@ -680,6 +680,65 @@ subsequent "not found" is meaningless.**
 > ⇒ ⭐⭐ ***On the Ralink, "I fixed it" and "I fixed it until the next reboot" are the same
 > action.*** **Any rule you need to keep must be re-applied by something that runs at boot.**
 
+## Phase 3b — 🔑 **MAKE ROOT SURVIVE A REBOOT — do this BEFORE anything else**
+
+**`[Recovered live off 151#1 by team-lead, 2026-09-14, after JP said "we somehow lost the info".
+It was never written down as a PROCEDURE — `mtdblock4` and `rsa_host_key` appeared NOWHERE in any
+guide. This section exists so it cannot be lost a third time.]`**
+
+> ### ⭐⭐⭐ **WHY IT WORKS ON THE PICO AND NOT ON THE RALINK — learn this or the rest is cargo**
+> ```
+> pico    /var/ipaccess  =  jffs2 on mtdblock4   ⇒ REAL FLASH. Survives a reboot.
+> Ralink  /var, /tmp     =  ramfs (initramfs)    ⇒ RAM. Wiped every boot, and the firmware
+>                                                   ships NO sshd and NO dropbear at all.
+> ```
+> ⇒ **Persistence on the pico is a FILE. Persistence on the Ralink would be a FIRMWARE CHANGE** —
+> or a re-push from the pico every boot, which is proposed and unbuilt
+> (`microcell/docs/findings/findings-morpheus3gkeep-ralink-ssh.md`).
+
+### THE THREE PARTS — all on the pico, all in `/var/ipaccess` (persistent)
+```
+1. /var/ipaccess/root_home/.ssh/authorized_keys        1461 B, mode 0600
+2. /var/ipaccess/opmode.sh          ← sourced at boot; carries the ROBUST_SSH block below
+3. /var/ipaccess/nv_env.sh          ← the two exports below
+```
+**`opmode.sh` — the `ROBUST_SSH` block:**
+```sh
+/opt/ipaccess/bin/setnv_env.sh ENV_VERBOSE_CONSOLE_ENABLED TRUE 2>/dev/null
+if ! /bin/netstat -ltn 2>/dev/null | grep -q 0.0.0.0:22; then
+    killall dropbear 2>/dev/null
+    /usr/bin/dropbear -r /etc/ssh/rsa_host_key -p 22 2>/dev/null
+fi
+```
+**`nv_env.sh` — the two lines that matter:**
+```sh
+export ENV_VERBOSE_CONSOLE_ENABLED="TRUE"
+export FS_VARIANT="224A"     # dev-variant override: 4th char 'A' is in the UNHARDENED set
+```
+⭐ **`FS_VARIANT="224A"` is NOT cargo.** `rcS` computes `FS_LETTER` with `cut -c4` and `A` is in
+`{A,C,E,G,I,W,X,Z}` ⇒ `DEFAULT_UNHARDENED=TRUE`. **A stock `205F` unit gives `F`, which is in no
+set.** ⇒ **The override is what makes the boot-path default fall the right way.**
+⛔ **It covers the BOOT path only** — the software-download path calls `init_nv_env` with the
+*incoming* variant and never reads this file. **That is why part 2 exists.**
+
+### ⭐ **THE DESIGN NOTE WORTH KEEPING: `ROBUST_SSH` IS IDEMPOTENT BY CONSTRUCTION**
+**It checks whether `0.0.0.0:22` is ALREADY listening and only then restarts dropbear.** ⇒ **It can
+run every boot without fighting a healthy sshd**, and it repairs the case where something reset the
+flag. ⭐ ***A persistence mechanism that is not idempotent becomes a fight with itself on boot two.***
+
+### ✅ **VERIFY — and check the BIND ADDRESS, not just that a daemon exists**
+```
+netstat -ltn | grep ':22'
+  0.0.0.0:22     ✅ persistent SSH is live
+  127.0.0.1:22   ⛔ dropbear is running and UNREACHABLE — ENV_VERBOSE_CONSOLE_ENABLED is not TRUE
+```
+⇒ ⭐⭐ **A loopback bind is the DEFAULT, not a fault** (`sshd:64-68`), and it is what an
+unprovisioned unit does. ***"dropbear is running" is not the test; the bind address is.***
+⚠️ **And expect TWO reboots** — see Phase 3 item 5: `$( )` runs in a subshell, so a payload that
+sets the flag cannot change the already-started sshd. **Reboot 1 lands it, reboot 2 binds it.**
+
+---
+
 ## Phase 4 — Point it at your core
 
 > ### 🎯 **DO THIS**
