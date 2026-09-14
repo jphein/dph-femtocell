@@ -305,10 +305,24 @@ which on a DPH-151 it is.**
 > *or from inside the unit*.** ⇒ ⛔ **EVEN WITH A DNAT THERE IS NOTHING ON THE OTHER END.**
 > ⇒ ☠️ **So "no DNAT" sends you to the FIREWALL when the fault is in the BOOT SCRIPT.** ⭐ ***A true
 > statement one level above the real constraint is worse than a false one: it survives checking.***
-> ✅ **AND IT RELOCATES THE QUESTION IN A USEFUL DIRECTION:** the `init.dmi` RUNNER branch needs **no
-> listener, no `ENV_START_DMI_TELNET`, and no port** — only a FILE at `/var/ipaccess/init.dmi` on the
-> pico. ⇒ **With Ralink root the question becomes *"can the Ralink WRITE to the pico's filesystem?"*
-> rather than *"can we reach a PORT?"*** — and the `:80` bound below does not apply to that route.
+> ✅ **AND IT RELOCATES THE QUESTION:** the `init.dmi` RUNNER branch needs **no listener, no
+> `ENV_START_DMI_TELNET`, and no port** — only a FILE at `/var/ipaccess/init.dmi` on the pico.
+> ⇒ **With Ralink root the question becomes *"can the Ralink WRITE to the pico's filesystem?"***
+> ### 🔴 **AND THAT QUESTION IS NOW ANSWERED: NO. MEASURED 2026-09-14 WITH ROOT ON `.106`'s RALINK.**
+> `[team-lead: "The Ralink cannot reach the pico's filesystem by any route." A clean measured no,
+>  taken from inside the unit with root — not inferred.]`
+> ⇒ ⛔ **SO THE `init.dmi` ROUTE IS CLOSED ON A DPH-151 TOO, for a different reason than `:8090`:**
+> ```
+> :8090 listener   -> never started (ENV_START_DMI_TELNET defaults FALSE)   ⛔
+> :80  upload UI   -> DNAT'd to the pico, which REFUSES it                  ⛔
+> init.dmi RUNNER  -> needs a FILE on the pico; the Ralink CANNOT WRITE IT  ⛔ ← measured
+> ```
+> ⇒ ⭐⭐ **ALL THREE DMI DOORS ARE MEASURED SHUT ON AN UNPROVISIONED DPH-151.** **Not inferred, not
+> one at a time by assumption — each closed by its own measurement, for its own reason.**
+> ⭐ **THAT IS WORTH MORE THAN A WORKING ROUTE WOULD HAVE BEEN TO THE NEXT READER:** it converts
+> *"try DMI"* from an open-ended afternoon into a settled no, **and names what would have to change
+> for each door to open.** ⇒ **The remaining paths need SERIAL or a SHELL — and those are decisions,
+> not experiments.**
 > ⛔ **BOUND: `opnormal` read from the 44-file 563 subset and the 579 tree; `nv_env.sh` absence is
 > from DONOR/DUMP copies. `.106`'s own files are UNREAD.** ⇒ **Strong prediction, not a measurement
 > of the unit.**
