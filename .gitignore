@@ -11,3 +11,7 @@ _site/
 patterns.txt
 __pycache__/
 *.pyc
+
+# Lane working notes and audits. Deliberately not under docs/ -- docs/* is published
+# as Pages, so an audit note there would publish itself.
+scratch/

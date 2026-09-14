@@ -83,76 +83,76 @@ written in prose here would be correct exactly once, and this file has already o
 > ### 🔴 THE CELL WILL NOT COME UP / NO RADIO
 > | you would say | trap |
 > |---|---|
-> | "it registers on the core but there is no radio" | [10](#10-the-cell-registers-and-there-is-no-radio), [61](#61) |
-> | "everything is running and there is still no cell" | [54](#54), [57](#57) |
-> | "it came up LOCKED and unlocking did nothing" | [5](#5), [48](#48) |
-> | "it won't radiate and the error mentions GPS" | [48](#48) |
+> | "it registers on the core but there is no radio" | [10](#10-the-cell-registers-and-there-is-no-radio), [61](#61-the-cell-registers-on-the-core-with-a-perfect-identity-while-its-own-mib-has-none--because-a-shim-supplies-it) |
+> | "everything is running and there is still no cell" | [54](#54-every-watched-process-is-running-every-port-is-listening-and-there-is-no-cell), [57](#57-the-readiness-gate-reads-zero-on-a-healthy-unit-because-bring-up-is-what-opens-it) |
+> | "it came up LOCKED and unlocking did nothing" | [5](#5-a-cold-boot-leaves-the-cell-locked-and-the-obvious-unlock-sets-the-wrong-attribute), [48](#48-your-cell-will-not-radiate-and-the-reason-mentions-gps) |
+> | "it won't radiate and the error mentions GPS" | [48](#48-your-cell-will-not-radiate-and-the-reason-mentions-gps) |
 > | "calls worked and then stopped" | [1](#1-iuh_enable--two-config-files-two-parsers-one-silent-failure) ⬅ **check this first, always** |
-> | "it registers then drops ~15 s later" | [25](#25) |
+> | "it registers then drops ~15 s later" | [25](#25-it-registers-de-registers-15-seconds-later-and-it-is-not-the-famous-bug) |
 >
 > ### 🔴 MY READ OR MY WRITE IS LYING TO ME
 > | you would say | trap |
 > |---|---|
-> | "I set it, read it back, and it is still wrong on the air" | [4](#4), [15](#15), [65](#65) |
-> | "the write succeeded and nothing changed" | [11](#11), [35](#35), [53](#53) |
-> | "my search returned zero" | [12](#12), [55](#55), [70](#70) |
-> | "two different checks agree, so it must be right" | [20](#20), [52](#52) |
-> | "the batch failed and I cannot see which attribute" | [37](#37) |
-> | "the console is mute" | [36](#36), [7](#7) |
-> | "the value came back as 0" | [35](#35), [70](#70) |
+> | "I set it, read it back, and it is still wrong on the air" | [4](#4-csgindicator-reads-false-in-the-database-and-broadcasts-true-on-the-air), [15](#15-the-management-data-model-and-the-running-radio-config-are-different-stores), [65](#65-a-derived-value-is-computed-once-at-cell-setup-so-provisioning-a-running-ap-changes-the-database-and-not-the-air) |
+> | "the write succeeded and nothing changed" | [11](#11-ntp-writing-the-factory-tier-is-not-writing-the-value-in-force), [35](#35-a-write-that-reads-back-as-0-may-have-been-consumed-not-lost), [53](#53-read-only-that-came-from-a-warning-string-not-from-a-rejected-write) |
+> | "my search returned zero" | [12](#12-searching-firmware-for-a-port-number-returns-zero), [55](#55-ps-truncates-the-argument-list-so-a-flag-reads-as-absent), [70](#70-a-counter-measures-its-own-node-never-the-flow--and-a-zero-from-one-can-be-the-correct-value) |
+> | "two different checks agree, so it must be right" | [20](#20-two-instruments-agreeing-is-not-corroboration), [52](#52-you-corrected-the-fact-and-the-stale-copy-now-reads-as-corroboration) |
+> | "the batch failed and I cannot see which attribute" | [37](#37-one-bad-attribute-name-aborts-the-whole-batch--and-a-real-name-from-the-wrong-namespace-reads-as-correct) |
+> | "the console is mute" | [36](#36-the-management-console-is-mute-while-the-management-path-works-fine), [7](#7-a-trailing-exit-blinds-the-vty) |
+> | "the value came back as 0" | [35](#35-a-write-that-reads-back-as-0-may-have-been-consumed-not-lost), [70](#70-a-counter-measures-its-own-node-never-the-flow--and-a-zero-from-one-can-be-the-correct-value) |
 >
 > ### 🔴 THE HANDSET SEES IT AND WILL NOT CONNECT
 > | you would say | trap |
 > |---|---|
-> | "shows the network, refuses to attach" | [50](#50) ⬅ **you are lying to it about your power**, [4](#4) |
-> | "three handsets, three different faults" | [64](#64) |
-> | "adding a second cell made it worse" | [46](#46) |
+> | "shows the network, refuses to attach" | [50](#50-the-handset-finds-the-cell-shows-it-and-will-not-connect--because-you-are-lying-to-it-about-your-power) ⬅ **you are lying to it about your power**, [4](#4-csgindicator-reads-false-in-the-database-and-broadcasts-true-on-the-air) |
+> | "three handsets, three different faults" | [64](#64-three-handsets-three-unrelated-faults-one-symptom--and-the-fix-is-a-log-filter) |
+> | "adding a second cell made it worse" | [46](#46-a-second-cell-on-the-same-plmn-removes-service-instead-of-adding-it) |
 >
 > ### ⛔ I AM ABOUT TO DO SOMETHING DESTRUCTIVE
 > | you are about to | trap |
 > |---|---|
-> | **type an `rmm_client` verb** | [71](#71) ⬅ `factory_reset` and `crash` are its neighbours |
-> | **boot the other firmware bank** | [31](#31) ⬅ **sticky. may remove every way back in** |
-> | **unpack firmware** | [32](#32) ⬅ overwrites YOUR filesystem |
-> | **open the case** | [41](#41) ⬅ can destroy the factory configuration |
-> | **press reset** | [49](#49) ⬅ reaches factory-restore sooner than the manual says |
-> | **correct the PLMN** | [33](#33) ⬅ silently removes a safety interlock |
-> | **stand up a security gateway** | [39](#39) ⬅ can take down your LAN and your own shell, [45](#45) |
-> | **stage a radio parameter** | [51](#51) ⬅ a loaded change: ANY reboot fires it |
+> | **type an `rmm_client` verb** | [71](#71-rmm_client-puts-factory_reset-and-crash-in-the-same-verb-list-as-cs_cmd-the-one-every-runbook-tells-you-to-type) ⬅ `factory_reset` and `crash` are its neighbours |
+> | **boot the other firmware bank** | [31](#31-booting-the-other-firmware-bank-can-remove-every-way-back-in-and-it-is-sticky) ⬅ **sticky. may remove every way back in** |
+> | **unpack firmware** | [32](#32-unpacking-the-firmware-overwrites-your-filesystem) ⬅ overwrites YOUR filesystem |
+> | **open the case** | [41](#41-opening-the-case-can-destroy-a-factory-configuration) ⬅ can destroy the factory configuration |
+> | **press reset** | [49](#49-the-reset-button-reaches-factory-restore-sooner-than-the-manual-says) ⬅ reaches factory-restore sooner than the manual says |
+> | **correct the PLMN** | [33](#33-correcting-the-plmn-silently-removes-a-safety-interlock) ⬅ silently removes a safety interlock |
+> | **stand up a security gateway** | [39](#39-standing-up-your-own-security-gateway-can-take-down-your-lan-including-your-own-shell) ⬅ can take down your LAN and your own shell, [45](#45-you-may-not-need-a-security-gateway-at-all) |
+> | **stage a radio parameter** | [51](#51-a-staged-radio-parameter-is-a-loaded-change-and-any-reboot-fires-it) ⬅ a loaded change: ANY reboot fires it |
 >
 > ### 🔴 THE DEVICE OR MY TOOLS ARE MISLEADING ME
 > | you would say | trap |
 > |---|---|
-> | "`show hnb` says it is connected" | [6](#6) ⬅ **lies in both directions** |
-> | "the log names the process that died" | [23](#23), [26](#26) |
-> | "the deploy passed its checksum" | [8](#8), [22](#22) |
-> | "the timestamp says…" | [29](#29) ⬅ no clock, so it is not a timestamp |
-> | "the crash file is zero bytes" | [43](#43) ⬅ that means healthy |
-> | "nothing is in the log" | [69](#69) ⬅ five components log nothing outside developer mode |
-> | "my TLS server cannot talk to it" | [24](#24), [38](#38), [40](#40) |
-> | "the hostnames still resolve" | [28](#28) |
+> | "`show hnb` says it is connected" | [6](#6-show-hnb-on-the-core-lies-in-both-directions) ⬅ **lies in both directions** |
+> | "the log names the process that died" | [23](#23-the-reboot-log-names-the-wrong-process--structurally-every-time), [26](#26-an-error-string-names-what-the-code-tried-to-do-not-what-happened) |
+> | "the deploy passed its checksum" | [8](#8-your-deploy-passed-md5-and-the-program-never-ran), [22](#22-running-the-root-tool-twice-does-not-confirm-it-worked) |
+> | "the timestamp says…" | [29](#29-a-files-timestamp-is-not-a-timestamp-on-a-device-with-no-clock) ⬅ no clock, so it is not a timestamp |
+> | "the crash file is zero bytes" | [43](#43-crash-files-zero-byte-means-healthy-and-old-ones-are-not-yours) ⬅ that means healthy |
+> | "nothing is in the log" | [69](#69-five-of-the-components-write-no-log-at-all-unless-the-unit-is-in-developer-mode) ⬅ five components log nothing outside developer mode |
+> | "my TLS server cannot talk to it" | [24](#24-your-tls-server-is-too-modern-to-talk-to-it), [38](#38-the-device-offers-exactly-one-ike-proposal-and-a-modern-responder-refuses-it), [40](#40-openssl-x509--in-file-reads-only-the-first-certificate-in-a-bundle-silently) |
+> | "the hostnames still resolve" | [28](#28-the-operators-hostnames-still-resolve-and-nothing-is-behind-them) |
 >
 > ### ⏱️ IT IS TAKING TOO LONG / I THINK IT IS DEAD
 > | you would say | trap |
 > |---|---|
-> | "it has been 8 minutes and nothing" | [21](#21) ⬅ **a cold boot takes ~16 min. Wait.** |
-> | "it keeps restarting for no reason" | [42](#42) ⬅ **check the barrel jack before the protocol** |
-> | "is this a storm?" | [67](#67) ⬅ get the distribution first, and check your own repair did not start it |
+> | "it has been 8 minutes and nothing" | [21](#21-a-cold-boot-takes-about-16-minutes-and-every-check-gave-up-sooner) ⬅ **a cold boot takes ~16 min. Wait.** |
+> | "it keeps restarting for no reason" | [42](#42-restart-shaped-events-with-no-explanation-check-the-barrel-jack-before-the-protocol) ⬅ **check the barrel jack before the protocol** |
+> | "is this a storm?" | [67](#67-get-the-distribution-before-calling-it-a-storm--and-check-whether-your-own-repair-started-it) ⬅ get the distribution first, and check your own repair did not start it |
 >
 > ### 📌 CONFIG, PERSISTENCE AND BANKS
 > | you would say | trap |
 > |---|---|
-> | "which config bank is live?" | [2](#2) ⬅ **differs PER MODEL. Read it, never assume** |
-> | "my setting vanished after a reboot" | [18](#18), [19](#19), [44](#44) |
-> | "I edited the config file" | [17](#17) ⬅ it may be a decoy nothing reads |
-> | "packet data does not work" | [62](#62), [63](#63) |
+> | "which config bank is live?" | [2](#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell) ⬅ **differs PER MODEL. Read it, never assume** |
+> | "my setting vanished after a reboot" | [18](#18-persistence-that-is-erased-seconds-after-it-is-applied), [19](#19-two-files-in-your-config-backup-are-live-runtime-state), [44](#44-a-boot-time-config-script-that-runs-and-does-nothing) |
+> | "I edited the config file" | [17](#17-a-config-file-that-is-a-decoy--referenced-everywhere-read-by-nothing) ⬅ it may be a decoy nothing reads |
+> | "packet data does not work" | [62](#62-packet-data-depends-on-an-address-that-exists-at-runtime-and-in-no-configuration-file), [63](#63-a-host-route-fixes-the-voice-symptom-and-cannot-fix-the-data-one-because-the-rejection-is-a-source-address-check) |
 >
 > ### 🧠 ABOUT THE WORK ITSELF
-> **[47](#47)** working on the device changes the device · **[59](#59)** the manual may not cover your model ·
-> **[60](#60)** a corpus you are writing is not one you have read · **[66](#66)** two co-varying candidates
-> need a second unit · **[68](#68)** a model check admitting a device on another device's evidence ·
-> **[30](#30)** `--help` is an action · **[56](#56)** `sed -ie` and the backup you cannot confirm ·
-> **[58](#58)** backgrounding inside `$( )`
+> **[47](#47-working-on-the-device-changes-the-device)** working on the device changes the device · **[59](#59-the-manual-for-your-device-family-may-not-cover-your-model-and-the-one-that-does-has-a-different-version-number)** the manual may not cover your model ·
+> **[60](#60-a-corpus-you-are-writing-is-not-a-corpus-you-have-read)** a corpus you are writing is not one you have read · **[66](#66-two-co-varying-candidates-cannot-be-separated-on-one-unit--a-second-unit-with-a-different-identity-is-an-instrument-not-redundancy)** two co-varying candidates
+> need a second unit · **[68](#68-a-model-check-admits-a-device-on-evidence-gathered-from-a-different-device)** a model check admitting a device on another device's evidence ·
+> **[30](#30---help-is-an-action)** `--help` is an action · **[56](#56-sed--ie-may-or-may-not-have-made-a-backup-and-the-flag-cannot-tell-you)** `sed -ie` and the backup you cannot confirm ·
+> **[58](#58-a-script-that-runs-inside---must-not-background-anything-that-keeps-stdout)** backgrounding inside `$( )`
 >
 > ⚠️ **Anchors are GitHub-style slugs of each heading; a few long titles are linked by number only.
 > If a link misses, search the trap number with `## <n>.` — that always resolves.**

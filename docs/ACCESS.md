@@ -377,7 +377,7 @@ operator's infrastructure is unreachable. **Capture it to a file the first time.
 > **Short form: *"TR-069 is not how root is obtained"* is TRUE OF THE RALINK and FALSE OF THE
 > PICOCHIP.** ⇒ **For a pico shell, TR-069 IS the route** — `persistent_ssh.sh:6` runs
 > `ssh -i cwmp_rce_key root@192.168.157.186`, and that is how `.244` first got root
-> `[findings-dph151-root-baseline.md:1-4]`. **See [Route 0](#route-0).**
+> `[findings-dph151-root-baseline.md:1-4]`. **See [Route 0](#route-0--the-one-that-actually-works-and-it-is-all-over-the-network).**
 >
 > ### 🔴 **CORRECTION TO MY OWN BANNER, WHICH STOOD HERE FOR FOUR MINUTES**
 > `[nebula-librarian3 — three errors in one edit, all mine, none caught by my own review]`
@@ -412,11 +412,11 @@ can answer as its management server without touching the device at all. See
 > ```
 > ⇒ ⭐⭐⭐ **BOTH ARE CORRECT AND THEY ARE ABOUT DIFFERENT PROCESSORS.** **The RALINK is rooted by
 > telnet + a vendor guest password + IPC injection (Route 3) — and calling THAT a "CWMP RCE" is the
-> misnomer.** **The PICOCHIP is rooted over the ACS/TR-069 leg — see [Route 0](#route-0).**
+> misnomer.** **The PICOCHIP is rooted over the ACS/TR-069 leg — see [Route 0](#route-0--the-one-that-actually-works-and-it-is-all-over-the-network).**
 > ⛔ **Neither document cited the other, so a reader arriving at Route 5 is told the management plane
 > is a dead end and sent away from the only route that produces a pico shell.**
 ⚠️ **It is not how root is obtained ON THE RALINK**, despite a widely-repeated name that says
-otherwise. See the correction under Route 3 — **and [Route 0](#route-0) for the picoChip, where it
+otherwise. See the correction under Route 3 — **and [Route 0](#route-0--the-one-that-actually-works-and-it-is-all-over-the-network) for the picoChip, where it
 IS the route.**
 
 The point for a reader is the *architecture*: the device is designed to be provisioned
