@@ -714,6 +714,19 @@ guide. This section exists so it cannot be lost a third time.]`**
 > REPARENTED to init and looks identical to one init started.**
 > ⇒ ✅ **What you can rely on TODAY: telnet access was there after a reboot, and the CREDENTIAL is
 > firmware-class.** ⛔ **What you cannot yet rely on: that it will be there after the NEXT one.**
+> ### ⭐⭐⭐ **AND THE REFRAME THAT COLLAPSES TWO PROBLEMS INTO ONE: THE RALINK HALF IS NOT SEPARATE WORK.**
+> **If you want REAL SSH on the Ralink, the designed route is not a Ralink change at all — it is the
+> PICO pushing a static `mipsel`/uClibc dropbear into the Ralink's ramfs on every boot, using
+> `opmode.sh` + the 30-second watchdog that already run from flash we already own.**
+> ⇒ ***The persistence mechanism already exists; it would just need to reach one hop further.***
+> ⇒ 🎯 **So "persistent SSH on BOTH chips" has exactly ONE blocker, and it is the same blocker as
+> everything else on this device: ROOT ON THE PICO.** ⛔ **Do not plan the Ralink half as separate
+> work.**
+> ⚠️ **Three prerequisites, ONE now cleared:** ✅ the telnet path works (measured on `.106`,
+> 2026-09-14) · ⛔ **a static mipsel/MIPS-II/uClibc dropbear actually BUILDING — UNVERIFIED** ·
+> ⛔ **free ramfs space on the Ralink — UNMEASURED.**
+> 📌 `microcell/docs/findings/findings-morpheus3gkeep-ralink-ssh.md`.
+>
 > ⇒ ⭐⭐ ***"We do not know why it survives" is a better thing to carry in a guide than a wrong
 > reason*** — a wrong reason gets dismissed the moment someone checks it, and takes the true
 > observation down with it.
