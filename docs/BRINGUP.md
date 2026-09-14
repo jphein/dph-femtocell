@@ -699,13 +699,24 @@ guide. This section exists so it cannot be lost a third time.]`**
 > > ***"The telnetd is not persistent. THE MEANS OF CREATING IT IS."***
 > > `[findings-nebulatopology-ralink-ssh.md:91 — `wizard` is in the firmware image]`
 > ```
-> telnetd on .185:23            ramfs-resident — dies on reboot, persists nothing
-> wizard + guest / 1qaz@WSX     IN THE SIGNED IMAGE ⇒ a reboot CANNOT remove them
-> ⇒ measured still open on .185:23 AFTER a reboot   [lucid-console154, 2026-09-14]
+> MEASURED   telnetd open on .185:23 AFTER a reboot · telnetd -b 192.168.157.185, PID 986
+>            guest / 1qaz@WSX is FIRMWARE-CLASS — it is in the image, a reboot cannot remove it
+> ⛔ UNEXPLAINED  telnetd is ramfs-resident, AND `#telnetd` is COMMENTED OUT in rcS on BOTH
+>            Ralink rootfs images held here (rootfs3:54 · rootfs4:56), whose inittabs run
+>            rcS as sysinit. ⇒ THE FIRMWARE I CAN READ DOES NOT START IT, AND IT IS RUNNING.
 > ```
-> ⇒ ⭐⭐ **Two observations that look contradictory — *"dies on reboot"* and *"still open after a
-> reboot"* — are BOTH TRUE, because the firmware RECREATES it.** ⇒ ***What you lose at reboot is a
-> CONVENIENCE, not ACCESS.***
+> ### ⚠️ **THE OBSERVATION IS SOLID; THE MECHANISM IS OPEN. DO NOT INHERIT A REASON.**
+> **Three candidates, none eliminated:** ① **those rootfs images are the wrong specimen** — they sit
+> under generic names and their device is unconfirmed · ② **a different BANK boots a different `rcS`**
+> — the two banks are known to differ, and which one the live Ralink booted is explicitly unsettled
+> · ③ **something enabled it at runtime, possibly us.**
+> ⭐ **`PID 986` with parent `init` does not settle it either: a daemon whose launcher has exited is
+> REPARENTED to init and looks identical to one init started.**
+> ⇒ ✅ **What you can rely on TODAY: telnet access was there after a reboot, and the CREDENTIAL is
+> firmware-class.** ⛔ **What you cannot yet rely on: that it will be there after the NEXT one.**
+> ⇒ ⭐⭐ ***"We do not know why it survives" is a better thing to carry in a guide than a wrong
+> reason*** — a wrong reason gets dismissed the moment someone checks it, and takes the true
+> observation down with it.
 > ⇒ ✅ **SO "persistent SSH on the Ralink" is a COMFORT GOAL, not a capability one.** **If the aim is
 > durable access to that chip, you already have it: telnet + a firmware-class credential.**
 > ⛔ **AND THE DISTINCTION THAT KEEPS BITING:** ***an account is not a service, and a service is not
