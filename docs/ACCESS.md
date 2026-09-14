@@ -799,3 +799,51 @@ working post-shell bring-up (`set hnbCId 7938`, `rrmUnlock`/`unlock`, `localSele
 `establishPermanentHnbGwConnection`) plus the watchdog patch that teaches it the cell-level
 `action unlock` it never had. **Restored in `78ee691`.**
 ⭐ ***"Duplicate" is a claim about CONTENT and the commit made it from the FILENAME.***
+
+### ⛔ **AND THE FIRMWARE TRAIN IS A SCOPE BOUNDARY — A 579 MEASUREMENT IS NOT A 563 FACT**
+`[two lanes, opposite directions, inside ten minutes, 2026-09-14]`
+```
+                        export ENV_VERBOSE_CONSOLE_ENABLED=$DEFAULT_UNHARDENED
+apcfg-x     (563)       0 occurrences  -- ABSENT   (control: 6 DEFAULT_UNHARDENED hits, reader works)
+rootfs154   (579/282F)  rcS:113-114, BOTH vars      -- present, UNCONDITIONAL
+
+unhardened FS_LETTER set:   563 -> A C E G I W X   Z   (EIGHT)
+                            579 -> A C E G I W X Y Z   (NINE -- Y added between trains)
+```
+⇒ ⭐⭐⭐ **THE TWO TRAINS NEED OPPOSITE LEVERS.** On **579** the unconditional export makes
+`FS_VARIANT` the master and clobbers a direct write. On **563** that block does not exist, so the
+`if [ "$ENV_..." = "" ]` guard is the whole story and **THE DIRECT WRITE IS THE LEVER**:
+```
+/opt/ipaccess/bin/setnv_env.sh ENV_VERBOSE_CONSOLE_ENABLED TRUE
+/opt/ipaccess/bin/setnv_env.sh ENV_FIREWALL_DISABLED       TRUE
+```
+✅ **OUR UNITS ARE 563** — `205F_fscheck_563.21.8_C_812_21.md5`, `iapc.563.21.8`.
+⚠️ **Advice derived from the 579 tree was the EXACT INVERSE of correct for our device.**
+
+### 🔴 **AND `FS_VARIANT` IS NOT A SETTABLE LEVER — THE CORPUS ALREADY TESTED AND DROPPED IT**
+`findings-dph154-v9-preflight.md`, verbatim: *"**FS_VARIANT dev-trick does NOT transfer** —
+`/etc/profile` reads it from `/etc/sw_description.dat` on the RO rootfs … **it is why v8's
+`FS_VARIANT="224A"` line is deliberately NOT in v9.**"*
+⇒ **The `export FS_VARIANT="224A"` found on `.244` is OUR OWN v8 payload's FAILED override attempt**
+— not a vendor value and not evidence the lever works. ⭐ ***An artefact of our own earlier failure,
+read back as a discovery.***
+
+### ⭐ **THE VARIANT IS AN `ls`, NOT A VARIABLE HUNT** — confirmed in two trains, two families
+```
+.244 (563/151)  /etc/205F_fscheck_563.21.8_C_812_21.md5
+154  (579/282)  /etc/282F_fscheck_579.11.127_C_900_143.md5
+```
+**`/etc/<VARIANT>_fscheck_<fw>_*.md5` gives the variant AND the train from one listing.**
+📌 Better still, read `/etc/sw_description.dat` — the file the system itself uses.
+
+### ⛔⛔ **`.244` IS NOT A CONTROL FOR A PRISTINE UNIT — WE UNHARDENED IT OURSELVES**
+`ENV_VERBOSE_CONSOLE_ENABLED="TRUE"` · `ENV_FIREWALL_DISABLED="TRUE"` · an `opmode.sh` ROBUST_SSH
+stanza that re-asserts them and starts dropbear on `:22`. ⇒ **Every *"it works on `.244`"*
+observation is taken on a device we modified.** ⭐ ***The unit you succeeded on stops being a
+control the moment you succeed on it.***
+
+### ✅ **AND THE READ THAT ENDS THE ARGUMENT — NO SHELL, NO DMI, NO WRITE**
+**`/var/ipaccess/nv_env.sh` is on `ENV_DIAG_FILE_LIST`.** ⇒ **A diagupload bundle hands you the
+LIVE file.** ⭐ **On 563 the entire gate is `if [ "$ENV_..." = "" ]`, so that file IS the decision:**
+**PRESENT-AND-FALSE and ABSENT are different answers and they select different levers.**
+⇒ ***Read the target device before choosing a lever from a different one.***
