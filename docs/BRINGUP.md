@@ -705,6 +705,29 @@ guide. This section exists so it cannot be lost a third time.]`**
 >            Ralink rootfs images held here (rootfs3:54 · rootfs4:56), whose inittabs run
 >            rcS as sysinit. ⇒ THE FIRMWARE I CAN READ DOES NOT START IT, AND IT IS RUNNING.
 > ```
+> ### ✅ **RESOLVED 2026-09-14 — `telnetd` IS IN THE INITRAMFS, STARTED BY INIT. `rcS` IS THE WRONG FILE TO LOOK IN.**
+> `[lucid-console154, 25ad49f, live. This closes the discrepancy flagged below — which was real,
+>  and whose resolution is that I was reading the wrong startup path.]`
+> ```
+> #telnetd commented in rcS      ✅ TRUE — and rcS is NOT what starts it
+> telnetd -b 192.168.157.185     started by INIT, from the INITRAMFS in the SIGNED IMAGE
+> ⇒ firmware-guaranteed. Survived today's reboot. A reboot CANNOT remove it.
+> ```
+> ⇒ ⭐⭐⭐ **SO THE TWO HALVES SEPARATE CLEANLY, AND THIS IS THE SENTENCE TO REMEMBER:**
+> ```
+> ✅ persistent Ralink ACCESS   ALREADY EXISTS — telnetd from the signed image + a firmware credential
+> ⛔ persistent Ralink SSH      IMPOSSIBLE as a file install — no sshd/dropbear shipped; / is
+>                              initramfs, /var + /tmp are ramfs; the config store persists
+>                              VALUES, NOT BINARIES
+> ```
+> ### ⭐⭐⭐ ***"SAME PATH NAME, OPPOSITE STORAGE"*** `[lucid-console154 — the most reusable line of the night]`
+> **pico `/var/ipaccess` = jffs2 on `mtdblock4`, REAL FLASH · Ralink `/var` = RAM.** ⇒ **One asymmetry
+> explains why an identical recipe persists on one chip and evaporates on the other.**
+> ⛔ **AND IT IS WHY "PERSISTENT SSH ON BOTH CHIPS" NEEDS ITS WORDING SETTLED:** persistent
+> **access** to the Ralink exists today; persistent **SSH** there does not and cannot be installed
+> as a file.
+>
+> ### 📕 **THE DISCREPANCY AS FLAGGED, KEPT SO THE RESOLUTION IS LEGIBLE:**
 > ### ⚠️ **THE OBSERVATION IS SOLID; THE MECHANISM IS OPEN. DO NOT INHERIT A REASON.**
 > **Three candidates, none eliminated:** ① **those rootfs images are the wrong specimen** — they sit
 > under generic names and their device is unconfirmed · ② **a different BANK boots a different `rcS`**
