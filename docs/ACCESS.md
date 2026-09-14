@@ -791,6 +791,21 @@ iptables -I INPUT 1 -p tcp --dport 22 -j ACCEPT
 > ⚠️ **BOUND: this was checked against the PRESERVED `evidence/v10` copy, identified by the hash in
 > its filename. Whether the LIVE docroot still serves those exact bytes was NOT verified** — that
 > needs one `curl` from `exchange` against that hash.
+> ### ⛔⛔ **FORWARD HAZARD: THE PACKED SDP IS *OLDER* THAN THE `.sh` BESIDE IT — REBUILDING FROM SOURCE RE-ADDS THE PUBLIC KEY.**
+> `[morpheus-iuh154, 2026-09-13, verifying the served artefact. Same shape as the three-copies trap,
+>  one level down: not two files with one name, but ONE NAME whose SOURCE and ARTEFACT have drifted.]`
+> ```
+> rmm-selfclean.sdp    (4450 B, the PACKED artefact)  pounce-rce 0 · dph151-jp 1   ✅ SAFE — this ships
+> selfclean_hook_jp.sh (the SOURCE beside it)         pounce-rce 1 · dph151-jp 3   🔴 carries the public key
+> ```
+> ⇒ **The safe thing to serve was built from an EARLIER hook than the script sitting next to it.**
+> ⇒ 🔴 **ANYONE WHO "REFRESHES" THE SDP BY REPACKING THAT `.sh` ADDS A KEY THE CURRENT ARTEFACT DOES
+> NOT HAVE.**
+> ⇒ ⭐⭐⭐ ***REBUILD-FROM-SOURCE IS THE MOVE THAT MAKES IT WORSE HERE — the exact opposite of the
+> usual instinct, and the instinct fires hardest on someone being careful.***
+> ✅ **Serve the ARTEFACT, verified by hash (`890bd9f1…`). If you must rebuild, hash the keys in the
+> output and compare against the artefact you are replacing** — `printf '%s' "$b" | sha256sum`,
+> never a bare pipe from `grep`, or a trailing newline will read as a substitution.
 > 📌 **Raised to JP directly on 2026-09-13. This banner records it; it does not decide it.**
 
 ⚠️ **THAT IS THE PERSISTENCE STEP, NOT THE ENTRY.** The `.dbg` shows it delivered **over SSH to
