@@ -226,6 +226,49 @@ handler and closes silently.
 
 ---
 
+**4. ⛔ `:22 CONNECTION REFUSED` IS THE *EXPECTED HEALTHY STATE* OF AN UNPROVISIONED UNIT — NOT A FAULT, AND NOT A FIREWALL.**
+`dropbear` is **always running**. It is bound to **`127.0.0.1:22`** because `ENV_VERBOSE_CONSOLE_ENABLED`
+is not `TRUE`. ⇒ ⭐⭐ **A refusal means "sshd is alive and listening on loopback", which is the
+*success* state for a factory unit — not "the port is closed."**
+```
+SYN/ACK  -> sshd bound 0.0.0.0:22   (you have already won)
+RST      -> sshd bound 127.0.0.1:22 (NORMAL. this is what a fresh unit does)
+silence  -> filtered/dropped        (a firewall, a different problem)
+```
+⛔ **Do not spend an evening proving the RST came from the Ralink rather than the pico. Either way
+this is the predicted reading.** `[cost: one full session, 2026-09-13]`
+
+**5. ⛔ TWO REBOOTS ARE REQUIRED, AND ONE REBOOT LOOKS EXACTLY LIKE A FAILED PAYLOAD.**
+```
+reboot 1   the payload runs as root: key installed, flags written.  sshd STILL on loopback.
+reboot 2   sshd reads TRUE at startup, binds 0.0.0.0:22.            SSH works.
+```
+**Why: `$( )` runs in a SUBSHELL, so an `export` inside it cannot reach the parent — and `sshd`
+had already started with the old value.** ⇒ ⭐⭐⭐ **Anyone who checks for SSH after ONE reboot will
+record a WORKING payload as a failure and go looking for a bug that is not there.**
+
+**6. ⭐⭐⭐ `dmistart()` IS AN `if`/`else` — THE `init.dmi` RUNNER **XOR** THE `:8090` LISTENER. NEVER BOTH.**
+```sh
+if [ -f /var/ipaccess/init.dmi ]; then ipa-dmi -c "call init.dmi" &   # the RUNNER
+else if [ "$ENV_START_DMI_TELNET" == TRUE ]; then ipa-dmi -u 8090 &   # the LISTENER
+```
+⇒ **This single line explains every *"the `:8090` listener will not start"* result, including
+`dmistart start` appearing to do nothing.** **An `init.dmi` sitting on disk SUPPRESSES the listener.**
+⇒ 🎯 **AND IT IS ALSO A ROUTE IN THAT NEEDS NO `:8090` AT ALL: upload an `init.dmi`** through the
+commissioning UI's file field, carrying the same `set` lines. ✅ **Use this when `:8090` is closed —
+which on a DPH-151 it is, because the Ralink has no DNAT for that port.**
+⭐ **Once root persists, DELETE `init.dmi`** and `:8090` listens natively.
+
+> ### ⚠️ **DEVICE SCOPE ON ITEMS 4-6 — READ BEFORE RELYING ON THEM**
+> **These three are measured on the ip.access nano3G and are written up in
+> [`BRINGUP-NANO3G.md`](BRINGUP-NANO3G.md) Phase 3.** ⭐ **The transfer case is unusually strong and
+> it is STATED, not assumed: the nano3G runs `563.16.0` and the DPH-151 runs `563.21.8` — the SAME
+> `563` TRAIN** (`HARDWARE.md:143`). ⇒ **The DPH-153's `579` is a different train and these should
+> NOT be carried there.**
+> ⛔ **What does NOT transfer is the TRANSPORT.** The nano3G reaches the DMI console on `:8090`
+> directly; **the DPH-151's Ralink has no DNAT for `:8090`.** ⇒ ***Same sink, same attribute, same
+> train — different door.*** **That is exactly why item 6's `init.dmi` route matters here.**
+
 ### ⭐ ROUTE 1 — CMHS / XMPP  `[✅ DEMONSTRATED on a DPH-151]`
 
 **The management channel is the EIGHT `cmhs*` servers in the device's own config**
