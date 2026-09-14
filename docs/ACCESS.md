@@ -761,6 +761,24 @@ iptables -I INPUT 1 -p tcp --dport 22 -j ACCEPT
 > **Delete the `pounce-rce` line from the hook and install only JP's key** — or the keypair minted
 > 2026-09-13 at `~/Projects/microcell/keys/dph151/dph151_nebula_2026-09-13` (RSA-2048, `0600`,
 > private half has never left katana). ⛔ **Do not serve the two-key hook to another unit.**
+> ### ✅ **RESOLUTION, SAME NIGHT — THE *SERVED* PAYLOAD IS CLEAN. THIS IS NOT ON THE LIVE PATH.**
+> `[measured offline 2026-09-13, by key-body hash across every artifact in the tree]`
+> ```
+> ACS SDP_URL (config/exchange/dph153-acs/acs_tr069.py:10) = .../rmm-selfclean-v10.sdp
+> evidence/v10/rmm-selfclean-v10.sdp.c77d57af...   pounce-rce: 0   ✅ CLEAN
+> ---- the artifacts that DO still carry it ----
+> build/dph151/selfclean_hook_jp.sh   1     build/dph151/rmm-selfclean-v8.sdp   1
+> evidence/v9/rmm-selfclean-v9.sdp    2     (already DO-NOT-SERVE)
+> rmm-selfclean.sdp (unversioned) · v7 · v10        0   ✅
+> ```
+> ⇒ ✅ **A BOOT Inform -> Download -> `post_swdl_hook` run will NOT install the public key.**
+> ⛔ **WHAT REMAINS TRUE: `selfclean_hook_jp.sh` and `v8.sdp` still contain it, and this page named
+> that hook as "the payload".** ⇒ **A rebuild, a fallback to v8, or following the older line above
+> RE-INTRODUCES IT.** ⭐ **And the corpus already warns that three paths carry the unversioned
+> `rmm-selfclean.sdp` name — here the wrong pick is also the UNSAFE one.**
+> ⚠️ **BOUND: this was checked against the PRESERVED `evidence/v10` copy, identified by the hash in
+> its filename. Whether the LIVE docroot still serves those exact bytes was NOT verified** — that
+> needs one `curl` from `exchange` against that hash.
 > 📌 **Raised to JP directly on 2026-09-13. This banner records it; it does not decide it.**
 
 ⚠️ **THAT IS THE PERSISTENCE STEP, NOT THE ENTRY.** The `.dbg` shows it delivered **over SSH to
