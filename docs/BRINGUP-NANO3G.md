@@ -126,6 +126,39 @@ either/or, not a preference.
 
 ---
 
+## 3️⃣ ⚖️ **THE CONTRAST WITH THE DPH-151 — READ THIS BEFORE CARRYING ANY FACT EITHER WAY**
+
+**This page has almost nothing "measured shut", and that is not luck — it is the difference between
+the models.** ⭐ **The failure that has actually cost this project days is not a dead route; it is a
+fact carried from one model to the other.** ⇒ **So this section is a CONTRAST, and it runs BOTH WAYS.**
+
+### ⛔ **SHUT ON THE DPH-151 · WORKS HERE — do not conclude the route is dead from a 151 result**
+| route | here (nano3G) | on the DPH-151 |
+|---|---|---|
+| **DMI `:8090`** | ✅ **LISTENS AND WORKS** — it is the route that rooted this unit | ⛔ **never started**: `opnormal:258` gates it on `${ENV_START_DMI_TELNET:-"FALSE"}`, absent from every `nv_env.sh` held. **Shut even with a port-forward, and shut on BOTH 151s** |
+| **the `init.dmi` file route** | ✅ available — one filesystem | ⛔ **unreachable**: needs a file on the **picoChip**, and **the Ralink cannot reach the pico's filesystem by any route** `[measured with root, 2026-09-14]` |
+| **reaching the radio SoC's disk** | ✅ **one SoC — there is no "other side"** | ⛔ **TWO SoCs.** Ralink `.185` owns the LAN address; picoChip `.186` has the radio. **Root on one is not root on the other** |
+
+### 🔴 **WORKS ON BOTH · BUT THE VALUE IS *REVERSED* — this is the one that destroys cells**
+```
+                       nano3G              DPH-151
+live config bank       config_bank_2       config_bank_1      ⬅ REVERSED
+```
+⇒ ☠️ **This corpus's own worked example of device scope.** **The 151's `config_bank_2` carries
+neither `IUH_ENABLE` nor any UARFCN — 14 of 15 files differ.** ⇒ **Writing the nano3G's bank number
+on a 151 points the unit at a bank that cannot bring up a cell.**
+✅ **NEVER ASSUME IT, ALWAYS READ IT:** `ls -l /var/ipaccess/config` names the live bank.
+⚠️ **A false version of this arose by grepping `config_bank_2` out of a shared document** — the
+hazard is real and it is documented in [`TRAPS.md`](TRAPS.md) trap 2.
+
+### ⭐ **AND THE GENERAL RULE, WHICH IS THIS CORPUS'S MOST EXPENSIVE LESSON**
+> ### ***A measurement on one model is not a fact about another — and the finer form that cost three reversals in one night: A 579 MEASUREMENT IS NOT A 563 FACT.***
+**The nano3G runs `563.16.0`, the DPH-151 `563.21.8` — the SAME train, which is why so much DOES
+transfer and why the exceptions are so easy to miss.** ⛔ **The DPH-154's `579` is a different train
+again.** 📌 **Identification table: [`MATRIX.md`](MATRIX.md).**
+
+---
+
 ## Phase 3 — Root
 
 **`/var/ipaccess/nv_env.sh` is sourced as root early in boot**, and several MIB string attributes
