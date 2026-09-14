@@ -247,6 +247,55 @@ real state, and does not change this one.** See [`TRAPS.md`](TRAPS.md). Read
 
 ---
 
+## ⛔ **LOADED CHANGES — a write that looks INERT and fires at the next reboot**
+
+**Two radio attributes on these units have been written, produced NO visible effect, and then taken
+effect at a reboot nobody connected to them.** ⇒ **This is a property of the ATTRIBUTE CLASS, not of
+either one, and it will bite whoever next touches a radio setting.**
+```
+rfParamsCandidateList   staged, then ANY reboot applies it — "not just the one you intended,
+                        and not only a bring-up": a crash, a watchdog or a power cut will do
+3606 primaryCpichPowerPercent   written · 2531 did NOT move · looked COMPLETELY INERT
+                        16 minutes later an UNRELATED reboot fired it: -3.0 dBm -> +7.0 dBm
+                        ⭐ and it needed NO scan — savedNwlResults kept its old timestamp
+```
+### ⭐⭐⭐ **THE CONSEQUENCE THAT CATCHES CAREFUL PEOPLE: *"ONE-COMMAND REVERT" IS TRUE OF THE CONFIG AND FALSE OF THE CELL.***
+**If a write is loaded, so is its revert.** ⇒ **You revert the setting, observe no change, conclude
+the revert worked — and both the change and its undo are queued behind the next reboot.**
+⛔ **Two wrong mitigations this produced in ONE night, from careful people:**
+```
+"harmless today, nothing reads it"          -> FALSE: cell setup reads it
+"harmless unless a startup scan succeeds"   -> FALSE: it needs no scan at all
+```
+⭐ **The second had a GATE the real behaviour does not have, so it implied `nwlOnStartup = FALSE`
+as a protection — which would NOT have worked.** ⇒ ***A wrong mechanism describes a wrong repair.***
+### ✅ **THE CHECKS, BOTH CHEAP**
+1. **Before ANY reboot, on ANY unit: does a STAGED value differ from the LIVE one?** **Staged-vs-live
+   is step one of the operation, not a post-mortem.**
+2. **Read the `ac` column before calling an attribute a setting.** **Three attributes here were
+   recorded as settings and are `ac=0` REPORTS** — `2593`, `uarfcnDownlink`, `3207`. ⭐ **Each time,
+   the attribute NAMED the thing somebody wanted, which is exactly when nobody checks.**
+📌 Full equation and evidence: `2g/docs/findings/findings-nebula-cpich-power-equation.md`.
+
+> ### 📐 **A DESIGNED-AND-NOT-TAKEN ROUTE, RECORDED SO IT DOES NOT LOOK DISCREDITED**
+> **To force a relocation without touching radiated power or needing hands: RAISE THE MEASUREMENT
+> THRESHOLD so the UE concludes its serving cell is poor and starts evaluating the neighbour.**
+> **Configuration only, contained to one cell, one-command revert.** `[team-lead, 2026-09-14]`
+> ⛔ **NOT TAKEN — because a better option existed on the night: JP walked a handset between cells.**
+> ⭐ **A call held up while a person walks is a mid-call handover BY CONSTRUCTION** — whereas a
+> threshold change risks the UE **RESELECTING AWAY** instead of relocating, ***and a reselection and
+> a relocation look the same from the core***, so the experiment could have produced a result that
+> read as success and was nothing of the kind.
+> ⚠️ **AND: the revert restores the SETTING, not the HANDSET.** **A UE that has reselected away does
+> not come back because you reverted.**
+> ✅ **KEEP IT: if a trigger is ever needed with nobody present, this is the route.**
+> ⛔ **BOUND BEFORE ANYONE RUNS IT: the threshold attribute class is a CORPUS ZERO** —
+> `qQualMin` · `qRxLevMin` · `sIntraSearch` · `sInterSearch` all return 0 across `CLAUDE.md`,
+> `docs/cards/` and `LAWS-INDEX`, **against a passing control (`cpichTxPower` = 21).** ⇒ **Nothing is
+> known about whether it applies LIVE or at CELL SETUP** — ⇒ **assume LOADED until measured.**
+
+---
+
 ## Instruments: what these attributes will and will not tell you
 
 > ### 🔴 `hnbGwConnectionCloseCause` is inert. It is not a verdict.
