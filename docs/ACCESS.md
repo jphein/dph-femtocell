@@ -747,9 +747,21 @@ iptables -I INPUT 1 -p tcp --dport 22 -j ACCEPT
 >    origin  https://github.com/nickvsnetworking/DPH153-AT.git          <- PUBLIC REPO
 > ```
 > ⇒ ⛔ **ANY UNIT PROVISIONED WITH THIS ACCEPTS ROOT SSH FROM A KEY ANYONE CAN `git clone`.**
-> ⇒ ⚠️ **`.244` IS PROBABLY ALREADY IN THAT STATE** — this very command is the recovered record of
-> it. **Its live `authorized_keys` has NOT been read; that is a one-line check and it has not
-> been done.**
+> ⇒ ✅ **MEASURED 2026-09-13 — `.244` IS IN THAT STATE, AND IT IS AN ACCEPTED RISK, NOT AN OPEN QUESTION.**
+> `[team-lead, read over .244's own root shell, TWICE. This block previously said the file had NOT
+>  been read; that was true when written and is now false.]`
+> ```
+> wc -l /var/ipaccess/root_home/.ssh/authorized_keys   -> 4
+> grep -oE "dph151-jp|pounce-rce"                      -> 1 dph151-jp · 1 pounce-rce  🔴 PRESENT
+> ```
+> ⇒ **151#1 accepts root SSH from a private key anyone can `git clone`. CONFIRMED ON THE DEVICE,
+> not inferred.**
+> ⇒ ✅ **JP WAIVED IT EXPLICITLY** — verbatim: ***"no wrorries about the public key"***. ⛔ **So do
+> NOT re-raise it as a finding, and do NOT remove the key on your own initiative: it is a decision
+> he has made, and `.244` is the unit that currently works.**
+> ⭐ **What survives regardless of his decision is the NAMING trap above** — the standing rule named
+> `selfclean_hook.sh`, the live artefact was `selfclean_hook_jp.sh`, and the `_jp` suffix reads like
+> the SAFE variant. ***Identity came from the hash.***
 > ### ☠️ **WHY THIS WAS NOT OBVIOUS, AND IT IS A NAMING TRAP**
 > **The standing rule in `2g/CLAUDE.md` names `selfclean_hook.sh` as the dangerous one. This is
 > `selfclean_hook_jp.sh` — ONE SUFFIX APART, and `_jp` reads like the SAFE variant.** ⛔ **It is the
