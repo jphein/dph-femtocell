@@ -81,10 +81,16 @@ picoChip.
 > `ip addr` / `ifconfig` on either side, or the boot log. They are factory-fixed, but write
 > down what *your* unit says rather than trusting any number in a guide, including this one.
 
-**The Ralink DNATs several TCP ports straight through to the picoChip.** On our unit that
-includes 22, 80, 8080 and 20000. ⇒ **The SSH you reach at the unit's LAN address is the
-picoChip's, not the Ralink's.** The Ralink's own SSH port is closed — because it has no SSH
-server at all (below).
+**The Ralink DNATs several TCP ports straight through to the picoChip.** ⇒ **The SSH you
+reach at the unit's LAN address is the picoChip's, not the Ralink's.** The Ralink's own SSH port
+is closed — because it has no SSH server at all (below).
+
+> ### ⚠️ **THE PORT LIST IS PER-UNIT — READ IT OFF YOUR OWN NAT TABLE, DO NOT INHERIT IT**
+> `[measured 2026-09-14: .244 forwards 22, 80, 8080, 20000; .106 forwards 22, 80, 8080 — no
+>  20000. lucid-console154, live `iptables -t nat -L PREROUTING -n`, both controls passing.]`
+> ⇒ **`set_port_fwd` is a settable verb, so the forwards ARE per-unit configuration.** A list
+> lifted from another unit's findings is a `.244` fact wearing a `.106` label — exactly the
+> device-scope error this corpus repeats most. **Enumerate; never assume the fourth rule is there.**
 
 > ⚠️ **"NO SSH" IS NOT "NO REMOTE SHELL" — TWO READERS MADE THAT LEAP ON 2026-09-13.**
 > **The Ralink has `telnetd`, and it is reachable.** See Route 3 below. **Do not read this

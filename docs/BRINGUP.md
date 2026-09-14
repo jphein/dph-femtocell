@@ -106,17 +106,37 @@ on the steps.
 udp 1024:65535   THE ONLY UNEXPLORED RANGE. The pico firewall permits it from .185.
                  ⛔ needs a real UDP client ⇒ do it FROM THE PICO. The Ralink's tftp gives
                     REACH, NOT ENUMERATION — an RRQ is answered only by a TFTP server.
-tcp 20000        ⭐ THE FOURTH DNAT, AND IT IS UNNAMED. "80, 22, 8080, 20000 all DNAT to
-                 192.168.157.186" [findings-dph151.md:113]. Three were worked all evening;
-                 20000 has never been touched.
+tcp 20000        🔴 RETRACTED 2026-09-14 — NOT A SURFACE ON .106. It is a .244 forward.
+                 Probed live: 10.0.6.106:20000 REFUSED, identically to the :9999 control.
+                 See the per-unit block below; do not put it back.
 tcp 3016 · 2345  OBSERVED LISTENING ON 0.0.0.0 — not loopback — on .244's pico.
                  ⇒ what becomes reachable on .106 the MOMENT its firewall opens.
 udp 5050         netannounce. ⚠️ CMHS-side (present in cmhs, absent in DslmSsp) ⇒ a hit is
                  NOT progress on the Inform problem. Reachability only.
 ```
-⇒ ⭐⭐ **`tcp 20000` is the sharpest of these: a DNAT we have had documented all along, on a unit
-we spent a night failing to reach through the other three.** ⇒ ***Three of four were worked to
-exhaustion and the fourth was never named out loud.***
+### 🔴 **`tcp 20000` RETRACTED AS A `.106` SURFACE — AND WHAT REPLACES IT IS WORTH MORE THAN THE PORT**
+`[lucid-console154, live nat table AND a probe on .106, 2026-09-14, with BOTH controls passing:
+ 192.168.157.185:23 succeeded (known-open) · 10.0.6.106:9999 refused (known-closed) ⇒ the
+ instrument discriminates. Device scope independently confirmed at the source by nebula-librarian3.]`
+```
+                  .244  (DPH-151 #1)        .106  (DPH-151 #2)
+  DNAT forwards   80, 22, 8080, 20000       80, 22, 8080          <- THREE RULES, NOT FOUR
+  source          findings-dph151.md:113    live nat table, measured 2026-09-14
+```
+⇒ ⛔ **`10.0.6.106:20000` refuses EXACTLY AS `:9999` DOES — because it IS like `:9999`: with no
+DNAT it lands on the Ralink, which has no listener and RSTs.**
+⇒ ⭐⭐⭐ **THE TWO UNITS DIFFER, AND *THAT* IS THE DURABLE FINDING: THE FORWARD TABLE IS PER-UNIT
+CONFIGURATION, NOT A MODEL PROPERTY.** ⇒ **NO PORT LIST TRANSFERS BETWEEN THESE UNITS.**
+✅ **Enumerate it on the unit in your hand:** `iptables -t nat -L PREROUTING -n` on its Ralink.
+⇒ ⭐ **AND IT TELLS US SOMETHING ABOUT A VERB NOBODY HAS DARED CALL:** somebody, at some point,
+set a forward on `.244` that `.106` lacks. ⇒ **`set_port_fwd` WORKS and its effect PERSISTS —
+learned from a difference between two units, without touching the verb.**
+☠️ **PROVENANCE, BECAUSE IT IS THIS CORPUS'S MOST-REPEATED ERROR: `findings-dph151.md` IS A `.244`
+FILE.** Its own header reads *"Lane: lucid-dph151 · 2026-09-04"* and its §1 reads `IP 10.0.6.244`.
+⇒ **A `.244` fact was read into a `.106` surface list, and I lifted it into this guide on that
+list's word — inside a document whose stated purpose is to stop people re-deriving things.**
+⭐ **It was caught ONLY BECAUSE IT WAS LIFTED** — i.e. read by someone other than its author.
+⇒ ***Copying a claim into a second home is not just propagation; it is the only review it gets.***
 
 > ### 📌 **THE THREE DMI DOORS IN DETAIL ARE IN PHASE 3 — POINTER, NOT A COPY**
 > **Each is closed for its own reason, which is the useful part: not one assumption carried across
@@ -161,7 +181,8 @@ will not load on another** (the image loader gates on PCB number and rejects a m
 > usable addresses:**
 > ```
 > 192.168.157.185   Ralink    OWNS THE LAN ADDRESS. Answers your ping. Runs the firewall.
->                             DNATs 22/80/8080/20000 onward to .186.
+>                             DNATs 22/80/8080 onward to .186. ⚠️ THE LIST IS PER-UNIT:
+>                             .244 also forwards 20000; .106 does NOT. Read your own nat table.
 > 192.168.157.186   picoChip  management + radio. THE CHIP YOU ACTUALLY WANT.
 > ```
 > ⇒ ⭐⭐⭐ **`nmap <lan-ip>` interrogates the RALINK'S face, where the firewall is up.** A filtered
