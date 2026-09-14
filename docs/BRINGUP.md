@@ -1,5 +1,28 @@
 # Bring-up: DPH-151 — from a boxed MicroCell to a call
 
+> ## 🔴 **WHICH RALINK BUILD IS THIS PROCEDURE FOR? — READ THIS BEFORE YOU LOG IN**
+> **Everything below that uses `guest` / `1qaz@WSX` describes a Ralink running `FW:1.0.34`.**
+> ⛔ **THE ACCOUNT SETS ON THE TWO BUILDS ARE *DISJOINT*, NOT OVERLAPPING:**
+> ```
+> FW:1.0.34   guest:…:1001:1001:guest:/tmp:/bin/sh   <- THE ENTIRE FILE. No root. No sshd.
+> FW:1.0.31   root:…:0:0:  +  sshd:…:0:0:            <- THE ENTIRE FILE. NO `guest` AT ALL.
+> FW:1.0.29   root + sshd, same as 1.0.31
+> ```
+> ⇒ ⛔ **On a 1.0.29/1.0.31 unit, `guest`/`1qaz@WSX` DOES NOT EXIST and the login is refused.**
+> ⇒ ☠️ **AND A FAILED LOGIN ON THIS DEVICE'S SINGLE-CLIENT `telnetd` IS INDISTINGUISHABLE FROM A
+> BRICKED BOARD** — so the first conclusion available to you is the worst one, and it is wrong.
+> ✅ **On 1.0.29/1.0.31 log in as `root`. On 1.0.34 log in as `guest`.**
+>
+> ### ✅ **CHECK THE UNIT IN FRONT OF YOU — ONE COMMAND, AND IT CANNOT GO STALE:**
+> ```sh
+> cat /etc_ro/version      # -> FW:1.0.34 --  Fri Apr 20 20:43:20 CST 2012
+> ```                      #    or FW:1.0.31 --  Thu Oct  6 09:37:21 CST 2011
+> ⭐ **The IMAGE states its own identity. This document cannot.** An undated, unversioned
+> procedure is *undetectably* stale: there is no anchor for a reader to compare against the
+> device, so nothing in the text can contradict a unit that has been re-flashed or bank-flipped.
+> ⚠️ **Dates in this file certify WHEN something was measured, never WHETHER IT STILL HOLDS.**
+
+
 > ## 1️⃣ **BEFORE STEP ONE — CONFIRM WHICH UNIT YOU ARE HOLDING: [`MATRIX.md`](MATRIX.md)**
 > **This guide is for the DPH-151: two SoCs (Ralink `.185` + picoChip `.186`) · live bank `config_bank_1` · **563** train**
 > ⇒ ⛔ **If your unit is not that, STOP — the other models differ in ways that have cost this
