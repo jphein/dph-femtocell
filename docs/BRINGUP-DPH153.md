@@ -80,6 +80,42 @@ answer for a finding that is not model-specific, and **is not the same claim.**
 
 ---
 
+## ✅ A WORKING REFERENCE **CONFIG SET** EXISTS — added 2026-09-14
+
+**It is the CORE side, not a device procedure, and that distinction is the whole value of it.**
+📌 **[`microcell/docs/reference/dph153-donor/`](../../microcell/docs/reference/dph153-donor/) — 23
+files, 24.8 MB, saved from `tempest`'s folder (Discourse topic 2625, post 41) on 2026-09-06.**
+⇒ **`cfgs/` holds seven Osmocom configs — `hnbgw · msc · sgsn · ggsn · hlr · mgw · stp` — from a
+deployment that carried a DPH-153.** ⭐ ***This project's own oldest law: the broken device tells
+you where it failed; the working one tells you what a correct request looks like.*** **We had never
+held a working reference config before.**
+
+### 🔴 **THE DIFFERENCES, AND ONE IS A LIVE UNTESTED LEAD**
+⛔ **POINTER, NOT A COPY — the full diff, with its bounds, is in that archive's `README.md`.**
+```
+                    THEIRS              OURS
+hnbap-allow-tmsi    1                   ABSENT      🔴 the difference worth testing
+cs7 instance 0      point-code 0.23.5   ABSENT      ⚠️ we rely on defaults
+                    sccp-address msc/sgsn
+iuh local-ip        EXPLICIT            EXPLICIT    ✅ corroborates our 2026-09-03 fix
+plmn                001 01 (ITU test)   999 99      ⚠️ a data point, NOT evidence against 999-99
+```
+⭐ **`hnbap-allow-tmsi 1` permits HNBAP UE Registration by TMSI rather than requiring IMSI** — and
+the archive's own note is the reason to care: ***"it lives exactly on the path a UE takes when
+first attaching through a NEW cell — which is the thing that has never once happened on our DPH."***
+⚠️ **BOUND, theirs: our nano3G carries UEs fine without it, so it is not fatal in general.**
+
+### ⛔ **WHAT THE ARCHIVE DOES *NOT* GIVE, STATED SO IT DOES NOT INFLATE THIS PAGE**
+**It contains NO device-side 153 procedure.** ⇒ **The hardware/root half is still the original
+author's published route, unreproduced here, exactly as the scope block above says.**
+⚠️ **AND DO NOT USE `151prov.pcapng` / `151full.pcapng` AS A POSITIVE CONTROL** — the archive's
+README retracts them: **150 mutual-TLS handshakes, ZERO application bytes, device-initiated FIN
+8.7 ms after the server's `Finished`.** ***An instrument that has never once shown a success.***
+📌 **Also in there: `csps.mp4`, a 124 s screen recording of that deployment carrying CS+PS** —
+Wireshark plus an SDR on the Band 5 uplink, a full attach, and real GTP-tunnelled traffic.
+
+---
+
 ## What would make this a real guide
 
 **One person bringing up a 153 against an Osmocom core and writing down what differed from the 151.**
