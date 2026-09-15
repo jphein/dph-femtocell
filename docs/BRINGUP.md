@@ -326,7 +326,15 @@ what fails when the operator's infrastructure is unreachable.
 > ⇒ IF BOTH ARE EMPTY, AN EMPTY MANAGEMENT POINTER CANNOT BE THE DIFFERENCE BETWEEN THEM.
 > ```
 > ⇒ ⛔ **The finding's cause — *"it has a bootstrap pointer and no management pointer"* — is refuted
-> BY THE WORKING UNIT.** ⚠️ **`dslg_cur_cfg` on `.244` is almost entirely the device describing
+> BY THE WORKING UNIT.**
+>
+> ### ✅ **AND THE CANDIDATE THAT REPLACES IT — [trap 72](TRAPS.md#72-two-physically-identical-dph-151s-one-registers-and-one-never-has--because-only-one-of-the-two-firmware-banks-ships-the-management-client)**
+> **A DPH-151 carries TWO complete firmware banks, and on the image examined only ONE of them
+> ships the management client** — the binary, its init script and its boot symlink are all
+> absent from the other. ⇒ **A unit booted from that bank cannot contact a management server no
+> matter how the network is arranged**, which predicts *every* symptom here including the empty
+> fields on BOTH units. ⚠️ **It is a CANDIDATE, not a diagnosis: which bank a particular silent
+> unit is running must be read from that unit's own boot log or filesystem.** ⚠️ **`dslg_cur_cfg` on `.244` is almost entirely the device describing
 > ITSELF** — module versions, GPS firmware, tamper flag — **not operator provisioning.**
 > ### ✅ **WHAT SURVIVES, AND IT IS STILL REAL — THE *OBSERVATION*, NOT THE *EXPLANATION***
 > **`.244` queries `cmhs*` names and dials three hosts; `.106` queries only `femtocell` and dials

@@ -145,6 +145,7 @@ written in prose here would be correct exactly once, and this file has already o
 > | "which config bank is live?" | [2](#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell) ⬅ **differs PER MODEL. Read it, never assume** |
 > | "my setting vanished after a reboot" | [18](#18-persistence-that-is-erased-seconds-after-it-is-applied), [19](#19-two-files-in-your-config-backup-are-live-runtime-state), [44](#44-a-boot-time-config-script-that-runs-and-does-nothing) |
 > | "I edited the config file" | [17](#17-a-config-file-that-is-a-decoy--referenced-everywhere-read-by-nothing) ⬅ it may be a decoy nothing reads |
+> | "one unit works, the identical one never has" | [72](#72-two-physically-identical-dph-151s-one-registers-and-one-never-has--because-only-one-of-the-two-firmware-banks-ships-the-management-client) ⬅ **only ONE of the two firmware banks ships the management client** |
 > | "packet data does not work" | [62](#62-packet-data-depends-on-an-address-that-exists-at-runtime-and-in-no-configuration-file), [63](#63-a-host-route-fixes-the-voice-symptom-and-cannot-fix-the-data-one-because-the-rejection-is-a-source-address-check) |
 >
 > ### 🧠 ABOUT THE WORK ITSELF
@@ -2955,3 +2956,85 @@ not documentation — it is a loaded menu.**
   `config_bank_$BANK/*`, so recovery is not a restore, it is a re-bring-up.
 - 📌 **`switch_fw_boot` is a third hazard hiding in plain sight**: a bank flip is STICKY and the
   AP does not return on its own.
+
+## 72. Two physically identical DPH-151s, one registers and one never has — because only one of the two firmware banks ships the management client
+
+**SYMPTOM.** You own two units of the same model. One provisions, registers and serves. The other
+answers ICMP, completes TLS to your management server, and then does nothing — forever. Every
+external check says the hardware is fine, and nothing you configure changes it.
+`[the firmware facts below are read from a flash image offline; the behaviour is observed on
+ hardware. Which of the two applies to YOUR silent unit is the one thing you must establish
+ yourself — see the bound at the end.]`
+
+### 🔎 A DPH-151 CARRIES **TWO COMPLETE FIRMWARE BANKS**, AND THEY ARE NOT THE SAME SOFTWARE
+```
+mtdparts: ...256K(uBoot),256K(env),2M(kernel1),2M(kernel2),3584K(config),
+          27M(FS1),27M(FS2),256K(oem_divert1),256K(oem_divert2),...
+```
+**Two 27 MB filesystems, each with its own kernel.** On the image examined here they are two
+*different builds*, and the difference is not cosmetic:
+
+```
+                              FS1                         FS2
+self-reported version         563.21.8                    491.44.1
+/opt/cisco/control Version    8.1.2bc21                   7.1.0bc8
+/opt/cisco/cmhs   (BINARY)    present                     🔴 ABSENT
+/etc/init.d/rmmcmhs           present                     🔴 ABSENT
+/etc/rcS.d/S08rmmcmhs         present                     🔴 ABSENT
+```
+⇒ ⭐⭐⭐ ***ONE BANK HAS NO MANAGEMENT CLIENT AT ALL.*** **Not disabled, not misconfigured — the
+binary, its init script and its boot symlink are all missing.** ⛔ **A unit booted from that bank
+cannot contact a management server no matter how the network is arranged, because nothing on it is
+built to try.**
+📌 **The `diff` between the two `init.d` trees is THREE entries. One of them is the client's
+starter.** ⇒ **This is not broad version drift where anything might differ; it is a narrow,
+deliberate difference.**
+
+### ⭐ AND THE UNIT SHIPS THE ADDRESSES IT NEVER USES, WHICH IS WHAT MAKES IT CONFUSING
+`cisco/cmhs_def_cfg.txt` — **byte-identical across every image examined** — carries a
+`DefaultServerURLs` list of **eight** management hostnames, plus the separate bootstrap/CDP base
+URL. ⇒ **So the silent unit is not missing configuration and is not failing to learn anything.**
+⇒ ***It holds eight addresses for a client that is not installed.*** **A reader who checks the
+config finds it complete and correct, which points away from the real cause.**
+
+### ⛔ WHY NO AMOUNT OF NETWORK WORK FINDS THIS
+**Both banks run the same kernel major/minor (2.6.28, same SoC variant), differing only in a build
+suffix that never appears on the wire.** ⇒ **No remote fingerprint separates them — not IP-ID
+behaviour, not ICMP rate-limiting, not TCP options. There is no kernel-era difference to find.**
+⇒ 🎯 ***THE BANK QUESTION IS A FILESYSTEM QUESTION AND ALWAYS WAS.*** **Stop probing and read the
+device's own report.**
+
+### 🔧 WHICH BANK IS RUNNING — AND HOW IT MOVES WITHOUT ANYONE ASKING
+```
+check_bank = if test -z $bank; then setenv bank 1; fi
+bootflash  = run check_bank; if test $bank -eq 1; then run set_args_1; else run set_args_2; fi; \
+             run flash_args; bootm $kernel_addr || run altbootcmd
+altbootcmd = run check_bank; if test $bank -eq 1; then run set_args_2; else run set_args_1; fi; ...
+bootlimit  = 4
+```
+⇒ **The selector is a single U-Boot variable, and the whole change is `setenv bank 1; saveenv; reset`.**
+⇒ ☠️ ***`bootlimit=4` MEANS U-BOOT FLIPS TO THE OTHER BANK BY ITSELF AFTER FOUR FAILED BOOTS.***
+**So a unit that shipped on the good bank and hit a bad patch can be moved to the other one BY ITS
+OWN BOOTLOADER and stay there.** ⭐ **Nobody did anything wrong, no setting was changed, and the
+device is now running software that cannot do its job.**
+
+### ⚠️ AND DO NOT FLIP IT BLIND
+**If the unit is on the second bank *because the first one was failing to boot*, flipping back
+gives you a boot loop rather than a working cell.** ⇒ ✅ **The boot log records the cause. Read it
+before you write anything** — the same serial session that shows you the bank tells you whether
+moving it is safe.
+
+### ✅ WHAT TO DO
+- **Get the boot log.** The U-Boot banner and the kernel image name identify the bank *and* the
+  build, and settle in one line what no network probe can.
+- **Check for the client, not for connectivity.** `ls /opt/cisco/cmhs` and
+  `ls /etc/rcS.d/ | grep cmhs` answer the question directly. A missing starter is the whole story.
+- ⛔ **Do not conclude from "it completes TLS and says nothing" that your server is wrong.** That is
+  exactly what a unit with no client installed looks like from the server side, and it is
+  indistinguishable from a dozen server-side faults you will chase first.
+
+### ⛔ THE BOUND, STATED PLAINLY
+**The firmware facts above are measured from a flash image. That any PARTICULAR silent unit is
+running the client-less bank is a CANDIDATE with a very good fit — it predicts every symptom — and
+it is NOT established without reading that unit's own boot log or filesystem.** ⚠️ **Do not repeat
+it as a diagnosis you have made; repeat it as the first thing to rule out.**
