@@ -196,25 +196,6 @@ Two honest positions:
   antenna, and containment to a single room or a shielded enclosure — accepting a risk
   knowingly rather than not knowing there is one.
 
-> ### ⚠️ And the pragmatic route has a failure mode that turning the power down makes *worse*
-> Containment gets reasoned about as **your downlink** — how far your cell reaches, who can hear
-> it. But a cell also **advertises** its transmit power, and handsets set their own uplink power
-> from that advertisement rather than from anything they measure. ⇒ **Reduce what you radiate
-> without correcting what you advertise and the gap widens, so every handset in range is told to
-> transmit *harder*.**
->
-> ⭐ **The containment step itself can increase the interference you cause**, in a direction the
-> plan does not look. **Minimum power and a shielded box do not address it** — the transmitter
-> concerned is not yours, and it is outside the box.
-> [Trap 50](docs/TRAPS.md#50-the-handset-finds-the-cell-shows-it-and-will-not-connect--because-you-are-lying-to-it-about-your-power)
-> has the mechanism and the vendor's own wording for it, together with an honest note that our
-> two derivations of the magnitude disagree.
-
-⭐ **The two goals are in direct conflict and it is worth saying so plainly: you cannot have
-house-wide coverage *and* RF containment.** If your requirement moves from "a bench" to "the
-whole house", that is not a power setting — it is a different decision, and it deserves to be
-re-made rather than inherited.
-
 Nothing here is legal advice. Rules differ by country; find out which apply to you.
 
 ## Scope: your hardware, your core
