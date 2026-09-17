@@ -251,16 +251,6 @@ let that through, and the second is the interesting one:
 It now checks the rule against heading/anchor pairs **measured** from rendered documents that
 do contain the awkward cases, rather than against this repo's own convenient sample.
 
-⚠️ **And one discipline that is not a tool, because no tool caught it.** Two edits here failed in
-mirror-image ways two commits apart: one **corrected** a wrong claim in a single guide and left
-it standing in two others; the other **added** a section that already existed elsewhere, because
-the check was *"is it in this file"* rather than *"is it in this repo"*. ⇒ **The rule is grep the
-corpus, not grep carefully.** Neither grep was careless — both were correct and answered the
-question they were given — and **scope is not something care fixes.**
-📌 Written up as [trap 52](docs/TRAPS.md#52-you-corrected-the-fact-and-the-stale-copy-now-reads-as-corroboration), because the failure is asymmetric: **a partial correction is
-worse than none.** The stale copy is promoted to *independent corroboration* by the act of fixing
-its sibling, so a reader who cross-checks comes away **more** confident in the error.
-
 ## Prior art
 
 The foundation is **fail0verflow's 2012 DPH-151 work** (UART header, SSH password,
