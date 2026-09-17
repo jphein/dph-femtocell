@@ -57,7 +57,7 @@ on the steps.
 
 ---
 
-> ## 🎯🎯 **STEP 1 IS ROOT SSH ON BOTH CHIPS. EVERYTHING ELSE WAITS ON IT.**
+> ## 2️⃣ 🎯 **THE GOAL OF PHASES 0–3 IS ROOT SSH ON BOTH CHIPS. EVERYTHING ELSE WAITS ON IT.**
 > `[JP, 2026-09-13: **"get root ssh on both chips is the first step"** · **"you have to get shell
 >  in order to make them work so the guide is wrong"**]`
 > ```
@@ -238,8 +238,32 @@ the unit; it only teaches *your* host where the Ralink's internal address lives.
 Then:
 
 ```sh
-telnet 192.168.157.185          # login: guest   password: 1qaz@WSX
+telnet 192.168.157.185
 ```
+
+> ### 🔴 **THE LOGIN DEPENDS ON THE BUILD, AND THIS STEP USED TO NAME ONLY ONE OF THEM**
+> **This line read `# login: guest password: 1qaz@WSX` until 2026-09-17 — which contradicted the
+> banner at the top of THIS FILE, where the account sets are recorded as DISJOINT.**
+> ```
+> FW:1.0.34            guest / 1qaz@WSX      <- no root account at all
+> FW:1.0.31 · 1.0.29   root  / gemtekro      <- NO `guest` account at all
+> ```
+> ⇒ ⛔ **A reader on a 1.0.31 unit was being handed the one credential pair that cannot work there,
+> and a failed login on this single-client `telnetd` is indistinguishable from a bricked board.**
+> ⭐ **Read `cat /etc_ro/version` FIRST and pick the pair.** `[verified 2026-09-17 on a FW:1.0.31
+> unit: `root`/`gemtekro` opens a BusyBox v1.8.2 shell; the banner's account table is correct.]`
+> 📌 **`gemtekro` is a CRACKED HASH, not a vendor-published default** — Gemtek is the ODM, `ro` is
+> `ro`(ot). ⚠️ **It is not guaranteed on every unit; if it fails, the hash is per-build, not per-device.**
+> ☠️ **This is this corpus's own law firing on this file: a correction that updates one mention of a
+> fact leaves the others reading as confirmation.** **The banner was added and this step was not.**
+
+> ### ⚠️ **AND THE BIND ADDRESS IS *INTERNAL ONLY* — MEASURED, BECAUSE IT LOOKS LIKE A DEAD UNIT**
+> ```
+> 10.0.6.106:23        closed      <- the LAN address. Nothing listens here.
+> 192.168.157.185:23   OPEN        <- the SAME CHIP, its internal address
+> ```
+> ⇒ ⭐ **Port-scanning the unit's LAN address tells you telnet is shut. It is not — it is bound
+> elsewhere on the same silicon**, which is why Step 1c comes AFTER this and not before.
 
 ⇒ **If that opens, you have a shell on the gateway SoC and you do not need serial, the port scan,
 or the backdoor.** For a clean root shell in one step, the corpus already ships the tool:
