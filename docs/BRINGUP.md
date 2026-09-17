@@ -275,9 +275,18 @@ or the backdoor.** For a clean root shell in one step, the corpus already ships 
 `[MEASURED 2026-09-13 on .106: root, BusyBox v1.8.2 (2012-04-20).]`
 Root without it: `rmm_client 192.168.157.185 cs_cmd "<command>"`.
 
-### 🚪 **TWO DOORS INTO THE RALINK, AND THEY ARE NOT INTERCHANGEABLE**
+### 🚪 **THREE NETWORK DOORS INTO THE RALINK, AND THEY ARE NOT INTERCHANGEABLE**
 
-**Both give root ON THE RALINK. Neither gives you the picoChip.** ⭐ **Pick by what you have.**
+**All give root ON THE RALINK. None gives you the picoChip.** ⭐ **Pick by what you have.**
+
+> ### 🔴 **THIS SECTION SAID "TWO DOORS" FOR ITS FIRST HOUR. IT IS THREE.**
+> **I split `telnet` and `wizard` out of a one-line summary and left the THIRD mechanism inside
+> it** — `rmm_client <ralink> cs_cmd "<command>"`, which ACCESS.md's route table calls *"IPC
+> injection"*. ⇒ ☠️ **I fixed a conflation at one level and reproduced it one level down**, which
+> is this corpus's own *"a correction that updates one mention leaves the others reading as
+> confirmation"*, committed inside the correction itself.
+> ⭐ **And `rroot.py` is NOT a fourth door** — it is a wrapper around `cs_cmd`. **Counting it
+> separately inflates the list the same way the summary line deflated it.**
 
 | | **telnet** | **the `wizard` UDP backdoor** |
 |---|---|---|
@@ -288,6 +297,25 @@ Root without it: `rmm_client 192.168.157.185 cs_cmd "<command>"`.
 | proving it worked | you read the output | ⛔ **by SIDE EFFECT only** — fail0verflow's own method was *making the device ping them* |
 | a port scan sees | `closed` on the LAN address, **open on the internal one** | **`open\|filtered` — and it can never read otherwise** |
 | present on | every build here | `/bin/wizard` — **present on FW:1.0.31, verified 2026-09-17** |
+
+### 🚪 **THE THIRD DOOR: `rmm_client … cs_cmd` — "IPC injection"**
+
+```
+rmm_client 192.168.157.185 cs_cmd "<command>"        runs as root on the Ralink
+~/Projects/microcell/keys/dph151/rroot.py 'id'       a WRAPPER around the same verb, not a 4th door
+```
+⭐ **No telnet credentials needed, and unlike the wizard it is not blind.** ⛔ **But `rmm_client`'s
+verb list also contains `factory_reset` and `crash`** — [`Trap 71`](TRAPS.md) — **so a typo in the
+verb field is a different category of accident from a typo in a shell.**
+⚠️ **This project prohibits firing `rmm_client` verbs for that reason.** **It is documented because
+it works and because a reader will find it; it is not the door to reach for first.**
+
+### 📻 **AND TWO PHYSICAL DOORS, FOR COMPLETENESS**
+```
+serial console  ttyS1 57600     UART header  (fail0verflow, 2012)
+```
+⚠️ **Both need the case open, which on a DPH-154 trips a one-way tamper latch — not an issue on a
+151, but do not carry the habit across.**
 
 > ### ⭐⭐ **PREFER TELNET WHENEVER YOU HAVE THE CREDENTIALS.**
 > **An interactive shell with output is strictly better than blind execution on the same chip with
