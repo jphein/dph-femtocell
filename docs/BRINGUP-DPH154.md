@@ -35,14 +35,44 @@ The 154 is the hardened one. Every direct door is shut, and each of these was **
 
 | door | state |
 |---|---|
-| the `wizard` **UDP** backdoor (works on older siblings) | 🔴 **NOT MEASURED — see below** |
+| the `wizard` **UDP** backdoor (works on older siblings) | ✅ **tested, did not work — and the image does not ship the handler** |
 | anything listening | **13 ports probed, 13 closed** — and they are **ICMP-unreachable rejects**, the signature of a **firewall rule**, not of absent listeners |
 | catching it phone home and answering as its server | **initiated nothing at all in 60 s of passive capture** |
 | a public firmware dump to analyse | none exists, and the only software dump path **requires the access it would provide** |
+| the software-download path, tried directly | ✅ **tested by JP, did not work** — see the fenced section at the foot of this page |
 
 ⇒ **Public exploits are 2012–2018 and target the 151/153. This is a 2019 build.**
 
-> ### 🔴🔴 **CORRECTION 2026-09-16 — THE FIRST ROW WAS MEASURED WITH THE WRONG PROTOCOL**
+> ### ✅ **RESOLVED 2026-09-16 — THE CONCLUSION HOLDS, AND IT NOW HAS EVIDENCE THAT SUPPORTS IT**
+> **JP, who ran the attempts:** *"the wizard UDP backdoor → port 14677 closed, we tested this and we
+> tested the software download and got neither to work — but yes, if you can't find the test then we
+> can't mark it tested."*
+> ⇒ ⭐⭐⭐ **And the reason it could not have worked is now measured STATICALLY, with a passing
+> positive control and without probing any device:**
+> ```
+> "BackdoorPacketCmdLine"  (the fail0verflow protocol verb), via strings(1):
+>    a Ralink rootfs that HAS the backdoor    2 hits   ✅ POSITIVE CONTROL
+>    the DPH-154's own rootfs                 0 hits   ⬅ A REAL ABSENCE
+> ```
+> ⇒ ✅ **The 154 image does not contain the wizard backdoor's protocol handler.**
+> ⛔ **BOUNDS: that rootfs is ONE filesystem from a 12-partition NAND dump, and a REIMPLEMENTATION
+> under a different verb is not excluded.** **It shows the fail0verflow verb is absent — not that no
+> UDP door exists.**
+>
+> ### ☠️ **AND TWO INSTRUMENTS FAILED ON THE WAY TO THAT LINE — BOTH SILENTLY**
+> ```
+> 1. the ORIGINAL wall:  TCP 22 23 80 443 7547 8080 8090 14677 -> all closed
+>    ⛔ the wizard backdoor is UDP. A TCP scan of a UDP service reads "closed" either way —
+>       AND ITS CONTROL PASSED (RST not filtered), because the scanner genuinely worked.
+> 2. grepping for the PORT: "14677" -> 0 hits on EVERY tree, INCLUDING ones that have the listener.
+>    ⛔ the port is a compiled integer (0x3955), not ASCII. That zero looks like corroboration
+>       and carries nothing.
+> 3. and grep -rl for the VERB -> 0 even on the control tree. strings(1) found it. Use strings.
+> ```
+> ⇒ ⭐⭐⭐ ***A CONTROL PROVES YOUR INSTRUMENT WORKS. IT SAYS NOTHING ABOUT WHETHER YOU AIMED IT AT
+> THE RIGHT THING — OR WHETHER THE THING YOU SEEK SURVIVES COMPILATION AS TEXT.***
+> ⭐ **The protocol VERB is a string and survives; the PORT is an integer and does not. Same target,
+> two searches, only one of them can answer.**
 > **The `wizard` backdoor is UDP.** `dph151-backdoor.py` sends `sock.sendto("BackdoorPacketCmdLine_Req …", (ip, 14677))`.
 > ```
 > what was actually run:   TCP 22 23 80 443 7547 8080 8090 14677  ->  all closed
@@ -52,11 +82,11 @@ The 154 is the hardened one. Every direct door is shut, and each of these was **
 > ⭐⭐ **And the control PASSED — the scanner was working perfectly, on the wrong protocol.** ⇒
 > ***A positive control proves your instrument works; it says nothing about whether you pointed it
 > at the right thing.***
-> ✅ **The honest state: UDP/14677 on a DPH-154 is UNMEASURED, not measured-closed.**
-> 📌 **It is probably moot** — the wizard backdoor lands on the **Ralink**, and a 154 has none
+> ✅ **AND IT IS DOUBLY SHUT:** the wizard backdoor lands on the **Ralink**, and a 154 has none
 > ([`Trap 73`](TRAPS.md#73-dph-151-vs-dph-154--three-exploits-share-one-name-the-cwmp-label-is-on-the-telnet-one-and-which-are-even-available-depends-on-the-model)).
-> ⚠️ **But "probably moot" and "measured closed" are different claims, and only one of them was
-> ever in this table.**
+> ⚠️ **The lesson kept: "tested and it failed", "measured closed" and "structurally impossible" are
+> three different claims. This table asserted the second on evidence for none of them — and the
+> first and third are both true, which is why nobody noticed.**
 ⭐ **So you do not attack the PERIMETER. You become the thing it is waiting for — and then you
 attack ONE FIELD, from inside the conversation it opened to you voluntarily.**
 ⚠️ **Both halves matter.** Phase 1 alone gets you a management session and nothing more; Phase 2
