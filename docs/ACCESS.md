@@ -616,13 +616,31 @@ and an append with no atomicity.**
 > that flag IS an NV variable ⇒ set by writing nv_env.sh
 > and the diagnosticTuning route to nv_env.sh ⇒ REQUIRES DMI
 > ```
-> ⇒ ☠️☠️☠️ ***YOU CANNOT ENABLE DMI THROUGH THE ROUTE THAT REQUIRES DMI.***
+> ⇒ ☠️☠️☠️ ***YOU CANNOT OPEN THE `:8090` LISTENER THROUGH THE ROUTE THAT REQUIRES IT.***
 > `[corroborated: nothing else in either rootfs sets the flag — the only occurrence in the 154 tree
 >  is the gate READING it — and it is absent from all four nv_env.sh files held, 0 occurrences each]`
-> ⇒ ⭐ **So `diagnosticTuning` is a SECOND-STEP CONVENIENCE, not a first-step route.** **On the
-> nano3G, DMI `:8090` listens by default and this is immediately usable. On a DPH-151 it does not,
-> and reaching it costs a CWMP session plus a reboot — which is not cheaper than the route the 151
-> guide already documents.** 📌 [`BRINGUP.md`](BRINGUP.md) ROUTE 3.
+>
+> ### ⭐⭐⭐ **BUT `:8090` IS NOT THE ONLY DOOR TO DMI, AND THE TWO ARE MODEL-SPECIFIC**
+> **Two files in this corpus looked contradictory — one calls a DPH-151's DMI console *"open,
+> unauthenticated"*, the other has `:8090` shut on both 151s. Both are right; they name DIFFERENT
+> TRANSPORTS to the SAME console.**
+> ```
+> nano3G     DMI over TCP :8090            gated on ENV_START_DMI_TELNET -> the loop above binds
+> DPH-151    DMI via `ipa-dmi -c`          ⛔ NOT telnet, NOT :8090 — "the nano3G method does
+>                                             not apply". And the 151's Ralink has NO DNAT for
+>                                             8090, so it is unreachable from the LAN whatever
+>                                             the picoChip does.
+> ```
+> ⇒ ⭐⭐ **So on a DPH-151, `ipa-dmi -c` runs ON the picoChip — which means it is available once you
+> ALREADY HAVE A SHELL THERE, and not before.**
+> ⇒ ✅ **THE CORRECTED CONCLUSION, same as before but for the right reason:** **`diagnosticTuning`
+> is a POST-SHELL CONVENIENCE on a 151, not a way in.** ⛔ **It is a genuine first-step route only on
+> the nano3G, where `:8090` listens and is reachable.** 📌 **The 151's way in stays
+> [`BRINGUP.md`](BRINGUP.md) ROUTE 3.**
+> ### ⚠️ **AND THE GENERAL LESSON, WHICH COST TWO LANES AN HOUR TONIGHT**
+> ***"Has DMI" is not one predicate.*** **A console can be reachable by one transport and not
+> another on the same unit, and "the DMI console is open" is true or false depending which you
+> meant.** ⭐ **Name the TRANSPORT, not just the console.**
 
 > ### ⛔ **IT IS A WHOLE-LIST REPLACE — 32 ENTRIES, STRIDE 168 BYTES**
 > **`memcpy(buf, incomingValue, 0x1504)` = 4 + 32×168.** ⇒ **Writing the list without reading it
