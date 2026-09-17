@@ -285,6 +285,24 @@ published "clean up these processes" list caused a reboot.
 
 ## Route 3 — the Ralink gateway
 
+> ### 🚪 **THIS ROUTE IS *TWO DOORS*, AND THIS PAGE USED TO LIST THEM AS ONE LINE**
+> **The summary table above reads `telnet · guest/pw · IPC injection · wizard UDP 14677` as a single
+> entry.** ⛔ **They are not one thing, and the difference decides which you can use:**
+> ```
+> telnet  tcp 23   NEEDS CREDENTIALS (build-dependent)   -> INTERACTIVE shell, WITH OUTPUT
+> wizard  udp 14677  NO credentials at all               -> BLIND exec. Replies to hardcoded
+>                                                            multicast 234.2.2.7, never to you.
+> ```
+> ⭐⭐ **PREFER TELNET WHENEVER YOU HAVE THE CREDENTIALS** — an interactive shell beats blind
+> execution on the same chip at the same privilege. ⚠️ **The backdoor sounds more capable and is
+> less capable.** ⇒ **It is for the case telnet is not available: wrong build, unknown password, or
+> `telnetd` not running.**
+> ⛔ **AND NEITHER REACHES THE picoChip.** `wizard` is a MIPS binary on the Ralink's own filesystem,
+> and the Ralink cannot reach the pico's filesystem by any route `[measured with root, 2026-09-14]`.
+> 📌 **Full comparison, with the port-scan behaviour and how to prove blind execution worked:**
+> [`BRINGUP.md`](BRINGUP.md) → *TWO DOORS INTO THE RALINK*. **Pointer, not a copy.**
+
+
 **The Ralink has no SSH server as shipped.** `[read from both extracted rootfs banks of a
 firmware image — ⚠️ this is a read of the IMAGE, not of a live device. If something was
 installed at runtime this read would look identical and be wrong.]` The `/etc/ssh` directory

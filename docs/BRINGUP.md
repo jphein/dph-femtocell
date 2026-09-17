@@ -275,6 +275,42 @@ or the backdoor.** For a clean root shell in one step, the corpus already ships 
 `[MEASURED 2026-09-13 on .106: root, BusyBox v1.8.2 (2012-04-20).]`
 Root without it: `rmm_client 192.168.157.185 cs_cmd "<command>"`.
 
+### 🚪 **TWO DOORS INTO THE RALINK, AND THEY ARE NOT INTERCHANGEABLE**
+
+**Both give root ON THE RALINK. Neither gives you the picoChip.** ⭐ **Pick by what you have.**
+
+| | **telnet** | **the `wizard` UDP backdoor** |
+|---|---|---|
+| port | **tcp 23**, bound to the **internal** address | **udp 14677** |
+| needs credentials | ✅ **yes** — and they are **build-dependent** (see above) | ⛔ **no. None.** |
+| you get | ⭐ **an INTERACTIVE shell, with OUTPUT** | ⚠️ **BLIND execution — one command, no reply to you** |
+| why blind | — | **it answers to hardcoded multicast `234.2.2.7`, NEVER to the sender** |
+| proving it worked | you read the output | ⛔ **by SIDE EFFECT only** — fail0verflow's own method was *making the device ping them* |
+| a port scan sees | `closed` on the LAN address, **open on the internal one** | **`open\|filtered` — and it can never read otherwise** |
+| present on | every build here | `/bin/wizard` — **present on FW:1.0.31, verified 2026-09-17** |
+
+> ### ⭐⭐ **PREFER TELNET WHENEVER YOU HAVE THE CREDENTIALS.**
+> **An interactive shell with output is strictly better than blind execution on the same chip with
+> the same privileges.** ⇒ ⛔ **The wizard is for the case telnet is NOT available** — wrong build,
+> unknown password, or a unit whose `telnetd` is not running.
+> ⚠️ **Do not reach for the backdoor because it sounds more capable. It is less capable.**
+
+> ### ⛔ **AND NEITHER ONE REACHES THE picoChip**
+> **`wizard` is a MIPS binary on the Ralink's filesystem, and the Ralink cannot reach the pico's
+> filesystem by any route** `[measured with root, 2026-09-14]`. ⇒ **The pico is Phase 3, and its
+> routes are a SEPARATE SET** — CMHS/XMPP, `rmm_client`, or the ACS software-download path.
+> 📌 **Tool for the wizard path, already written:** `microcell/tools/dph151-backdoor.py`
+> (negative control first, denominators printed, execution proven by side effect).
+
+> ### 📌 **A U-BOOT VARIABLE NAMED `backdoor` IS NOT THIS, AND PROBABLY NOT WORTH TOUCHING**
+> **`.106`'s U-Boot env carries `backdoor=0`** `[read 2026-09-17]`. ⛔ **NOTHING in the Ralink's
+> userland reads it** — `grep -rl backdoor /etc_ro /sbin /bin /usr` is empty, against a passing
+> control — **and it is absent from `/proc/cmdline`.** ⇒ **It is consumed by U-Boot itself, at
+> bootloader stage.** ⚠️ **So setting it changes how the unit BOOTS, on hardware whose recovery is a
+> serial console at `ttyS1 57600`** — **in exchange for, at most, a door you already have.**
+
+---
+
 ### Step 1c — only now, knock — and know what each answer means
 
 ```sh
