@@ -3116,3 +3116,47 @@ the kernel image name settles the platform:   Linux-3.0.0-ip30xxff-xc-*   ->  pi
 
 📌 **The DPH-154's working route is B, over the session the device opens to you:**
 [`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) Phase 2.
+
+
+## 74. DPH-151 — `AUTOCONFIGSERVER_URL` and `ENV_BASICOAM_SERVER_URL` are different variables in different files, and the permissive one is unreachable by construction
+
+`[JP reached for this by memory as "CONFIGSERVER_URL" while reviewing the 154 guide. There is no
+ such variable; there are two, one prefix apart, and only one of them is a route.]`
+
+**`basicoamcommon` reads the Basic-OAM server from TWO places:**
+```
+:62   BOAM_SERVER = getVarVal /var/ipaccess/basic_oam.dat  AUTOCONFIGSERVER_URL
+:67   if [ "$ENV_BASICOAM_SERVER_URL" != "" ]              <- from nv_env.sh
+```
+
+| | `AUTOCONFIGSERVER_URL` | `ENV_BASICOAM_SERVER_URL` |
+|---|---|---|
+| lives in | `/var/ipaccess/basic_oam.dat` — **a file** | `/var/ipaccess/nv_env.sh` — **the NV environment** |
+| protocol | ✅ **accepts plain `http`** | ⛔ **`https` ONLY** — *"only https protocol supported"* |
+| can you set it remotely? | 🔴 **NO — it needs the filesystem write it would give you** | ✅ **yes, via the NV-write routes** |
+
+> ### ⭐⭐⭐ **THE PERMISSIVE SETTING IS BEHIND THE DOOR; THE REACHABLE SETTING IS THE STRICT ONE.**
+> **The corpus states the circularity in one line:** *"`AUTOCONFIGSERVER_URL` does accept `http`, but
+> that file lives on the filesystem we cannot yet write, **so it is circular**."*
+> ⇒ ⛔ **So the variable that would let you stand up a plain-HTTP server is the one you can only
+> reach AFTER you are already in.** ⚠️ **That is not a coincidence — it is the shape of the design,
+> and it is why a plan built around "just point it at my http server" dies on contact.**
+> ✅ **If you go this way at all, the reachable variable is `ENV_BASICOAM_SERVER_URL` and you will
+> need a real HTTPS endpoint, with the certificate questions that brings.**
+
+### ⛔ And on a DPH-154 this is the WRONG FAMILY ENTIRELY — the working write DISABLES Basic OAM
+
+```
+AUTOCONFIGSERVER_URL   9 hits in a DPH-151 image · 0 in the DPH-154 rootfs
+                       ⚠️ BOUND: that rootfs is ONE filesystem of a 12-partition NAND dump
+the 154's actual write:  ENV_BASICOAM_DISABLED: TRUE
+```
+⇒ ⭐ **On the 154 you TURN BASIC OAM OFF — stopping the unit phoning its real operator — and take
+root through `ENV_XKINIT` in the same `Tuning` write.** ⛔ **You do not repoint it.**
+📌 [`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) Phase 2 has that write in full.
+
+### ✅ The check
+
+⭐ **Two variables one prefix apart, in two files, with opposite protocol rules and opposite
+reachability.** ⇒ ***Name the FILE the variable lives in, every time you name the variable.***
+**"The config server URL" is ambiguous between a route and a dead end.**
