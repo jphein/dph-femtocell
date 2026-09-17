@@ -556,6 +556,59 @@ that is what sourcing a shell file means.
 `$( )` runs in a **subshell**, so it cannot change the environment of the parent. Altering an
 NV variable means editing the **file** and booting **again**.
 
+### ⭐⭐⭐ A THIRD write path on the SAME console, and it is strictly stronger: `diagnosticTuning` (2320)
+
+> ### 🔴 **ADDED 2026-09-16. THIS DOCUMENT TAUGHT THE NARROW PRIMITIVE AND OMITTED THE GENERAL ONE.**
+> **`crlServerBaseUrl` lets you inject into the VALUE of ONE variable you did not choose.**
+> **`diagnosticTuning` lets you choose the variable NAME.** ⇒ **Same console, same sink, more reach.**
+
+**It is a vendor debug hook taking an arbitrary `name`/`value` list.** `[read end to end from
+`ipa-mgr_app` 563.16.0 — the attribute-set dispatcher at `cmp r5,#2320`]`
+
+```
+set diagnosticTuning=({name=ENV_VERBOSE_CONSOLE_ENABLED,value=TRUE})
+```
+
+**The dispatcher walks the list and branches on what the NAME CONTAINS:**
+```
+name contains "ENV_"              -> setNvEnvVar()   -> /var/ipaccess/nv_env.sh
+name contains "CLI_STARTUP_CMD"   -> CreateSignal(0x505) -> SendSignal(partner 5)
+name contains "CLI_IMD_CMD"       -> CreateSignal(0x504) -> SendSignal(partner 5)
+```
+⇒ ⭐⭐ **So there are TWO primitives behind one attribute** — an NV-environment write and a
+**command-signal dispatch** — and the second has nothing to do with `nv_env.sh` at all.
+
+**And the NV write has the same missing quoting discipline as the route above:**
+```
+setNvEnvVar(name, value, variant):
+    snprintf(newline, 1024, "export %s=\"%s\"\n", name, value)
+    ... strstr(line,"export NAME=") ? replace : copy ...  no match anywhere -> APPEND
+    rename(tmp_nv_env.sh -> nv_env.sh)
+```
+⇒ **`%s` twice, into a shell file that is sourced as root.** ⭐ **Note it writes via a temp file and
+`rename()` — an ATOMIC swap, unlike the `setnv_env.sh` script path, which does two `sed -i` passes
+and an append with no atomicity.**
+
+> ### ⛔ **IT IS A WHOLE-LIST REPLACE — 32 ENTRIES, STRIDE 168 BYTES**
+> **`memcpy(buf, incomingValue, 0x1504)` = 4 + 32×168.** ⇒ **Writing the list without reading it
+> first silently drops every entry you were not thinking about** — ⚠️ **including the one holding
+> your own access open.** ✅ **`get diagnosticTuning` first, every time.**
+
+> ### ⚠️ **AND THE PAYLOAD IS DORMANT ON ARRIVAL — THIS IS WHERE PEOPLE CONCLUDE IT FAILED**
+> **The write APPENDS to `nv_env.sh` and does nothing else.** ⛔ **It does not source, restart or
+> signal anything.** ⇒ **You inject, you watch, and nothing happens — because it is sitting armed.**
+> ✅ **Trigger it deliberately. A LOGIN is the cheapest trigger** — `/etc/profile` sources
+> `nv_env.sh` **unconditionally**, with no root guard and no variant guard.
+> ⭐ **And on these units a login IS a root login: there is exactly one uid-0 account and no
+> non-root interactive account, so there is no weaker case to hedge.**
+> 📌 **Ten consumers source that file** — `sshd`, `startgetty`, `iptablesinit`, `rcS`, `opnormal`,
+> `startmode`, `diagupload` among them — **so it fires eventually on its own.** ⚠️ **"Eventually" is
+> not a step in a procedure, and the gap between injection and effect is exactly where a reader
+> gives up and reaches for something destructive.**
+
+📌 **The DPH-154 reaches this same sink through CWMP instead, because it has no DMI console:**
+[`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) Phase 2. ⭐ **One mechanism, two doors.**
+
 ### A second write path, through the web UI — and it skips the validator the first one has
 
 The attribute route above goes through the DMI console. There is another, through the

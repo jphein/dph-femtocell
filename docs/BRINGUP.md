@@ -649,6 +649,44 @@ on one DPH-151 — **every `rmm_client` verb failed while the port stayed open.*
 > every CHEAP avenue is now closed by measurement rather than assumption, so whichever is picked
 > starts from a tested position instead of a hopeful one.**
 
+### 🔀 **BEFORE ROUTE 3: IF YOU ALREADY HAVE THE DMI CONSOLE, THERE IS NO RACE TO RUN**
+
+> ### ⭐⭐⭐ **ADDED 2026-09-16. ROUTE 3 IS A 30–60 SECOND RACE AND IT IS NOT THE ONLY WAY TO THAT SINK.**
+> ```
+> ROUTE 3 (below)          reboot + a running catcher + a served package + WIN A RACE
+> diagnosticTuning (2320)  one DMI write. No reboot, no race, no package, no window.
+> ```
+> ⇒ **Both end in the same place: an `export` line in `/var/ipaccess/nv_env.sh`, sourced as root.**
+> ### 🔴🔴 **BUT ON A DPH-151 THE CALM ROUTE IS *NOT AVAILABLE*, AND I ALMOST TOLD YOU IT WAS.**
+> `[caught before publication, from this repo's own nano3G guide, which states it as measured]`
+> ```
+> DMI :8090   nano3G   ✅ LISTENS AND WORKS — it is the route that rooted that unit
+>             DPH-151  ⛔ NEVER STARTED. opnormal:258 gates it on ${ENV_START_DMI_TELNET:-"FALSE"},
+>                         which is absent from every nv_env.sh held. Shut on BOTH 151s, and shut
+>                         even with a port-forward.
+> ```
+> ⇒ ☠️☠️ **AND THE DEPENDENCY IS CIRCULAR: to use `diagnosticTuning` you need the DMI console; to
+> start the DMI console on a 151 you must set `ENV_START_DMI_TELNET` in `nv_env.sh`; and writing
+> `nv_env.sh` is the thing you were trying to achieve.**
+> ⇒ ✅ **SO ON A DPH-151, ROUTE 3 REALLY IS THE WAY IN. Run the race.**
+> ⭐ **The calm route is for the nano3G, and for a DPH-154 it is CWMP instead** —
+> 📌 [`ACCESS.md`](ACCESS.md) Route 6 → the third write path · [`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) Phase 2.
+> ### ⭐⭐⭐ **KEPT VISIBLE BECAUSE THE NEAR-MISS IS THE LESSON**
+> **I found a cheaper mechanism, confirmed it reaches the same sink, and wrote "if you have the
+> console, take the calm route" — WITHOUT CHECKING WHETHER THIS MODEL HAS THE CONSOLE.** ⇒ ***A
+> route's PRECONDITION is per-model, and a mechanism that is real on one unit is not thereby
+> available on another.*** **That is this corpus's per-device scoping rule, firing on the edit
+> written to document a per-device availability trap.**
+
+> ### ⚠️ **AND WHICHEVER ROUTE YOU TAKE, THE NV WRITE IS DORMANT ON ARRIVAL**
+> **Writing `nv_env.sh` APPENDS and does nothing else** — no source, no restart, no signal.
+> ⇒ **You write it, you watch, and nothing happens, because it is sitting armed.** ⛔ **That reads
+> as failure and sends people back to riskier methods.**
+> ✅ **Trigger it deliberately: a LOGIN is the cheapest** — `/etc/profile` sources the file
+> unconditionally, and on these units a login is a root login (one uid-0 account, no non-root
+> interactive account). 📌 **Ten consumers source it, so it fires eventually anyway — but
+> "eventually" is not a step.**
+
 ### ⭐ ROUTE 3 — ACS / TR-069 → **PATH D**   `[✅ THIS IS HOW .244's PICOCHIP GOT ROOT]`
 
 ⭐ **CWMP gives READ *and* WRITE** — 543 parameters, identity and PLMN. ⛔ **It does NOT reach
@@ -661,6 +699,38 @@ reboot -> device sends "1 BOOT", re-reads DNS -> management session completes
        -> post_swdl_hook SOURCES IT AS ROOT -> enables sshd + installs a key
        -> ssh root@192.168.157.186
 ```
+
+> ### ⭐⭐⭐ **WHAT THE `0x5007` PACKAGE ACTUALLY IS — AND WHY IT IS *NOT* THE DESTRUCTIVE KIND OF DOWNLOAD**
+> **`0x5007` "sdphook" is a package whose payload is A SHELL SCRIPT**, and `post_swdl_hook`
+> **sources it as root BEFORE its own destructive teardown.**
+> ```
+> your script runs as root
+>   ... do the payload ...
+> exit 0      ⬅ ⭐ RETURNS FROM THE SOURCED SCRIPT and SKIPS post_swdl_hook's
+>                delete_config / switching_bank tail
+> ```
+> ⇒ ✅ ***"It never writes a firmware bank, so the active image stays verifiable."***
+> ⛔ **Do not confuse this with serving a full firmware IMAGE**, which runs `activate_bank` →
+> `uboot-install` and **rewrites both U-Boot banks irreversibly.** ⭐ **Same machinery, two package
+> types, opposite risk** — 📌 [`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) has the side-by-side table.
+> ### ✅ **WHY IT NEEDS NO SIGNATURE**
+> **Image signing is OFF on these builds (`verifyflash` disabled).** ⇒ **The package needs only its
+> three internal CRCs and a well-formed header** — no key, no vendor cooperation.
+> ### ⚠️ **THE DETAIL THAT PUTS THE UNIT IN A RETRY LOOP IF YOU MISS IT**
+> **The `Download` RPC's `FileSize` MUST EQUAL THE SERVED BYTE COUNT EXACTLY.** ⛔ **Otherwise the
+> femto fetches a truncated image, the apply fails, and it loops.** ✅ **`stat -c%s` the package and
+> put that number in the RPC.**
+> ### 📋 **AND THE HOOK HAS A JOB BEYOND THE PAYLOAD — LEAVE NO PENDING UPGRADE**
+> ```
+> 1. kill the upgrade transaction:  rm cisco/UpgradeBeforeReboot cisco/VersionBeforeReboot
+>    fw_setenv bank <good> · bootcount 0 · flip Upgrade.Current.InProgress true->false
+>    ⚠️ busybox sed needs UPPERCASE N for the {N;s|...|} join — lowercase n silently no-ops
+> 2. the payload: setnv_env.sh ENV_VERBOSE_CONSOLE_ENABLED TRUE, install YOUR key (root-owned,
+>    dir 700 — dropbear REJECTS group-writable)
+> 3. exit 0
+> ```
+> ⛔⛔ **MINT YOUR OWN KEYPAIR. The `cwmp_rce_key` referenced by the upstream tooling has its
+> PRIVATE half in a public GitHub repository** — installing it authorises the internet.
 `[findings-dph151-root-baseline.md:1-4 — "first root baseline, measured 2026-09-05 21:59Z…
  read off the device over SSH as uid=0 on the pico"]`
 

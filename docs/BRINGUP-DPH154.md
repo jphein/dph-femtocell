@@ -483,7 +483,8 @@ and is not one.**
 | `wizard` UDP/14677 backdoor | free — no reboot, no flash | a unit that **has** it. 151/153 generation. ⚠️ **status on a 154 is UNMEASURED** |
 | **`diagnosticTuning` (2320) over DMI** | free — no reboot, no flash | **a DMI console** — which a 151 or nano3G has |
 | **`X_00000C_LogUpload.Tuning` over CWMP** | free — no reboot, no flash | **a CWMP session** — which a 154 gives you ⬅ **PHASE 2** |
-| software download (`swdl`) | ⛔ **rewrites both U-Boot banks. Irreversible.** | only the ability to **serve an image** |
+| **software download, type `0x5007` "sdphook"** | **free — no bank write at all** | the ability to **serve a package** ⬅ ✅ **THIS IS HOW THE DPH-151 GOT ROOT** |
+| software download, a **full firmware image** | ⛔ **rewrites both U-Boot banks. Irreversible.** | the ability to serve an image |
 
 ### 🎯 **AND THE TWO GOALS HAVE DIFFERENT PRICES — ASK WHICH ONE YOU ARE HERE FOR**
 
@@ -503,7 +504,32 @@ next section as instructions.**
 
 ---
 
-## 📕 THE ROUTE THAT WAS **NOT** USED — kept verbatim, and it is irreversible
+> ### 🔴🔴🔴 **"SOFTWARE DOWNLOAD" IS TWO COMPLETELY DIFFERENT OPERATIONS, AND THIS PAGE WAS TREATING THEM AS ONE**
+> `[JP: "we used the software download for the 151 I thought." He is right — and it is the CHEAP one.]`
+>
+> | | **`0x5007` "sdphook"** | **a full firmware image** |
+> |---|---|---|
+> | payload | **a shell script** | a filesystem |
+> | what the device does | `post_swdl_hook` **SOURCES IT AS ROOT** | `activate_bank` → `uboot-install` |
+> | bank / bootloader write | ⭐ **NONE — a trailing `exit 0` returns from the sourced script and skips `post_swdl_hook`'s `delete_config` / `switching_bank` tail** | ⛔ **BOTH U-Boot banks rewritten** |
+> | reversible | ✅ **yes — "it never writes a firmware bank, so the active image stays verifiable"** | ⛔ **no** |
+> | status here | ✅ **the route that rooted a DPH-151** | ⚠️ **tested on the 154 by JP; did not work** |
+>
+> ⇒ ⭐⭐⭐ **The irreversibility belongs to the IMAGE variant, not to "software download".** ⛔ **A
+> reader who learns *"software downloads rewrite bootloaders"* will avoid the cheap one too — which
+> is the one that actually worked on a sibling model.**
+> ### ✅ **WHY `0x5007` NEEDS NO SIGNATURE**
+> **Image signing is OFF on these builds (`verifyflash` disabled)** — the package needs only its
+> three internal CRCs and a well-formed header. ⇒ **That is the property the whole route rests on.**
+> ### ⚠️ **AND THE ONE DETAIL THAT MAKES IT LOOP FOREVER IF YOU MISS IT**
+> **The ACS `Download` RPC's `FileSize` MUST EQUAL THE SERVED BYTE COUNT EXACTLY**, or the unit
+> fetches a truncated image, the apply fails, and **it retries in a loop.** ⭐ **`stat -c%s` the file
+> and put that number in the RPC.**
+> ⛔ **DO NOT install the published `cwmp_rce_key`** — its private half is in a public GitHub
+> repository. **Mint your own pair.**
+> 📌 **The 151's full procedure: [`BRINGUP.md`](BRINGUP.md) ROUTE 3.**
+
+## 📕 THE **FULL-IMAGE** DOWNLOAD ROUTE — NOT USED HERE, AND IT IS THE IRREVERSIBLE VARIANT
 
 > ### ⛔⛔ **DO NOT RUN THIS TO "GET IN". PHASE 2 IS HOW YOU GET IN.**
 > **This section stood as Phase 2 until 2026-09-16 and was wrong about what was done.** It is kept
