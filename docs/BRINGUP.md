@@ -45,7 +45,7 @@ core, carrying voice and SMS for four handsets and recovering unattended from a 
 > | **Cisco DPH-151** | **this page** | ✅ **proven here, end to end** |
 > | **ip.access nano3G S8** | [`BRINGUP-NANO3G.md`](BRINGUP-NANO3G.md) | ✅ **proven here, end to end** |
 > | **Cisco DPH-153** | [`BRINGUP-DPH153.md`](BRINGUP-DPH153.md) | ⚠️ **published route by someone else; not reproduced here** |
-> | **Cisco DPH-154** | [`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) | 🔴 **no route in. Four measured walls.** |
+> | **Cisco DPH-154** | [`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) | ⚠️ **access SOLVED here; radio gated by a per-unit tamper bit** |
 >
 > ⭐ **Phases 4–8 below are the ip.access software stack and transfer between models** — attributes,
 > the unlock order, the transmission gate, power-cut recovery. **Phases 0–3 are hardware and access,

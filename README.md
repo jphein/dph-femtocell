@@ -31,8 +31,16 @@ an editable placeholder. Pointed at an open-source core, one becomes a private U
 > repointed (Osmocom Discourse, `tempest`). **Reported, not reproduced here** —
 > [`docs/BRINGUP-DPH153.md`](docs/BRINGUP-DPH153.md).
 >
-> ⛔ **The DPH-154 has no known route in.** Four walls, each measured —
+> ✅ **The DPH-154 HAS a working route in** — and it needs no memory-corruption exploit, no
+> JTAG, no case opening and no serial console: you stand up the management server the unit is
+> already looking for and let its own provisioning path do the work. **Access is solved. The
+> RADIO is separately gated** by a per-unit tamper bit, which is SET on the unit measured here —
+> so the final phase is unproven and is labelled as such.
 > [`docs/BRINGUP-DPH154.md`](docs/BRINGUP-DPH154.md).
+>
+> 📌 **This line read *"no known route in"* until 2026-09-16.** The guide it points at had
+> already been corrected; these citations had not. ⭐ *A correction that updates one mention of a
+> fact leaves the others reading as confirmation* — and the stale copy was on the front page.
 >
 > ⭐ **The nano3G is not a footnote here.** It is ip.access's own product — the thing Cisco badged —
 > and it is the reference for the *software* half of every model in this repo. **Where the two
@@ -123,7 +131,7 @@ documentation, not this repo's.
 | **[`docs/BRINGUP.md`](docs/BRINGUP.md)** | **DPH-151** — commissioning → Iuh → a first call. **Also the router to the other three.** |
 | **[`docs/BRINGUP-NANO3G.md`](docs/BRINGUP-NANO3G.md)** | **ip.access nano3G S8** — sealed box → root → a cell carrying voice |
 | **[`docs/BRINGUP-DPH153.md`](docs/BRINGUP-DPH153.md)** | **DPH-153** — the published route, and what transfers from here |
-| **[`docs/BRINGUP-DPH154.md`](docs/BRINGUP-DPH154.md)** | **DPH-154** — no route in; four measured walls, and what would reopen it |
+| **[`docs/BRINGUP-DPH154.md`](docs/BRINGUP-DPH154.md)** | **DPH-154** — the provider-emulation route in: access solved, radio tamper-gated |
 | [`docs/CONFIG.md`](docs/CONFIG.md) | the attributes that matter and what they do |
 | [`docs/TRAPS.md`](docs/TRAPS.md) | ⭐ **the failure modes. Read this before you debug anything.** |
 | [`docs/ALTERNATIVES.md`](docs/ALTERNATIVES.md) | when one of these is the wrong choice |
