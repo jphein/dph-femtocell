@@ -35,12 +35,28 @@ The 154 is the hardened one. Every direct door is shut, and each of these was **
 
 | door | state |
 |---|---|
-| the `wizard` UDP backdoor (works on older siblings) | **port 14677 closed** |
+| the `wizard` **UDP** backdoor (works on older siblings) | 🔴 **NOT MEASURED — see below** |
 | anything listening | **13 ports probed, 13 closed** — and they are **ICMP-unreachable rejects**, the signature of a **firewall rule**, not of absent listeners |
 | catching it phone home and answering as its server | **initiated nothing at all in 60 s of passive capture** |
 | a public firmware dump to analyse | none exists, and the only software dump path **requires the access it would provide** |
 
 ⇒ **Public exploits are 2012–2018 and target the 151/153. This is a 2019 build.**
+
+> ### 🔴🔴 **CORRECTION 2026-09-16 — THE FIRST ROW WAS MEASURED WITH THE WRONG PROTOCOL**
+> **The `wizard` backdoor is UDP.** `dph151-backdoor.py` sends `sock.sendto("BackdoorPacketCmdLine_Req …", (ip, 14677))`.
+> ```
+> what was actually run:   TCP 22 23 80 443 7547 8080 8090 14677  ->  all closed
+>                          (RST not filtered, so the scanner demonstrably worked)
+> ```
+> ⇒ ⛔ **A TCP scan of a UDP service returns "closed" whether the UDP service is there or not.**
+> ⭐⭐ **And the control PASSED — the scanner was working perfectly, on the wrong protocol.** ⇒
+> ***A positive control proves your instrument works; it says nothing about whether you pointed it
+> at the right thing.***
+> ✅ **The honest state: UDP/14677 on a DPH-154 is UNMEASURED, not measured-closed.**
+> 📌 **It is probably moot** — the wizard backdoor lands on the **Ralink**, and a 154 has none
+> ([`Trap 73`](TRAPS.md#73-dph-151-vs-dph-154--three-exploits-share-one-name-the-cwmp-label-is-on-the-telnet-one-and-which-are-even-available-depends-on-the-model)).
+> ⚠️ **But "probably moot" and "measured closed" are different claims, and only one of them was
+> ever in this table.**
 ⭐ **So you do not attack the PERIMETER. You become the thing it is waiting for — and then you
 attack ONE FIELD, from inside the conversation it opened to you voluntarily.**
 ⚠️ **Both halves matter.** Phase 1 alone gets you a management session and nothing more; Phase 2
@@ -183,18 +199,21 @@ ENV_DIAG_FILE_LIST: /var/ipaccess/.tamperInfo /var/ipaccess/nv_env.sh …
 > thinking about** — including the one holding your own access open. ⭐ **A DROPPED key is a visible
 > omission; a STALE key looks like diligence — present, correctly spelled, and wrong.**
 
-> ### ⛔⛔ **THE HONEST STATE OF THE ESCAPE, AND TWO SOURCES DISAGREE**
+> ### ⛔⛔ **THE HONEST STATE OF THE ESCAPE — AND THE PAYLOAD IS IN THE TOOL, DATED AND ATTRIBUTED**
 > ```
+> ✅ the payload EXISTS, queued through this exact field, with its authorisation recorded in code:
+>       Tuning <- "ENV_XKINIT: $(mkdir -p /var/ipaccess/root_home/.ssh && <key install>)"
+>       log("*** DPH-154 ENV_XKINIT INJECTION QUEUED (JP authorised; his key, his device) ***")
 > ✅ JP, who ran it:  "we were able to get into the 154 that way, but then the tamper timer went off"
-> ⚠️ the corpus lane: "THE PRIMITIVE IS DESIGNED, NOT DEMONSTRATED. Do not price it as proven."
->                     the one logged attempt FAULTED 9003/9007 "Invalid parameter value"
->                     0 of 663 readbacks ever contained ENV_XKINIT
+> ⚠️ a corpus lane:   "THE PRIMITIVE IS DESIGNED, NOT DEMONSTRATED. Do not price it as proven."
+>                     one logged attempt FAULTED 9003/9007; 0 of 663 readbacks contained ENV_XKINIT
 > ```
-> **Both are recorded and neither is adjudicated here.** ⭐ **The likeliest reconciliation is that
-> they are about different moments on different units — the logged failure is a later re-attempt,
-> not the original access — but nobody has established that, so it is not stated as fact.**
-> ✅ **What IS beyond doubt: the `Tuning` write itself lands, the NV variables it sets take effect,
-> and the field reaches `setnv_env.sh` with no escaping.**
+> ⭐ **So three things are settled: the field is the right one, the payload was written, and it was
+> authorised.** ⛔ **What is NOT settled is whether that particular queued write ever executed** —
+> the readback evidence says that one did not. ⚠️ **Recorded, not adjudicated: the likeliest reading
+> is different moments on different units, and nobody has established it.**
+> ✅ **Beyond doubt either way: the `Tuning` write lands, the NV variables it sets take effect, and
+> the field reaches `setnv_env.sh` unescaped.**
 
 > ### ✅ **THE PRECONDITION IS MEASURED, AND IT IS WHY THIS SUITS A 154 AND NOT A 151**
 > ```
@@ -214,16 +233,38 @@ ENV_DIAG_FILE_LIST: /var/ipaccess/.tamperInfo /var/ipaccess/nv_env.sh …
 > label in the upstream README sits on the TELNET one.** ⭐ **A DPH-154 has no Ralink at all, so A
 > cannot apply to it under any circumstances** — see [`MATRIX.md`](MATRIX.md).
 
-### 📌 **THE 151 DOES THE SAME THING THROUGH A DIFFERENT FIELD AND A DIFFERENT DOOR**
+### 📌 **IT IS ONE MECHANISM WITH TWO DOORS — AND THE OTHER DOOR IS DMI**
 
 ```
-DPH-151   DMI    set crlServerBaseUrl="x$(…)"   (MIB 2203)  ->  export ENV_CRL_BASE_SERVER="…"
-DPH-154   CWMP   SetParameterValues on Tuning                ->  setnv_env.sh -> nv_env.sh
+CWMP  Device.X_00000C_LogUpload.Tuning       needs a CWMP SESSION   <- the 154's door
+DMI   diagnosticTuning  (attribute 2320)     needs a DMI CONSOLE    <- the 151/nano3G door
+        set diagnosticTuning=({name=ENV_VERBOSE_CONSOLE_ENABLED,value=TRUE})
 ```
-⇒ ⭐⭐ **Same sink — `nv_env.sh`, sourced as root. Different field, different transport.** **The 154
-is not a harder target; it is the same target with the console removed, and CWMP is the console it
-still answers on.** 📌 **Full 151 write-up including the two-reboot payload: the 2g corpus,
-`DEVICE-ACCESS.md` Steps 3–4.**
+⇒ ⭐⭐⭐ **Same sink, same lack of escaping, same `setnv_env.sh`.** **The 154 is not a harder target —
+it is the same target with the DMI console removed, and CWMP is the console it still answers on.**
+> ### ⚠️ **BOTH ARE WHOLE-COLLECTION REPLACES, NOT MERGES**
+> **`Tuning` is a whole-STRING replace; `diagnosticTuning` is a whole-LIST replace.** ⛔ **Read the
+> current value before writing, or you will silently drop every key you are not thinking about —
+> including the one holding your own access open.**
+
+### 🚪 A second, WEAKER door on the same sink — and why it is weaker
+
+```
+crlServerBaseUrl (2203, ac=1 WRITABLE)  ->  export ENV_CRL_BASE_SERVER="<your value>"
+```
+⇒ **Also unescaped, so it also injects.** ⛔ **But it writes ONE FIXED VARIABLE: you inject into the
+VALUE of a variable you did not choose.** ⭐ **`Tuning` takes `NAME: value; NAME: value` — you
+choose the variable NAME, which is why `ENV_XKINIT`, `ENV_FIREWALL_DISABLED` and
+`ENV_VERBOSE_CONSOLE_ENABLED` can all come from a single write.**
+> ### ☠️ **AND IF YOU GO LOOKING FOR `2203`, THE ATTRIBUTE MAPS IN CIRCULATION DISAGREE BY ONE ROW**
+> ```
+> the STALE map       2201 crlServerBaseUrl  ·  2203 crls
+> the CORRECTED map   2201 certificates      ·  2203 crlServerBaseUrl   ac=1   ⬅ right
+> ```
+> ⇒ ⛔ **A NAME-SHIFTED map is worse than a wrong one: every id resolves, every name looks
+> plausible, and you write a URL into a certificate-revocation-list field with nothing to tell you.**
+> ✅ **Probe BY NUMBER and read back the name the device returns.** 📌 **Full 151 write-up including
+> the two-reboot payload: the 2g corpus, `DEVICE-ACCESS.md` Steps 3–4.**
 
 ---
 
@@ -400,6 +441,35 @@ and is not one.**
 > ⭐⭐ **A leftover string naming a nonexistent host reads exactly like evidence that the host
 > exists** — and it is in the firewall rules, which is the most convincing place for it to be.
 
+
+---
+
+## 🔀 Choose your route by WHAT YOU ALREADY HAVE — three of the four are free
+
+> ### ⭐⭐⭐ **THE TRAP IS NOT THAT THE EXPENSIVE ROUTE IS WRONG. IT IS THAT THE EXPENSIVE ROUTE IS THE ONE THAT WORKS REGARDLESS OF PRECONDITIONS — SO IT IS THE ONE THAT GETS WRITTEN DOWN.**
+
+| mechanism | cost | you must already have |
+|---|---|---|
+| `wizard` UDP/14677 backdoor | free — no reboot, no flash | a unit that **has** it. 151/153 generation. ⚠️ **status on a 154 is UNMEASURED** |
+| **`diagnosticTuning` (2320) over DMI** | free — no reboot, no flash | **a DMI console** — which a 151 or nano3G has |
+| **`X_00000C_LogUpload.Tuning` over CWMP** | free — no reboot, no flash | **a CWMP session** — which a 154 gives you ⬅ **PHASE 2** |
+| software download (`swdl`) | ⛔ **rewrites both U-Boot banks. Irreversible.** | only the ability to **serve an image** |
+
+### 🎯 **AND THE TWO GOALS HAVE DIFFERENT PRICES — ASK WHICH ONE YOU ARE HERE FOR**
+
+```
+GET ROOT / SET NV VARIABLES     any of the top three. FREE.
+CHANGE FS_VARIANT PERSISTENTLY  the software download, and ONLY that -- because FS_VARIANT comes
+                                from sw_description.dat, re-exported by /etc/profile every boot.
+```
+> ⭐⭐ **`/etc/profile:56` reads `FS_VARIANT` from the software description and `:63` exports it, and
+> `/etc/profile` is the ONLY file in the whole rootfs that assigns it** — `rcS:53` even says so in
+> its own comment: *"done after sourcing /etc/profile so FS_VARIANT is set"*.
+> ⇒ ✅ **So the irreversible section below is RIGHT about its own goal.** ⛔ **It is only wrong as an
+> answer to *"how do I get in"*, which is what it used to be presented as.**
+
+⇒ **If you want a shell and your NV variables, you are done at Phase 2 and you should not read the
+next section as instructions.**
 
 ---
 
