@@ -589,6 +589,41 @@ setNvEnvVar(name, value, variant):
 `rename()` — an ATOMIC swap, unlike the `setnv_env.sh` script path, which does two `sed -i` passes
 and an append with no atomicity.**
 
+> ### ☠️☠️ **TWO NAMES, ONE CHARACTER-CLASS APART, AND THEY ARE DIFFERENT THINGS**
+> ```
+> setnv_env.sh    a SHELL SCRIPT in /opt/ipaccess/bin/   <- what rcS and a root shell call
+> setNvEnvVar()   a FUNCTION INSIDE ipa-mgr_app          <- what the DMI dispatcher calls
+> ```
+> ⇒ ⭐⭐⭐ **The DMI path reaches `nv_env.sh` WITHOUT invoking the shell script.** **The manager
+> binary opens, rewrites and `rename()`s the file itself.**
+> ⚠️ **THIS MATTERS BECAUSE A CAREFUL CORPUS NOTE WARNS ABOUT THE OTHER ONE:** `setnv_env.sh`
+> contains a string — *"will be updated on OMCR (if already exist in diagnosticTunning list) on next
+> AP reboot"* — and reasoning from that string alone, **whether a DMI write causes the SCRIPT to run
+> is an INFERENCE and is correctly flagged as one.** ⇒ ✅ **It is not the claim above.** **The claim
+> above is a disassembly read of the attribute-set dispatcher, and it bypasses the script entirely.**
+> ⭐ **Two sources, two mechanisms, nearly the same name — and only one of them is an inference.**
+> ✅ **The cheap confirmation, read-only and non-destructive, is still worth running first:**
+> ```
+> get diagnosticTuning · get diagnosticTuning[0].name · get diagnosticTuning[0].value
+> ```
+> **An indexed name/value list containing `ENV_*` entries confirms the shape at the wire.**
+
+> ### 🔴🔴 **AND A BOOTSTRAP LOOP THAT DECIDES WHETHER YOU CAN USE ANY OF THIS**
+> ```
+> DMI :8090 requires          ENV_START_DMI_TELNET=TRUE
+> opnormal.sh:258-259 (151)   if [ ${ENV_START_DMI_TELNET:-"FALSE"} == "TRUE" ]   <- DEFAULTS FALSE
+> opnormal:307-308    (154)   the identical gate
+> that flag IS an NV variable ⇒ set by writing nv_env.sh
+> and the diagnosticTuning route to nv_env.sh ⇒ REQUIRES DMI
+> ```
+> ⇒ ☠️☠️☠️ ***YOU CANNOT ENABLE DMI THROUGH THE ROUTE THAT REQUIRES DMI.***
+> `[corroborated: nothing else in either rootfs sets the flag — the only occurrence in the 154 tree
+>  is the gate READING it — and it is absent from all four nv_env.sh files held, 0 occurrences each]`
+> ⇒ ⭐ **So `diagnosticTuning` is a SECOND-STEP CONVENIENCE, not a first-step route.** **On the
+> nano3G, DMI `:8090` listens by default and this is immediately usable. On a DPH-151 it does not,
+> and reaching it costs a CWMP session plus a reboot — which is not cheaper than the route the 151
+> guide already documents.** 📌 [`BRINGUP.md`](BRINGUP.md) ROUTE 3.
+
 > ### ⛔ **IT IS A WHOLE-LIST REPLACE — 32 ENTRIES, STRIDE 168 BYTES**
 > **`memcpy(buf, incomingValue, 0x1504)` = 4 + 32×168.** ⇒ **Writing the list without reading it
 > first silently drops every entry you were not thinking about** — ⚠️ **including the one holding
