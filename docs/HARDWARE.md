@@ -112,15 +112,28 @@ case opening.** → **[`BRINGUP-DPH154.md`](BRINGUP-DPH154.md)**
 - **No public firmware dump exists, and all four routes to making one are blocked** — with a
   neat circularity: the only software dump path requires the very access the dump is meant to
   provide.
-- **No root has ever been confirmed, publicly or here.** It is a 2019 build; the public
-  exploits are 2012–2018 and target the 151/153.
+- 🔴 ~~**No root has ever been confirmed, publicly or here.**~~ **CORRECTED 2026-09-16.** **Public
+  exploits are 2012–2018 and target the 151/153 — that half stands.** ⛔ **But access to a 154 was
+  achieved here, by a route none of those exploits describe:** the unit is configured through an
+  ACS you stand up, and `X_00000C_LogUpload.Tuning` is written into `nv_env.sh` with no escaping.
+  ⇒ **It rides the device's own OUTBOUND session, so the 154's total inbound REJECT is irrelevant
+  to it.** 📌 Full route: [`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) Phases 1–3.
+  ⚠️ **The RADIO is separately gated by a per-unit tamper bit, and on the unit measured here that
+  gate is closed** — so "access" and "a working cell" are different claims, and only the first is
+  proven.
 
-> ### ⚠️ Do not repeat "the DPH-154 is not picoChip" as settled — we would have, and it is wrong
-> A teardown identifies an **AD9365** transceiver with Band 2 and Band 5 power amplifiers.
-> Another source attributes a picoChip part. **These are reconcilable rather than
-> contradictory: the AD9365 is the RF transceiver, and a picoChip part would be the
-> processor/baseband.** They are different components. The 154's SoC identity is genuinely
-> unsettled, and this repo is not going to settle it.
+> ### ✅ **SETTLED 2026-09-16 — IT IS picoChip, AND THE DEVICE SAID SO ITSELF**
+> ~~*"The 154's SoC identity is genuinely unsettled, and this repo is not going to settle it."*~~
+> ```
+> its serial boot log   Image Name: Linux-3.0.0-ip30xxff-xc-245.0
+> its own NAND rootfs   ip30xxff-xc-239.0
+> ```
+> ⇒ **`ip30xx` is ip.access's platform name for the picoChip PC30xx.** **Two surfaces on the
+> device, agreeing** — which beats any number of third-party teardown attributions.
+> ⭐ **The old reconciliation was RIGHT and stopped one step short:** the **AD9365 is the RF
+> transceiver**, the **PC30xx is the SoC/baseband** — different components, both present.
+> 🔴 **And it is ONE SoC, not two:** the 151 is Ralink + PC202; **the 154 has NO RALINK**, so every
+> Ralink-side route is structurally dead on it.
 >
 > The 154 is still the wrong buy — but for the measured reasons above, not for this one.
 

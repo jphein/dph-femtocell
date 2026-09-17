@@ -89,9 +89,14 @@ single most useful fact for legal containment.
 > ✅ See [`BRINGUP.md`](BRINGUP.md) Phase 1 and [`ACCESS.md`](ACCESS.md) Route 3.
 > ⚠️ **The 154 is genuinely a different design — do NOT carry the two-SoC layout to it.**
 
-⚠️ **On the 154's silicon:** an AD9365 transceiver and a picoChip part are **not contradictory** —
-the AD9365 is the RF transceiver and a picoChip part would be the baseband. **Different components.**
-The 154's full SoC identity is genuinely unsettled.
+✅ **On the 154's silicon — SETTLED 2026-09-16, from the device itself:** its boot log and its NAND
+rootfs both name `Linux-3.0.0-ip30xxff-xc-*`, and **`ip30xx` is ip.access's designation for the
+picoChip PC30xx**. ⭐ **An AD9365 transceiver and a picoChip part were never contradictory** — the
+AD9365 is the RF transceiver, the PC30xx is the SoC/baseband. **Different components, both present.**
+⇒ 🔴 **ONE SoC, not two. The 154 has no Ralink**, so `rroot.py` and every other telnet/Ralink route
+is structurally dead on it — regardless of what the leftover `192.168.157.185` strings in its own
+firewall rules imply. ⭐ **Those are inherited from the 151/153 lineage and name a peer this product
+does not have.**
 
 ---
 

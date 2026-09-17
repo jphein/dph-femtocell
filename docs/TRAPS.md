@@ -56,6 +56,7 @@ written in prose here would be correct exactly once, and this file has already o
 | C | **[#32 — unpacking the firmware overwrites your `/`](#32-unpacking-the-firmware-overwrites-your-filesystem)** | absolute paths in the archive. Only a permission error stopped it. |
 | D | **[#33 — correcting the PLMN removes a safety interlock](#33-correcting-the-plmn-silently-removes-a-safety-interlock)** | the wrong PLMN was itself preventing transmission. Nobody chose to remove that. |
 | E | **[#49 — the reset button restores sooner than documented](#49-the-reset-button-reaches-factory-restore-sooner-than-the-manual-says)** | measured **3 s** where every document said 5. A press you believe is a reboot can be a **factory restore**. Read your own unit's threshold. |
+| F | **[#73 — three exploits share one name, and the "CWMP" label is on the telnet one](#73-three-different-exploits-get-called-the-rce--and-the-cwmp-label-is-on-the-telnet-one)** | aiming the Ralink exploit at a **DPH-154** targets a processor it does not contain — and it fails by **timing out**, which reads as a firewall. |
 
 ### 🔴 Before you conclude anything is broken
 | | trap | why it is here |
@@ -3038,3 +3039,52 @@ moving it is safe.
 running the client-less bank is a CANDIDATE with a very good fit — it predicts every symptom — and
 it is NOT established without reading that unit's own boot log or filesystem.** ⚠️ **Do not repeat
 it as a diagnosis you have made; repeat it as the first thing to rule out.**
+
+
+## 73. Three different exploits get called "the RCE" — and the "CWMP" label is on the telnet one
+
+`[JP corrected this repo's own DPH-154 page three times on 2026-09-16. Every wrong version was a
+ real mechanism from this corpus, applied to the wrong device or the wrong layer.]`
+
+**This corpus documents THREE separate primitives. They are routinely collapsed into one phrase.**
+
+```
+A  rroot.py            TELNET to 192.168.157.185 as guest -> rmm_client cs_cmd -> root on the RALINK
+B  the SPV injection   CWMP SetParameterValues -> unescaped nv_env.sh write -> root on the PICO
+C  persistent_ssh.sh   POST-exploitation persistence. Assumes you ALREADY have A or B.
+```
+
+> ### ⛔ **A IS TELNET AND B IS CWMP — OPPOSITE TRANSPORTS, DIFFERENT CHIPS.**
+> ⚠️ **And the upstream README's "CWMP RCE" label sits on `rroot.py`, which is the TELNET one.**
+> ⇒ ⭐ **So the name of the artefact actively points you at the wrong mechanism.**
+
+### 🔴 Why this is worse than a naming annoyance: **A cannot exist on a DPH-154**
+
+```
+DPH-151   Ralink + picoChip PC202   TWO SoCs   <- the Ralink is LAN-facing and runs telnet
+DPH-154   picoChip PC30xx           ONE SoC    <- NO RALINK. There is no host to telnet to.
+```
+⇒ **Reaching for A on a 154 is not "an exploit that failed". It is an exploit aimed at a processor
+the unit does not contain.** ⭐ **And it fails by TIMING OUT, which reads exactly like a firewall.**
+
+### ☠️☠️ **AND THE 154's OWN FILES ARGUE FOR THE PROCESSOR IT DOES NOT HAVE**
+
+```
+192.168.157.185 appears in the 154's rootfs, in THREE files:
+    iptables-customerA-rules    opt/cisco/reset    opt/cisco/DslmSsp
+```
+⇒ ⛔ **All three are INHERITED FROM THE 151/153 LINEAGE and name a peer this product does not have.**
+⭐⭐ ***A leftover string naming a nonexistent host reads exactly like evidence that the host
+exists*** — **and here it is in the FIREWALL RULES, which is the most convincing possible place for
+it to be.** ⇒ **You can "confirm" the two-SoC layout from the device's own filesystem and be wrong.**
+
+### ✅ The check, and it is one command against the device rather than against a document
+
+```
+the kernel image name settles the platform:   Linux-3.0.0-ip30xxff-xc-*   ->  picoChip PC30xx, ONE SoC
+```
+⭐ **Ask what the unit IS before choosing which exploit to aim at it** —
+[`MATRIX.md`](MATRIX.md) is the identification table, and it is 166 lines.
+
+📌 **The DPH-154's working route is B, over the session the device opens to you:**
+[`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) Phase 2.

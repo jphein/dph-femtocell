@@ -31,11 +31,13 @@ an editable placeholder. Pointed at an open-source core, one becomes a private U
 > repointed (Osmocom Discourse, `tempest`). **Reported, not reproduced here** —
 > [`docs/BRINGUP-DPH153.md`](docs/BRINGUP-DPH153.md).
 >
-> ✅ **The DPH-154 HAS a working route in** — and it needs no memory-corruption exploit, no
-> JTAG, no case opening and no serial console: you stand up the management server the unit is
-> already looking for and let its own provisioning path do the work. **Access is solved. The
-> RADIO is separately gated** by a per-unit tamper bit, which is SET on the unit measured here —
-> so the final phase is unproven and is labelled as such.
+> ✅ **The DPH-154 HAS a working route in** — no memory-corruption exploit, no JTAG, no case
+> opening, no serial console. **You stand up the management server it is already looking for**
+> (its own `REDIRECTOR_URL` names the host and the port), **and then write one CWMP field that the
+> device copies into its root-sourced environment file with no escaping.** ⭐ **It rides the
+> session the device OPENS TO YOU, so the unit's total inbound firewall never comes into it.**
+> **Access is solved. The RADIO is separately gated** by a per-unit tamper bit, SET on the unit
+> measured here — so the final phase is unproven and is labelled as such.
 > [`docs/BRINGUP-DPH154.md`](docs/BRINGUP-DPH154.md).
 >
 > 📌 **This line read *"no known route in"* until 2026-09-16.** The guide it points at had
@@ -131,7 +133,7 @@ documentation, not this repo's.
 | **[`docs/BRINGUP.md`](docs/BRINGUP.md)** | **DPH-151** — commissioning → Iuh → a first call. **Also the router to the other three.** |
 | **[`docs/BRINGUP-NANO3G.md`](docs/BRINGUP-NANO3G.md)** | **ip.access nano3G S8** — sealed box → root → a cell carrying voice |
 | **[`docs/BRINGUP-DPH153.md`](docs/BRINGUP-DPH153.md)** | **DPH-153** — the published route, and what transfers from here |
-| **[`docs/BRINGUP-DPH154.md`](docs/BRINGUP-DPH154.md)** | **DPH-154** — the provider-emulation route in: access solved, radio tamper-gated |
+| **[`docs/BRINGUP-DPH154.md`](docs/BRINGUP-DPH154.md)** | **DPH-154** — become its ACS, then inject through `LogUpload.Tuning`; access solved, radio tamper-gated |
 | [`docs/CONFIG.md`](docs/CONFIG.md) | the attributes that matter and what they do |
 | [`docs/TRAPS.md`](docs/TRAPS.md) | ⭐ **the failure modes. Read this before you debug anything.** |
 | [`docs/ALTERNATIVES.md`](docs/ALTERNATIVES.md) | when one of these is the wrong choice |
