@@ -88,5 +88,16 @@ kramdown:
 #
 #    The old comment here read "Nothing in the docs links to these" -- which was
 #    already false when it was written, because the README linked LICENSE.
+#
+# ⚠️ AND A SECOND BUILD-TIME RULE, MEASURED ON THE LIVE SITE 2026-09-18: GitHub
+#    Pages applies ITS OWN default exclusions ON TOP of this list, and
+#    CONTRIBUTING.md is one of them. SECURITY.md rendered to SECURITY.html and
+#    jekyll-relative-links rewrote the link; CONTRIBUTING.md did NOT, so its link
+#    stayed .md and served RAW MARKDOWN in the browser. Both returned 200 -- this
+#    was ugly, not broken, and no checker would ever have flagged it.
+#    ⇒ The README now links CONTRIBUTING.md by absolute blob URL, which renders
+#      correctly both in-repo and on the site.
+#    ⭐ Emptying this list does not give you a complete picture of what is
+#      published. The only reliable check is curl against the built site.
 exclude:
   - tools/

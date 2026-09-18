@@ -351,5 +351,5 @@ the femtocell firmware itself, which is ip.access's and is **not distributed her
 
 ## Contributing and security
 
-Corrections are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md) for the evidence vocabulary
+Corrections are welcome — see [`CONTRIBUTING.md`](https://github.com/jphein/dph-femtocell/blob/main/CONTRIBUTING.md) for the evidence vocabulary
 and the contribution licence. Vendor contact and disclosure posture: [`SECURITY.md`](SECURITY.md).
