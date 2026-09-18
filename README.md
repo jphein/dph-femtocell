@@ -99,6 +99,9 @@ strangers' handsets, not just more coverage.**
 **This is the most dangerous property of a private cell and it is the one most easily forgotten,
 because nothing ever reports it as an error.**
 
+📌 **Containment that actually works, and the closed-access settings that keep strangers off:**
+[`docs/LEGAL.md`](docs/LEGAL.md).
+
 ### ⛔ Never broadcast a real carrier's PLMN
 
 A unit that ran on AT&T may still carry **MCC/MNC 310-410** in its live configuration.
@@ -162,6 +165,7 @@ documentation, not this repo's.
 | [`docs/CONFIG.md`](docs/CONFIG.md) | the attributes that matter and what they do |
 | [`docs/TRAPS.md`](docs/TRAPS.md) | ⭐ **the failure modes. Read this before you debug anything.** |
 | [`docs/ALTERNATIVES.md`](docs/ALTERNATIVES.md) | when one of these is the wrong choice |
+| **[`docs/LEGAL.md`](docs/LEGAL.md)** | ⭐ **operating one legally** — Part 5 licensing, containment, emergency calling, what you can publish |
 | `config/` | sanitised core-network config templates, with placeholders |
 | `tools/` | scripts that generalise beyond one network |
 | `_config.yml` | GitHub Pages settings. **The file does not enable Pages** — that is a repo-settings decision. |
@@ -215,8 +219,11 @@ as vacant.
 So a femtocell on your bench is not an unlicensed device the way a Wi-Fi access point is.
 Two honest positions:
 
-- **The clean route** is an experimental licence — in the US, [FCC Part 5](https://www.fcc.gov/general/experimental-licenses).
-  It exists for exactly this, and it is not exotic.
+- **The clean route** is an experimental licence — in the US, **FCC Part 5**. It exists for
+  exactly this, an individual can hold one, and it is roughly a form and 30–45 days.
+  ⇒ 📌 **[`docs/LEGAL.md`](docs/LEGAL.md) has the checklist**: eligibility, Form 442, the ELS
+  filing system, what the application asks for, and the non-interference condition that applies
+  whether or not you hold one.
 - **The pragmatic route** that many people actually take is minimum transmit power, minimum
   antenna, and containment to a single room or a shielded enclosure — accepting a risk
   knowingly rather than not knowing there is one.

@@ -20,13 +20,28 @@ one needs to be able to close it.
 ## Vendors
 
 If you represent **Cisco, ip.access or Mavenir** and want something here handled differently,
-open an issue or contact the maintainer. Requests from a vendor with an affected product still
-in market will be taken seriously.
+**open an issue or contact the maintainer.** Requests from a vendor with an affected product
+still in market will be taken seriously, and this repository will act on a reasonable one.
 
-**Disclosure log**
-| date | action | outcome |
-|---|---|---|
-| — | *(pending)* notify Mavenir re: nano3G DMI console root path | — |
+### Why there was no advance notification
+
+**Stated plainly, because the alternative is for a reader to assume it was an oversight.**
+
+This material was published without notifying a vendor first. That was a considered decision,
+not a gap:
+
+- **The DPH-151/153/154 are end-of-life** and the only network they served was shut down on
+  **2022-02-22**. There is no fleet to protect and no fix pipeline to give notice to.
+- **The nano3G's vendor, ip.access, was acquired by Mavenir in September 2020**, so a corporate
+  successor does exist. But the nano3G is a **legacy 3G product**, 3G is being retired
+  worldwide, and the root path described here is **reachable only by someone who already has
+  the device on their own network.**
+- ⭐ **The defence is published alongside the finding.** Where this repository documents the DMI
+  console as a root path, it also documents **the boot-script branch that gates the port and the
+  one-write change that closes it** — which is the part an owner actually needs.
+
+⇒ **The posture is responsive, not proactive.** No vendor has been contacted, and if one makes
+contact, this repository will engage in good faith and act on a reasonable request.
 
 ## Readers
 
