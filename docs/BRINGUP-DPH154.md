@@ -218,17 +218,41 @@ where AT&T stood. ⇒ **Phase 2 is what converts a session into a shell.**
 > cmhs              0       0          0      <- ⚠️ CONTROL FAILS ⇒ these zeros are INADMISSIBLE
 > sysctrlUpdateEnvVar:  0 files in the ENTIRE rootfs
 > ```
-> ⇒ 🔴 **`Tuning` → `DslmSsp` → `sysctrlUpdateEnvVar` → `setnv_env.sh` HAS NO `DslmSsp` HALF on this
-> train.** ⚠️ **It may be a 579.11.144 property** — this page was written against a unit running .144.
+> ⇒ 🔴 **`Tuning` → `DslmSsp` → `sysctrlUpdateEnvVar` → `setnv_env.sh` HAS NO `DslmSsp` HALF.**
+> ### ✅ **AND IT IS WRONG ON *BOTH* TRAINS — SO IT WAS NEVER A VERSION REGRESSION**
+> ~~*"It may be a 579.11.144 property — this page was written against a unit running .144."*~~
+> **That hedge was written here on 2026-09-17 and refuted the same day.** `[0 hits for
+> `setnv` / `nv_env` / `env.sh` / `sysctrlUpdateEnvVar` in **579.11.127 AND 579.11.144**, controls
+> passing. `ENV_XKINIT` returns **zero hits image-wide.**]`
+> ⇒ ⭐⭐⭐ **THE ROUTE WAS NEVER RIGHT ON ANY BUILD THIS PROJECT HAS TOUCHED.** **"Newer firmware
+> removed it" was the comfortable reading and it is false** — there is no build in which it worked.
+> ⭐ **A version hedge is the most attractive explanation available for a negative result, because it
+> preserves the original claim as once-true.** ⇒ **Check the OTHER version before reaching for it.**
 > ⛔ **BOUND, CARRIED VERBATIM FROM ITS AUTHOR:** *"a binary can call a script through a CONSTRUCTED
 > string, so 'the literal is absent' is NOT 'it cannot call it.'"* **What makes the zero admissible
 > is not the grep** — it is the complete command surface (35 strings, all printed), every path
 > fragment against a `swdl_client` control reading non-zero on all of them, and all 7 path-shaped
 > `%s` formats, **none of which builds under `/opt` or `/var`.**
-> ⚠️ **DEVICE-ATTRIBUTION BOUND:** the dump is a **THIRD DEVICE** on that train — its
-> `hw_description.dat` serial matches neither unit discussed on this page. **Its results reach a
-> `579.11.127` unit by TRAIN EQUALITY, which is an inference, not the byte-for-byte identity an
-> earlier write-up claimed.**
+> ### ⚠️ **DEVICE-ATTRIBUTION BOUND — THIS SITS UNDER THE NEGATIVE RESULT ABOVE, SO READ IT WITH IT**
+> **The dump is a THIRD DEVICE** — its `hw_description.dat` serial matches neither unit discussed on
+> this page. **Its author's phrasing, carried verbatim:** *"train 579.11.127 as shipped on a DONOR
+> unit — applicability unverified."*
+> ⇒ **Its results reach a running `579.11.127` unit by TRAIN EQUALITY, which is an INFERENCE** — not
+> the byte-for-byte identity an earlier write-up claimed (*"THAT DUMP IS `.150`'s EXACT FILESYSTEM"*,
+> **now struck by its own author**).
+> 📌 **What is NOT in doubt: the running unit's own variant and train**, `282F` / `579.11.127`,
+> **read from the DEVICE's own management report — never from the dump.**
+
+> ### ✅ **AND A BRICK FEAR THAT A READER WILL OTHERWISE INFER FROM THIS PAGE — IT IS DEAD**
+> **`setnv_env.sh:46` uses `$VARNAME` unquoted as a `sed` regex**, which looks like a malformed key
+> could corrupt `nv_env.sh` and leave the unit unable to boot cleanly. ⇒ ⛔ **It cannot have
+> happened here: NEITHER TRAIN HAS ANY ROUTE TO `setnv_env.sh` AT ALL.** **The rejected SPV never
+> reached it, because nothing does.**
+> ⭐ **Recorded because the inference is the natural one** — a rejected write, a device that later
+> went quiet, and an unquoted regex sitting in the sink. **Three true facts that assemble into a
+> false story.** ⚠️ **And the quieting has its own within-device control: the same unit was equally
+> absent for six days earlier in the month, with no SPV anywhere near it, and came back on its own.**
+> ⇒ ***Do not read "it stopped answering" as "we broke it."***
 
 > ### ✅ **WHAT IS STILL TRUE, AND IT IS THE HALF WORTH KEEPING: THE SINK IS REAL**
 > ```
@@ -571,6 +595,32 @@ and is not one.**
   U-Boot reads a 4-byte `default_bank` value, and `config_bank_1`/`config_bank_2` **do not exist on
   it at all.** ⇒ [`Trap 2`](TRAPS.md#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell)
   does not apply to this model in the same form.
+
+> ### ✅ **ROUTES CLOSED BY MEASUREMENT — RECORDED SO NOBODY SPENDS A NIGHT REOPENING THEM**
+> **A guide that lists only open questions invites the same dead ends to be re-tried.** These three
+> are shut, each with the instrument that shut it:
+> ```
+> netannounce / udp 5050   CLOSED  bound on a DPH-151 (read from its SOCKET TABLE, not a scan),
+>                                  but a 154 has NO Ralink to send from, its iptables-282F ruleset
+>                                  has ZERO inbound-NEW ACCEPTs against 2 in every 205*/224*/234*
+>                                  set, and a 90 s passive capture saw 0 UDP from the unit
+>                                  ⇒ no conntrack window ever opens.
+> CMHS as a command channel CLOSED  the binary carries FOUR FIXED fully-qualified literals and
+>                                  ZERO format specifiers -- nothing interpolable. It can be
+>                                  spoken to; it cannot be made to carry an argument you choose.
+> a cert-chain swap         CLOSED  the alternative chain is a RE-SIGNATURE of the same identity:
+>                                  identical leaf public key, identical SKI, and its SAN is a
+>                                  strict SUPERSET. Nothing to gain -- confirmed independently
+>                                  rather than by trusting the deployed code's own comment.
+> ```
+> ⭐⭐ **`CMHS is inert` is the one worth internalising, because it is counter-intuitive:** CMHS is
+> the **only live management channel** on a unit whose CWMP is dead, so it reads like the obvious
+> way in. ⇒ ***Being the only channel left does not make it a channel that can carry a payload.***
+> ⚠️ **What is still OPEN on CMHS, and it is a different question: whether it can TRIGGER A DOWNLOAD
+> or SET A URL.** **Both software-download routes need something to hand them a URL, and CWMP — the
+> documented trigger — is the dead one.** ⇒ 🎯 **That is the real remaining question on this page.**
+> ⛔ **BOUND: one probe of CMHS's settable surface had a FAILING CONTROL, so its zeros are
+> inadmissible and are not quoted here.** **Unmeasured, not measured-negative.**
 
 ---
 

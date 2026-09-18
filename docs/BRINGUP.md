@@ -666,6 +666,20 @@ on one DPH-151 — **every `rmm_client` verb failed while the port stayed open.*
 > .106   never resolves a cmhs* name, ever                    [openwrt-f8]
 > .106   ONE destination          .244  THREE
 > ```
+> > ### ⚠️ **`.106` / `.244` / `.127` HERE ARE LAB HOST SHORTHAND — THREE PHYSICAL UNITS, NOT SETTINGS**
+> > **They are the last octet of one lab's addresses and mean nothing on yours.** ⭐ **Read them as
+> > *"unit A / unit B / unit C"*; only the ASYMMETRY between them is the finding.**
+> > ### ☠️☠️ **AND `127` NAMES A DEVICE HERE AND A FIRMWARE BUILD ELSEWHERE IN THIS REPO**
+> > ```
+> > .127            a HOST, in this table               <- unit C
+> > 579.11.127      a FIRMWARE TRAIN                    <- see BRINGUP-DPH154.md
+> > ```
+> > ⇒ ⛔ **The two are unrelated, and the unit running train `579.11.127` is NOT the one called
+> > `.127` — that unit runs `579.11.144`.** **A sentence pairing "127" with "144" is CORRECT and
+> > reads exactly like a typo.** ⚠️ **Anyone normalising it "fixes" it into a falsehood.**
+> > 📌 **Counts in this corpus carry different windows and denominators** — this row is *9 days*, and
+> > other write-ups slice the same device by *single day* or *by destination address*. ⭐ **Quote a
+> > count only with the window and denominator it was measured over; the bare number is not portable.**
 > ⇒ ⭐ **`.106` is dialling a FULLY WORKING CWMP ENDPOINT AND DECLINING TO SPEAK ON IT.** **The
 > asymmetry was never in doubt; the *why* was wrong.**
 > ### 🔑 **THE LEADING CANDIDATE — team-lead's, and STILL UNMEASURED**
