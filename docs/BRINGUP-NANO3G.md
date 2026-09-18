@@ -287,6 +287,23 @@ you intended. **Compare staged against live before any reboot, on any unit.**
 
 ---
 
+> ### ⛔ **STOP. THIS IS THE STEP THAT PUTS A TRANSMITTER ON LICENSED SPECTRUM.**
+> Everything before this point was passive. **From here the cell radiates.**
+> **Band 2 (1900 PCS) and Band 5 (850 Cellular) are refarmed and in active use** — empty of the
+> old technology is not the same as vacant. There is a clean route (a **Part 5 experimental
+> licence** in the US) and there is minimum power with physical containment. **You cannot have
+> house-wide coverage and RF containment at the same time.**
+> **Settle the PLMN before this step, not after** — a unit that ran on a carrier still carries
+> that carrier's MCC/MNC. Use **999-99** or **001-01**, and verify it **on the air**.
+> 📌 Full text: the spectrum section of the [README](../README.md).
+> ### ☠️ **AND EMERGENCY CALLING DOES NOT WORK ON THIS CELL.**
+> A handset that camps onto it will try to place **911 / 112 / 999 calls through it, and they
+> will not complete** — with **no warning shown to the user.** It displays bars and looks like
+> service. ⛔ **Not fixable with configuration:** a private core has no route to emergency
+> services. ⇒ **Programmed SIMs you control, minimum power, physical containment** — so no
+> handset you do not control can camp on. ☠️ **If anyone nearby might rely on a phone to call
+> for help, do not run the cell.**
+
 ## Phase 7 — Unlock, and why a refusal is good news
 
 ```

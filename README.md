@@ -1,5 +1,12 @@
 # Private UMTS from retired femtocells — Cisco DPH-151 / DPH-153 / DPH-154 and the ip.access nano3G
 
+> ### ⚠️ **NO WARRANTY. READ THIS BEFORE YOU ACT ON ANYTHING BELOW.**
+> These are **field notes, not a product.** Following them can **permanently destroy hardware**,
+> **permanently lock SIM cards**, and **cause radio transmission on licensed spectrum**. You are
+> responsible for what your equipment transmits and for the laws where you are.
+> ⛔ **A private cell cannot complete emergency calls** — see the 911 warning below.
+> **Nothing here is legal advice.**
+
 AT&T shut down its UMTS network on **2022-02-22**. The MicroCell femtocells sold to
 customers to fix indoor coverage stopped being able to do their job that day, and they
 have been landfill-priced ever since — routinely under $15, often under $10.
@@ -73,6 +80,24 @@ neither band is vacant. **Read the “Before you transmit: spectrum” section b
 ⚠️ One temptation worth naming here: Band 5 propagates roughly 7 dB better than Band 2, which
 makes it exactly the wrong thing to reach for when coverage disappoints. Better propagation is
 less containment.
+
+### ☠️ EMERGENCY CALLING DOES NOT WORK ON THIS CELL — AND THE HANDSET WILL NOT SAY SO
+
+A handset that camps onto your cell will try to place **911 / 112 / 999 calls through it**, and
+**they will not complete.** The handset shows the user **no warning and no indication**: it
+displays bars, it looks like service, and the call fails when it matters most.
+
+⛔ **This is not fixable with configuration.** A private core has no route to an emergency
+services network, and there is no setting that makes one appear.
+
+⇒ ⭐ **So the containment rule is not only about spectrum.** Use **programmed SIMs you control**,
+**minimum transmit power**, and **physical containment**, so that no handset you do not control
+can camp onto it. ⚠️ **Band 5 propagates ~7 dB better than Band 2 — better propagation is more
+strangers' handsets, not just more coverage.**
+
+☠️ **If anyone in the building might rely on a phone to call for help, do not run the cell.**
+**This is the most dangerous property of a private cell and it is the one most easily forgotten,
+because nothing ever reports it as an error.**
 
 ### ⛔ Never broadcast a real carrier's PLMN
 
@@ -287,10 +312,30 @@ source that already exists rather than publishing a new one. **`sysmocom`'s ship
 configuration is the other artefact worth reading**: it settles at least one question in
 [`docs/CONFIG.md`](docs/CONFIG.md) that our own measurements only corroborated.
 
+## Trademarks
+
+AT&T and MicroCell are trademarks of AT&T Intellectual Property. Cisco is a trademark of Cisco
+Systems, Inc. ip.access and nano3G are trademarks of ip.access Ltd, acquired by Mavenir in
+September 2020. These marks are used here **only to identify the hardware this document
+describes**, as permitted by nominative fair use.
+
+⛔ **This project is not affiliated with, endorsed by, or sponsored by AT&T, Cisco, ip.access or
+Mavenir.**
+
 ## Licence
 
-**GPL-3.0.** See [`LICENSE`](LICENSE).
+- **Documentation** — `README.md`, `docs/`, `config/` — [**CC BY-SA 4.0**](https://creativecommons.org/licenses/by-sa/4.0/), see [`LICENSE-DOCS`](LICENSE-DOCS)
+- **Code** — `tools/` — [**GPL-3.0**](LICENSE)
+
+📌 **Commits before 2026-09-18 were published under GPL-3.0 and remain available under it.** The
+split applies going forward, because GPLv3 is a software licence whose source/object-code
+machinery does not map onto prose, and this repository is mostly prose.
 
 ⚠️ The licence covers the **writing and the scripts in this repository**. It says nothing about
 the femtocell firmware itself, which is ip.access's and is **not distributed here** — see
 [`docs/HARDWARE.md`](docs/HARDWARE.md) for what you need to obtain yourself and from where.
+
+## Contributing and security
+
+Corrections are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md) for the evidence vocabulary
+and the contribution licence. Vendor contact and disclosure posture: [`SECURITY.md`](SECURITY.md).
