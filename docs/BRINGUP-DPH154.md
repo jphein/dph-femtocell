@@ -171,6 +171,43 @@ everything else here is.** 📌 **Y2K-dated leaf certificates are what worked; s
 ⛔ **That is NOT root, and it is NOT persistent** — it lasts exactly as long as you keep standing
 where AT&T stood. ⇒ **Phase 2 is what converts a session into a shell.**
 
+> ### ☠️☠️☠️ **AND BUDGET FOR THIS: EVERY UNIT THAT HAS EVER WORKED HERE INFORMED FOR *ONE DAY* AND THEN DIALLED FOREVER IN SILENCE.**
+> `[measured across three units on one ACS. Counted from the ACS's own logs.]`
+> ```
+> unit B   09-05        392 dials / 92 Informs  (23.5%)
+> unit B   09-06->09-17 477 dials / 0  Informs  (0%)      <- TWELVE DAYS, NOT ONE INFORM
+> unit C   09-11        its only Informing day
+> unit A   never Informed at all
+> ```
+> ⇒ ⭐⭐⭐ **THE DEVICE KEEPS DIALLING. It completes TLS, presents its client certificate, ACKs your
+> Finished — and then FINs with ZERO APPLICATION BYTES.** **It is not unreachable, not misrouted,
+> not refusing your certificate. It connects perfectly and says nothing.**
+> ### ⛔ **THIS KILLS THE PER-DEVICE EXPLANATION, WHICH IS THE ONE EVERYONE REACHES FOR FIRST**
+> **Three units, three different firmware trains, and the SAME one-day shape.** ⇒ **"that unit is
+> faulty" / "that build is different" / "that one's certificate is wrong" cannot account for a
+> pattern all three share.** ⚠️ **Plan Phase 3 around a management window that may close and not
+> reopen — get what you need in the first day.**
+> ### 📕 **RULED OUT, SO NOBODY SPENDS A NIGHT ON THEM**
+> ```
+> "serve it a different certificate"   ⛔ CLOSED, n=2 on the same intervention. A cert the unit
+>                                         PROVABLY accepts on its other management leg was served
+>                                         on the ACS leg; it FINed with zero bytes anyway, twice.
+> "our rejected SetParameterValues     ⛔ CLOSED. The last Informing session of the unit that went
+>  broke it"                              quiet contains NO ACS->CPE RPC AT ALL. Nothing was sent
+>                                         to it to have broken it.
+> "the clock is wrong, so the Y2K      ⛔ CLOSED. A unit's own report carries a CORRECT wall-clock
+>  certificate reads as not-yet-valid"    time.
+> ```
+> ⭐⭐ **The shape that survives all three: a post-handshake, LOCAL, SILENT decision on the device,
+> in single-digit milliseconds, with no network fetch.** **That is the revocation / trust-store
+> shape — reached from the wire, independently of any code reading.**
+> ⛔ **BOUND, AND IT IS LOAD-BEARING FOR EVERYTHING ABOVE:** the ACS log records *dialled → TLS-OK →
+> peer closed* and **nothing between — no byte count, no request line.** ⇒ ***"it sends zero
+> application bytes" is an INFERENCE FROM AN ABSENT LOG LINE.*** **Three states log identically:**
+> **(a) it sent nothing · (b) it sent HTTP we could not parse · (c) headers, then closed pre-body.**
+> ⇒ ✅ **A packet capture of that leg discriminates them and needs no code change. Until someone
+> runs one, what is established is only *"we never logged anything it said."***
+
 > ### ⚠️ **THE CWMP STORE AND THE NV ENVIRONMENT ARE DIFFERENT PLACES, AND CONFUSING THEM COSTS A DAY**
 > ```
 > our ACS writes  ->  the CWMP store only   (/var/ipaccess/cisco/dslg_cur_cfg.xml.gz)
@@ -753,35 +790,48 @@ CWMP Download -> swdl_client -> activate_bank -> activate_fs -> set_hardened_sta
 > ### 🎯 **THE LEVER IS NOT THE FILE WRITE. IT IS `FS_VARIANT`, AND IT COMES FROM THE IMAGE YOU SUPPLY.**
 > `set_hardened_state` loop-mounts the filesystem **you served** and reads `FS_VARIANT` out of its own
 > `/etc/sw_description.dat`. The hardening decision is then **a pure function of the 4th character**:
+> ### ✅ **THE LETTER SET MEANS *UNHARDENED*. THE VENDOR NAMES THE VARIABLE, SO THERE IS NOTHING TO INTERPRET.**
 > ```
-> rcS:48   FS_LETTER=$(echo $FS_VARIANT | cut -c4)   ->  DEFAULT_UNHARDENED
->          hardened only for:  A C E G I W X Z
+> rcS:83-93              FS_LETTER    = `echo $FS_VARIANT | cut -c4`
+>                        A C E G I W X Y Z  ->  DEFAULT_UNHARDENED="TRUE"
+>                                               ⬆ THE VENDOR'S OWN VARIABLE NAME
+>
+> swdl_client:1008-1028  ALTFSLETTER  = `echo $1 | cut -c4`
+>                        A C E G I W X   Z  ->  "Development release - enabling uboot and
+>                                                kernel consoles"
+>                                               ENV_FIREWALL_DISABLED        TRUE
+>                                               ENV_VERBOSE_CONSOLE_ENABLED  TRUE
+>                        else               ->  "Production release - disabling ..."
+>                                               ENV_FIREWALL_DISABLED        FALSE
 > ```
-> ⇒ ⭐ **You choose that character.** The unit hardens or unhardens *itself*, on your say-so, through
-> its own vendor code path.
-> ### 🔴🔴 **POLARITY DISPUTED 2026-09-17 — TWO SOURCES NAME THE SAME EIGHT LETTERS AND MEAN OPPOSITE THINGS. DO NOT ACT ON EITHER YET.**
+> ⇒ ⭐ **You choose that character.** **A letter IN the set = development = firewall OFF, consoles
+> ON. A letter OUTSIDE it = production = firewall ON.** The unit unhardens *itself*, on your say-so,
+> through its own vendor code path.
+> ### 🔴 **CORRECTED 2026-09-17 — THIS PAGE HAD THE POLARITY EXACTLY BACKWARDS**
+> ~~*"rcS:48 … hardened only for: A C E G I W X Z"*~~
+> ⛔ **A reader who trusted that line would serve a "hardened" image in order to HARDEN a unit and
+> get the FIREWALL TURNED OFF** — on the operation that rewrites both U-Boot banks.
+> ⭐⭐⭐ **THE FIX IS TO QUOTE THE NAME, NOT TO RESTATE THE RULE:** `DEFAULT_UNHARDENED="TRUE"` is
+> the vendor's own identifier, and ***a variable the vendor named cannot be re-inverted by a later
+> reader's interpretation.*** **Every paraphrase of a polarity is one inversion away from wrong;
+> the identifier is not.**
+> ### ✅ **THREE INDEPENDENT AGREEMENTS, WHICH IS WHY THIS IS SETTLED AND NOT MERELY RE-ARGUED**
 > ```
-> THIS PAGE (above)        "hardened only for:  A C E G I W X Z"
-> swdl_client:1008-1023    letter in A C E G I W X Z  ->  ENV_FIREWALL_DISABLED  TRUE
->                                                         ENV_VERBOSE_CONSOLE_ENABLED TRUE
->                                                         fw_setenv bootdelay 5 ; consoledev ttyS0
->                          i.e. THAT SET IS THE **DEVELOPMENT** SET -- FIREWALL **OFF**.
+> 1 CODE              rcS's variable is literally called DEFAULT_UNHARDENED
+> 2 VENDOR DEBUG STR  swdl_client prints "Development release" / "Production release"
+> 3 DEVICE BEHAVIOUR  a 579.11.127 unit reports 282F -- letter F, OUTSIDE both sets -> production
+>                     -> and its firewall is measurably ON: iptables-282F-rules has 0 inbound-NEW
+>                        ACCEPTs against 2 in every 205*/224*/234* ruleset, every probe REJECTed
 > ```
-> ⇒ ☠️☠️ **THE SAME EIGHT LETTERS, READ AS *HARDENED* BY THIS PAGE AND AS *UNHARDENED* BY THE
-> SCRIPT.** ⛔ **A reader who picks the wrong polarity serves an image that does the OPPOSITE of what
-> they intended — and the operation is the irreversible one that rewrites both U-Boot banks.**
-> ### 📌 **A THIRD DATA POINT, WHICH LEANS ONE WAY — OFFERED AS EVIDENCE, NOT AS THE VERDICT**
-> **A unit measured on the `579.11.127` train reports its own variant as `282F` — letter `F`, NOT in
-> the eight — and that unit's firewall is ON** (its `iptables-282F-rules` has **zero** inbound-NEW
-> ACCEPTs, against two in every `205*/224*/234*` ruleset).
-> ⇒ **not-in-the-set ⇒ firewall ON**, which makes **in-the-set ⇒ firewall OFF**, i.e. the eight are
-> the **development / unhardened** letters and **this page's line is inverted.**
-> ⚠️ **Stated as a lean, because it rests on one unit and on the two branches agreeing** — and this
-> page already documents that `rcS` and `swdl_client` **do not** agree with each other about `Y`.
-> ⇒ ⭐ **If they can disagree on membership, they can disagree on polarity, and then BOTH statements
-> are locally true about different code paths.** **Nobody has read the two branches side by side.**
-> ✅ **What settles it: quote `rcS:48` and `rcS:84-93` verbatim beside `swdl_client:1008-1023` and
-> state which sets the firewall which way.** **Until then this is flagged, not fixed.**
+> ⇒ **Source, the vendor's own words about the source, and a running unit — all three agree.**
+> ### ⚠️ **AND THE MEMBERSHIP SPLIT IS REAL AND SURVIVES: `rcS` INCLUDES `Y`, `swdl_client` DOES NOT**
+> **The two files agree on POLARITY and differ on MEMBERSHIP, and only on `Y`.**
+> ⇒ **A `…Y…` variant is UNHARDENED to `rcS` and PRODUCTION to `swdl_client`** — a unit in that
+> state disagrees with itself about what it is. **Someone will hit it.**
+> 📌 **Recorded because the worry that resolved the other way is worth keeping: a membership
+> disagreement did NOT imply a polarity disagreement.** ⭐ **Two files can differ on WHICH inputs
+> take a branch while agreeing perfectly on WHAT the branch does** — ⇒ ***check the two separately,
+> because one disagreement is not evidence of the other.***
 
 > ### ⚠️ A LATENT DISAGREEMENT BETWEEN TWO IMPLEMENTATIONS OF THE SAME TEST
 > ```
