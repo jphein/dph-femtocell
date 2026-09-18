@@ -1159,6 +1159,29 @@ address. If you host more than one service, you need more than one address — a
 > `strings` reported the TLS 1.0 client method **absent** while `nm -D` found it present. The
 > author was one step from publishing "no TLS 1.0 support", which is the opposite of the truth.
 
+> ### ☠️☠️ **AND THE SECOND FAILURE MODE IS A *REGRESSION*, NOT A SETUP PROBLEM — IT KILLS A WORKING FLEET**
+> **Everything above is written for someone who has never connected.** ⛔ **The nastier version
+> happens months later, to a core that works:** you upgrade the OS, bump OpenSSL, or tighten a TLS
+> policy for an unrelated service — **and every DPH-154 stops managing at once.**
+> ```
+> a DPH-154 offers:   TLS 1.0 ONLY · exactly ONE cipher suite (0x002f) · NO extensions
+> ```
+> ⇒ ⭐⭐⭐ **ONE cipher suite means there is no negotiation margin whatsoever.** A modern default, a
+> distro-wide crypto policy, or a `SECLEVEL` bump removes the *only* suite it can speak. **There is
+> no second-best for it to fall back to** — the handshake does not degrade, it ends.
+> ### ⛔ **AND IT PRESENTS AS "THE DEVICES DIED", WHICH SENDS YOU TO THE HARDWARE**
+> **Every unit fails simultaneously, none has been touched, and the thing that changed is on the
+> other machine.** ⇒ **Simultaneity across independent devices is the tell: it points at the one
+> thing they share, which is your core — never at N devices failing at once.**
+> ✅ **Before any core upgrade, pin the requirement in writing where whoever does the upgrade will
+> see it:** *this host must keep offering TLS 1.0 and cipher `0x002f`
+> (`TLS_RSA_WITH_AES_128_CBC_SHA`).* ⭐ **Record it as a CONSTRAINT ON THE CORE, not as a fact about
+> the femtocells** — the person running `apt upgrade` is not reading the femtocell guide.
+> 📌 **Same class as the DPH-151's dropbear 0.50 needing the legacy SSH set** (see
+> [`ACCESS.md`](ACCESS.md)): an obsolete peer whose requirements are invisible until routine
+> maintenance silently removes them. ⚠️ **The SSH one fails loudly at your prompt; this one fails on
+> a device with no screen.**
+
 ---
 
 ## 25. It registers, de-registers ~15 seconds later, and it is **not** the famous bug

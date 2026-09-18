@@ -202,6 +202,26 @@ Nothing here is legal advice. Rules differ by country; find out which apply to y
 
 This is about making a femtocell **you own** serve a core **you run**. That is the whole subject.
 
+> ### ⛔ **ONE CONSTRAINT ON *YOUR CORE* BEFORE YOU BUILD IT — AND IT IS THE ONE THAT BITES LATER**
+> **These devices ship a 2008 TLS stack.** A DPH-154 offers **TLS 1.0 only, exactly one cipher
+> suite (`0x002f` / `TLS_RSA_WITH_AES_128_CBC_SHA`), and no extensions.**
+> ⇒ ⭐⭐ **One suite means there is no negotiation margin at all.** Any modern default, distro crypto
+> policy, or `SECLEVEL` bump removes the *only* thing it can speak, and the handshake does not
+> degrade — it ends.
+> ### ☠️ **THE FAILURE YOU SHOULD ACTUALLY PLAN FOR IS NOT SETUP. IT IS A ROUTINE UPGRADE, MONTHS LATER.**
+> **You will get this working. Then you will upgrade the OS or tighten TLS for an unrelated service
+> on the same host, and every femtocell will stop managing at once** — none of them touched.
+> ⛔ **It presents as *"the devices died"*, which sends you to the hardware.** ⭐ **Simultaneity is
+> the tell: N independent devices do not fail in the same minute — the thing that changed is the one
+> thing they share, which is your core.**
+> ✅ **So write the requirement down on the CORE, next to whatever runs its upgrades — not in the
+> femtocell notes.** *The person typing `apt upgrade` is not reading this page.*
+> 📌 Mechanism, probe and the way `openssl s_client` misreports it:
+> [trap 24](docs/TRAPS.md#24-your-tls-server-is-too-modern-to-talk-to-it). **Same class as the
+> DPH-151's SSH needing the legacy cipher set — an obsolete peer whose requirements are invisible
+> until maintenance removes them.** ⚠️ **The SSH one fails loudly at your prompt. This one fails on a
+> device with no screen.**
+
 It deliberately does not cover attacking, intercepting or impersonating anyone else's
 equipment or network. Some of the same mechanisms would apply — that is true of most
 networking knowledge — but the material here is organised around reuse, and working attack
