@@ -67,12 +67,26 @@ kramdown:
   input: GFM
   hard_wrap: false
 
-# In the repository but not part of the published site. Nothing in the docs
-# links to these, so excluding them breaks no navigation -- checked with
-# tools/check-links.py.
+# In the repository but not part of the published site.
+#
+# ⚠️ ONLY tools/ IS EXCLUDED, AND THE REASON THE LIST IS THIS SHORT IS A BUG THAT
+#    WAS ALMOST SHIPPED. On 2026-09-18 this list also held LICENSE, LICENSE-DOCS,
+#    CONTRIBUTING.md and SECURITY.md -- all four of which the README LINKS.
+#
+#    An excluded page is not copied to _site, and jekyll-relative-links rewrites
+#    a .md link to .html regardless. So `[CONTRIBUTING.md](CONTRIBUTING.md)` would
+#    have become `/CONTRIBUTING.html` and 404'd ON THE SITE ONLY.
+#
+# ⭐ AND tools/check-links.py CANNOT SEE THIS CLASS OF DEFECT, which is the part
+#    worth remembering. It validates that a relative link resolves IN THE
+#    REPOSITORY, and every one of those links did. The file exists; the link is
+#    correct; the target is simply never published. The checker is right and the
+#    site is broken, and no amount of running it harder would have said so.
+#    ⇒ An exclusion is a SECOND link-resolution rule that runs at build time, and
+#      nothing in this repo checks it. If you add to this list, hand-check that
+#      nothing links to what you excluded.
+#
+#    The old comment here read "Nothing in the docs links to these" -- which was
+#    already false when it was written, because the README linked LICENSE.
 exclude:
   - tools/
-  - LICENSE
-  - LICENSE-DOCS
-  - CONTRIBUTING.md
-  - SECURITY.md
