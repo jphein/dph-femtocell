@@ -3151,9 +3151,18 @@ AUTOCONFIGSERVER_URL   9 hits in a DPH-151 image · 0 in the DPH-154 rootfs
                        ⚠️ BOUND: that rootfs is ONE filesystem of a 12-partition NAND dump
 the 154's actual write:  ENV_BASICOAM_DISABLED: TRUE
 ```
-⇒ ⭐ **On the 154 you TURN BASIC OAM OFF — stopping the unit phoning its real operator — and take
-root through `ENV_XKINIT` in the same `Tuning` write.** ⛔ **You do not repoint it.**
-📌 [`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) Phase 2 has that write in full.
+⇒ ⭐ **On the 154 you TURN BASIC OAM OFF — stopping the unit phoning its real operator.** ⛔ **You do
+not repoint it.**
+> ### 🔴 **CORRECTED 2026-09-17 — THE SECOND HALF OF THIS LINE NAMED A REJECTED KEY.**
+> ~~*"…and take root through `ENV_XKINIT` in the same `Tuning` write."*~~
+> **`ENV_XKINIT` is not a key this firmware accepts** — the device faults the SPV `9003/9007` and
+> names the value in its own rejection. **The `ENV_BASICOAM_DISABLED: TRUE` half of this entry is
+> measured and stands; the root-through-`ENV_XKINIT` half does not.**
+> ⭐⭐ **WHY THIS ONE MATTERED MORE THAN ITS LENGTH SUGGESTS:** it is a **subordinate clause in a trap
+> about a DIFFERENT subject** (`AUTOCONFIGSERVER_URL` vs `ENV_BASICOAM_DISABLED`). **Nobody
+> correcting the Phase 2 route would think to grep a Basic-OAM trap** — ⇒ ***a claim survives longest
+> where it is not the topic.*** 📌 This corpus's own law: *grep the corpus, not grep carefully.*
+📌 [`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) Phase 2 has the corrected write and the six accepted keys.
 
 ### ✅ The check
 

