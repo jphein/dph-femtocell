@@ -45,6 +45,38 @@ station location               a fixed address for a bench cell
 times of operation             not "continuous" unless you mean it
 ```
 
+### 📝 The worksheet — what to have in hand before you open Form 442
+
+⭐ **Most of this is already printed on your unit or published in its FCC grant.** ⛔ **Do not
+invent any of it, and do not copy it from this page** — the grant for *your* FCC ID is the
+authoritative source and a regulator can check it in the same database you can.
+
+```
+1. FRN                     get it first, from the FCC CORES system. Nothing files without it.
+2. FCC ID                  read it off the unit's own label. NOT the rear barcode -- this repo
+                           documents that the barcode is wrong across models. The separate
+                           FCC-ID label is the authoritative one.
+3. emission designator     LOOK IT UP IN THE GRANT for that FCC ID. Do not guess it and do not
+                           take it from a forum: it is a precise field and it is published.
+4. authorised power        also in the grant. Then ask for LESS -- see below.
+5. frequency / UARFCN      the exact downlink channel you intend to use, not "Band 2".
+                           Confirm your unit's bands from the DEVICE (`get umtsBandsSupported`),
+                           not the label -- ALTERNATIVES.md covers why.
+6. antenna                 type, gain, height above ground.
+7. location                the fixed address where the cell will sit.
+8. times of operation      when you will actually transmit. "Continuous" invites questions you
+                           do not want and probably is not true.
+9. purpose                 plain words: what you are testing and why. This is a real field, not
+                           a formality -- it is how eligibility under 5.51 gets assessed.
+```
+
+> ### ⭐ **ASK FOR LESS POWER THAN THE GRANT ALLOWS, AND SAY WHY**
+> **The grant tells you what the hardware may emit. Your application says what you intend to
+> emit, and those are different numbers.** ⇒ **Requesting the minimum that makes your handsets
+> attach, and saying in the purpose field that the experiment is deliberately contained to one
+> room, is the single thing most likely to make the application boring** — and boring is exactly
+> what you want. ⚠️ **A hobby bench request at full authorised power reads like a deployment.**
+
 ### ⛔ The condition that never goes away, licence or not
 
 **§ 5.84 — non-interference.** An experimental station operates **only** on the condition that

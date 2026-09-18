@@ -1,5 +1,16 @@
 # Bring-up: ip.access nano3G S8 — from a sealed box to a call
 
+> ## 🔑 **THIS PAGE ASSUMES THE DEVICE IS YOURS. THAT IS NOT A DISCLAIMER — IT IS THE SUBJECT.**
+> **Everything here is written for someone holding hardware they bought, pointing it at a core
+> they run.** ⭐ **That is not packaging around the technical content; it is what the technical
+> content is *for*.** A guide to reusing your own device and a guide to attacking someone else's
+> are different documents even where a paragraph would look the same.
+> ⛔ **Nothing here is for equipment or a network you do not own** — not a carrier's, not a
+> neighbour's, not one you found. **No route on this page is published to help you reach
+> somebody else's unit**, and every one of them needs physical or LAN access you would only
+> have to your own.
+> 📌 **What you may publish, what you may not, and the one bright line: [`LEGAL.md`](LEGAL.md).**
+
 > ## 1️⃣ **BEFORE STEP ONE — CONFIRM WHICH UNIT YOU ARE HOLDING: [`MATRIX.md`](MATRIX.md)**
 > **This guide is for the ip.access nano3G: one SoC · live bank `config_bank_2` · **563** train · DMI on `:8090` WORKS**
 > ⇒ ⛔ **If your unit is not that, STOP — the other models differ in ways that have cost this

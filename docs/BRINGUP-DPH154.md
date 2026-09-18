@@ -1,5 +1,16 @@
 # Bring-up: Cisco DPH-154 — the provider-emulation route, and the one bit that stops it
 
+> ## 🔑 **THIS PAGE ASSUMES THE DEVICE IS YOURS. THAT IS NOT A DISCLAIMER — IT IS THE SUBJECT.**
+> **Everything here is written for someone holding hardware they bought, pointing it at a core
+> they run.** ⭐ **That is not packaging around the technical content; it is what the technical
+> content is *for*.** A guide to reusing your own device and a guide to attacking someone else's
+> are different documents even where a paragraph would look the same.
+> ⛔ **Nothing here is for equipment or a network you do not own** — not a carrier's, not a
+> neighbour's, not one you found. **No route on this page is published to help you reach
+> somebody else's unit**, and every one of them needs physical or LAN access you would only
+> have to your own.
+> 📌 **What you may publish, what you may not, and the one bright line: [`LEGAL.md`](LEGAL.md).**
+
 > ## 1️⃣ **BEFORE STEP ONE — CONFIRM WHICH UNIT YOU ARE HOLDING: [`MATRIX.md`](MATRIX.md)**
 > **This guide is for the DPH-154: **no config banks at all** · **579** train · ⛔ JP: DO NOT OPEN IT**
 > ⇒ ⛔ **If your unit is not that, STOP — the other models differ in ways that have cost this

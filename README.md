@@ -234,6 +234,13 @@ Nothing here is legal advice. Rules differ by country; find out which apply to y
 
 This is about making a femtocell **you own** serve a core **you run**. That is the whole subject.
 
+⭐ **And it is the substance of this project's position, not a disclaimer wrapped around it.**
+**Owning the device is what makes every route on these pages a repair manual rather than an
+attack guide** — and it is why the scope holds even where a mechanism would transfer.
+📌 **Restated at the top of every page that describes a way in**, because a scope limit that
+lives only on the front page is one the reader never meets. **What you may publish and the one
+bright line: [`docs/LEGAL.md`](docs/LEGAL.md).**
+
 > ### ⛔ **ONE CONSTRAINT ON *YOUR CORE* BEFORE YOU BUILD IT — AND IT IS THE ONE THAT BITES LATER**
 > **These devices ship a 2008 TLS stack.** A DPH-154 offers **TLS 1.0 only, exactly one cipher
 > suite (`0x002f` / `TLS_RSA_WITH_AES_128_CBC_SHA`), and no extensions.**

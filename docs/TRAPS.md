@@ -1,5 +1,16 @@
 # Traps
 
+> ## 🔑 **THIS PAGE ASSUMES THE DEVICE IS YOURS. THAT IS NOT A DISCLAIMER — IT IS THE SUBJECT.**
+> **Everything here is written for someone holding hardware they bought, pointing it at a core
+> they run.** ⭐ **That is not packaging around the technical content; it is what the technical
+> content is *for*.** A guide to reusing your own device and a guide to attacking someone else's
+> are different documents even where a paragraph would look the same.
+> ⛔ **Nothing here is for equipment or a network you do not own** — not a carrier's, not a
+> neighbour's, not one you found. **No route on this page is published to help you reach
+> somebody else's unit**, and every one of them needs physical or LAN access you would only
+> have to your own.
+> 📌 **What you may publish, what you may not, and the one bright line: [`LEGAL.md`](LEGAL.md).**
+
 Failure modes that cost us days. Each one is written as **SYMPTOM** (what you will see),
 **MECHANISM** (why), and **CHECK** (the observation that distinguishes it from what it
 resembles).
