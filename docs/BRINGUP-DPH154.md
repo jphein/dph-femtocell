@@ -653,10 +653,24 @@ next section as instructions.**
 > | bank / bootloader write | ⭐ **NONE — a trailing `exit 0` returns from the sourced script and skips `post_swdl_hook`'s `delete_config` / `switching_bank` tail** | ⛔ **BOTH U-Boot banks rewritten** |
 > | reversible | ✅ **yes — "it never writes a firmware bank, so the active image stays verifiable"** | ⛔ **no** |
 > | status here | ✅ **the route that rooted a DPH-151** | ⚠️ **tested on the 154 by JP; did not work** |
+> | **the `FS_VARIANT` dev-letter branch** | ⛔ **NOT REACHABLE** | ✅ **this is where it lives** |
 >
 > ⇒ ⭐⭐⭐ **The irreversibility belongs to the IMAGE variant, not to "software download".** ⛔ **A
 > reader who learns *"software downloads rewrite bootloaders"* will avoid the cheap one too — which
 > is the one that actually worked on a sibling model.**
+> ### ⛔⛔ **AND THE MIRROR ERROR, WHICH IS THE ONE THIS TABLE NOW INVITES: YOU CANNOT GET THE DEV-LETTER BRANCH CHEAPLY.**
+> **`init_nv_env` is called from `swdl_client:1043/1054`, immediately after
+> `mount -o loop -t cramfs $1/images/fs.bin` — it reads `FS_VARIANT` out of a MOUNTED FILESYSTEM
+> IMAGE.** ⇒ **No filesystem, no branch.** ⛔ **A `0x5007` payload is a shell script; there is
+> nothing to loop-mount, so the dev-letter lever is unavailable on the free, reversible path.**
+> ⚠️ **Reading the two halves of this table separately — "`0x5007` is free and reversible" and "one
+> character turns the firewall off" — and combining them produces a route that does not exist.**
+> ⇒ ⭐ ***The dev-letter lever and the reversible download are in different columns, and that is the
+> whole point of the table.*** **The lever costs the dual-bank rewrite. That is JP's decision to
+> take, not a lane's.**
+> 📌 **And on a production unit the branch works AGAINST you every boot:** a variant letter outside
+> the eight makes the active-bank path **re-assert the production values on every run**. **The
+> firewall is switched on deliberately, by design, not left on by neglect.**
 > ### ✅ **WHY `0x5007` NEEDS NO SIGNATURE**
 > **Image signing is OFF on these builds (`verifyflash` disabled)** — the package needs only its
 > three internal CRCs and a well-formed header. ⇒ **That is the property the whole route rests on.**
@@ -695,6 +709,29 @@ CWMP Download -> swdl_client -> activate_bank -> activate_fs -> set_hardened_sta
 > ```
 > ⇒ ⭐ **You choose that character.** The unit hardens or unhardens *itself*, on your say-so, through
 > its own vendor code path.
+> ### 🔴🔴 **POLARITY DISPUTED 2026-09-17 — TWO SOURCES NAME THE SAME EIGHT LETTERS AND MEAN OPPOSITE THINGS. DO NOT ACT ON EITHER YET.**
+> ```
+> THIS PAGE (above)        "hardened only for:  A C E G I W X Z"
+> swdl_client:1008-1023    letter in A C E G I W X Z  ->  ENV_FIREWALL_DISABLED  TRUE
+>                                                         ENV_VERBOSE_CONSOLE_ENABLED TRUE
+>                                                         fw_setenv bootdelay 5 ; consoledev ttyS0
+>                          i.e. THAT SET IS THE **DEVELOPMENT** SET -- FIREWALL **OFF**.
+> ```
+> ⇒ ☠️☠️ **THE SAME EIGHT LETTERS, READ AS *HARDENED* BY THIS PAGE AND AS *UNHARDENED* BY THE
+> SCRIPT.** ⛔ **A reader who picks the wrong polarity serves an image that does the OPPOSITE of what
+> they intended — and the operation is the irreversible one that rewrites both U-Boot banks.**
+> ### 📌 **A THIRD DATA POINT, WHICH LEANS ONE WAY — OFFERED AS EVIDENCE, NOT AS THE VERDICT**
+> **A unit measured on the `579.11.127` train reports its own variant as `282F` — letter `F`, NOT in
+> the eight — and that unit's firewall is ON** (its `iptables-282F-rules` has **zero** inbound-NEW
+> ACCEPTs, against two in every `205*/224*/234*` ruleset).
+> ⇒ **not-in-the-set ⇒ firewall ON**, which makes **in-the-set ⇒ firewall OFF**, i.e. the eight are
+> the **development / unhardened** letters and **this page's line is inverted.**
+> ⚠️ **Stated as a lean, because it rests on one unit and on the two branches agreeing** — and this
+> page already documents that `rcS` and `swdl_client` **do not** agree with each other about `Y`.
+> ⇒ ⭐ **If they can disagree on membership, they can disagree on polarity, and then BOTH statements
+> are locally true about different code paths.** **Nobody has read the two branches side by side.**
+> ✅ **What settles it: quote `rcS:48` and `rcS:84-93` verbatim beside `swdl_client:1008-1023` and
+> state which sets the firewall which way.** **Until then this is flagged, not fixed.**
 
 > ### ⚠️ A LATENT DISAGREEMENT BETWEEN TWO IMPLEMENTATIONS OF THE SAME TEST
 > ```
@@ -707,6 +744,30 @@ CWMP Download -> swdl_client -> activate_bank -> activate_fs -> set_hardened_sta
 ⛔ **`-noswap` is never passed** (the operation type is hardcoded), so `activate_bank` **does** run —
 which means **`uboot-install` rewrites both U-Boot banks first.** ⇒ **This is not a reversible probe.
 It rewrites bootloaders.**
+
+> ### ⚠️ **A PROPERTY OF THE VENDOR'S SCRIPT, RECORDED BECAUSE AN OWNER SHOULD KNOW IT — AND DELIBERATELY NOT WEAPONISED HERE**
+> **`swdl_client` extracts the served archive BEFORE it validates anything, and the vendor left the
+> guard as a comment:**
+> ```
+> :700  # TODO: need to ensure this is safe against directory traversal
+> :701  #       (e.g. tar file containing ../../../var/ipaccess/nv_env.sh ?!)
+> :714  ret=`... | tar x -C $STANDBY_IMAGE_DIR ...`     <- EXTRACT
+> :725  validate_bank $STANDBY_BANK                     <- VALIDATE, ELEVEN LINES LATER
+> ```
+> ⇒ ⭐⭐ **Extraction precedes validation, so a signature check CANNOT prevent a write — the files
+> are on disk before anything is verified.** **`validate_bank` stops a bad bank BOOTING; it does not
+> stop a bad archive UNPACKING.** ⭐ **The vendor's own `TODO`, naming the attack, is the strongest
+> available evidence that nobody added the guard.**
+> ### ⛔ **BOUND, CARRIED VERBATIM FROM THE LANE THAT READ IT**
+> ***"`bin/tar → busybox` (2014) and whether THIS busybox strips `..` is version-dependent and was
+> not executed."*** ⇒ ***UNGUARDED BY THE SCRIPT IS NOT DEMONSTRATED TRAVERSABLE.*** **busybox has
+> stripped leading `../` by default for much of its history; nobody has checked this build.**
+> ### 🔒 **AND THIS REPO DOES NOT PUBLISH A PAYLOAD FOR IT, BY POLICY AND ON PURPOSE**
+> **It is stated because a person who owns one of these needs to know their unit will unpack an
+> unsigned archive from whoever it is pointed at** — which is a reason to keep the ACS leg on a
+> network you control. ⛔ **It is not a walkthrough, and the crafted archives are not in this repo.**
+> ⭐ **Same judgement as the rest of this page: the mechanism stated accurately, stopping short of an
+> assembled article** — see the scope note in the [README](../README.md).
 
 📌 **And do not expect `ENV_FIREWALL_DISABLED` in `nv_env.sh` to do anything on its own** — that
 value is **dead state** for the running environment. The firewall follows `FS_VARIANT`, not the file.
