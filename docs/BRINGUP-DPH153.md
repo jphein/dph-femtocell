@@ -1,5 +1,16 @@
 # Bring-up: Cisco DPH-153 — the published route, and what this repo can and cannot tell you
 
+> ## 🔑 **THIS PAGE ASSUMES THE DEVICE IS YOURS. THAT IS NOT A DISCLAIMER — IT IS THE SUBJECT.**
+> **Everything here is written for someone holding hardware they bought, pointing it at a core
+> they run.** ⭐ **That is not packaging around the technical content; it is what the technical
+> content is *for*.** A guide to reusing your own device and a guide to attacking someone else's
+> are different documents even where a paragraph would look the same.
+> ⛔ **Nothing here is for equipment or a network you do not own** — not a carrier's, not a
+> neighbour's, not one you found. **No route on this page is published to help you reach
+> somebody else's unit**, and every one of them needs physical or LAN access you would only
+> have to your own.
+> 📌 **What you may publish, what you may not, and the one bright line: [`LEGAL.md`](LEGAL.md).**
+
 > ## 1️⃣ **BEFORE STEP ONE — CONFIRM WHICH UNIT YOU ARE HOLDING: [`MATRIX.md`](MATRIX.md)**
 > **This guide is for the DPH-153: the donor archive's train · board code `224F`**
 > ⇒ ⛔ **If your unit is not that, STOP — the other models differ in ways that have cost this
@@ -60,6 +71,7 @@ not about any model's hardware:
 |---|---|---|
 | Pointing the unit at your own core | [`BRINGUP.md`](BRINGUP.md) Phase 4 | ✅ same attributes |
 | Radio parameters, unlock order, the transmission gate | [`BRINGUP.md`](BRINGUP.md) Phase 5 | ✅ same attributes |
+
 | Surviving a power cut unattended | [`BRINGUP.md`](BRINGUP.md) Phase 7 | ✅ same mechanism |
 | The failure modes | [`TRAPS.md`](TRAPS.md) | ⚠️ **read each entry's scope line** |
 | Which config bank is live | [`trap 2`](TRAPS.md#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell) | 🔴 **per-model. Read the symlink; never assume.** |
@@ -83,7 +95,7 @@ answer for a finding that is not model-specific, and **is not the same claim.**
 ## ✅ A WORKING REFERENCE **CONFIG SET** EXISTS — added 2026-09-14
 
 **It is the CORE side, not a device procedure, and that distinction is the whole value of it.**
-📌 **[`microcell/docs/reference/dph153-donor/`](../../microcell/docs/reference/dph153-donor/) — 23
+📌 **[`(private lab notes)`](../../(private lab notes)) — 23
 files, 24.8 MB, saved from `tempest`'s folder (Discourse topic 2625, post 41) on 2026-09-06.**
 ⇒ **`cfgs/` holds seven Osmocom configs — `hnbgw · msc · sgsn · ggsn · hlr · mgw · stp` — from a
 deployment that carried a DPH-153.** ⭐ ***This project's own oldest law: the broken device tells
@@ -130,3 +142,24 @@ Specifically:
 
 ⇒ **Until then this page stays a router.** A guide that reads as complete while resting on someone
 else's single report is exactly the failure this repo exists to avoid.
+
+---
+
+## ⛔ Before you let this unit transmit
+
+> ### ⛔ **STOP. THIS IS THE STEP THAT PUTS A TRANSMITTER ON LICENSED SPECTRUM.**
+> Everything before this point was passive. **From here the cell radiates.**
+> **Band 2 (1900 PCS) and Band 5 (850 Cellular) are refarmed and in active use** — empty of the
+> old technology is not the same as vacant. There is a clean route (a **Part 5 experimental
+> licence** in the US) and there is minimum power with physical containment. **You cannot have
+> house-wide coverage and RF containment at the same time.**
+> **Settle the PLMN before this step, not after** — a unit that ran on a carrier still carries
+> that carrier's MCC/MNC. Use **999-99** or **001-01**, and verify it **on the air**.
+> 📌 Full text: the spectrum section of the [README](../README.md).
+> ### ☠️ **AND EMERGENCY CALLING DOES NOT WORK ON THIS CELL.**
+> A handset that camps onto it will try to place **911 / 112 / 999 calls through it, and they
+> will not complete** — with **no warning shown to the user.** It displays bars and looks like
+> service. ⛔ **Not fixable with configuration:** a private core has no route to emergency
+> services. ⇒ **Programmed SIMs you control, minimum power, physical containment** — so no
+> handset you do not control can camp on. ☠️ **If anyone nearby might rely on a phone to call
+> for help, do not run the cell.**

@@ -1,5 +1,16 @@
 # Bring-up: ip.access nano3G S8 — from a sealed box to a call
 
+> ## 🔑 **THIS PAGE ASSUMES THE DEVICE IS YOURS. THAT IS NOT A DISCLAIMER — IT IS THE SUBJECT.**
+> **Everything here is written for someone holding hardware they bought, pointing it at a core
+> they run.** ⭐ **That is not packaging around the technical content; it is what the technical
+> content is *for*.** A guide to reusing your own device and a guide to attacking someone else's
+> are different documents even where a paragraph would look the same.
+> ⛔ **Nothing here is for equipment or a network you do not own** — not a carrier's, not a
+> neighbour's, not one you found. **No route on this page is published to help you reach
+> somebody else's unit**, and every one of them needs physical or LAN access you would only
+> have to your own.
+> 📌 **What you may publish, what you may not, and the one bright line: [`LEGAL.md`](LEGAL.md).**
+
 > ## 1️⃣ **BEFORE STEP ONE — CONFIRM WHICH UNIT YOU ARE HOLDING: [`MATRIX.md`](MATRIX.md)**
 > **This guide is for the ip.access nano3G: one SoC · live bank `config_bank_2` · **563** train · DMI on `:8090` WORKS**
 > ⇒ ⛔ **If your unit is not that, STOP — the other models differ in ways that have cost this
@@ -286,6 +297,23 @@ you intended. **Compare staged against live before any reboot, on any unit.**
 > copied from another unit's write-up is how a stale docstring became a "hardware ceiling" in ours.
 
 ---
+
+> ### ⛔ **STOP. THIS IS THE STEP THAT PUTS A TRANSMITTER ON LICENSED SPECTRUM.**
+> Everything before this point was passive. **From here the cell radiates.**
+> **Band 2 (1900 PCS) and Band 5 (850 Cellular) are refarmed and in active use** — empty of the
+> old technology is not the same as vacant. There is a clean route (a **Part 5 experimental
+> licence** in the US) and there is minimum power with physical containment. **You cannot have
+> house-wide coverage and RF containment at the same time.**
+> **Settle the PLMN before this step, not after** — a unit that ran on a carrier still carries
+> that carrier's MCC/MNC. Use **999-99** or **001-01**, and verify it **on the air**.
+> 📌 Full text: the spectrum section of the [README](../README.md).
+> ### ☠️ **AND EMERGENCY CALLING DOES NOT WORK ON THIS CELL.**
+> A handset that camps onto it will try to place **911 / 112 / 999 calls through it, and they
+> will not complete** — with **no warning shown to the user.** It displays bars and looks like
+> service. ⛔ **Not fixable with configuration:** a private core has no route to emergency
+> services. ⇒ **Programmed SIMs you control, minimum power, physical containment** — so no
+> handset you do not control can camp on. ☠️ **If anyone nearby might rely on a phone to call
+> for help, do not run the cell.**
 
 ## Phase 7 — Unlock, and why a refusal is good news
 

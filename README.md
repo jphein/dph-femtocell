@@ -1,5 +1,12 @@
 # Private UMTS from retired femtocells — Cisco DPH-151 / DPH-153 / DPH-154 and the ip.access nano3G
 
+> ### ⚠️ **NO WARRANTY. READ THIS BEFORE YOU ACT ON ANYTHING BELOW.**
+> These are **field notes, not a product.** Following them can **permanently destroy hardware**,
+> **permanently lock SIM cards**, and **cause radio transmission on licensed spectrum**. You are
+> responsible for what your equipment transmits and for the laws where you are.
+> ⛔ **A private cell cannot complete emergency calls** — see the 911 warning below.
+> **Nothing here is legal advice.**
+
 AT&T shut down its UMTS network on **2022-02-22**. The MicroCell femtocells sold to
 customers to fix indoor coverage stopped being able to do their job that day, and they
 have been landfill-priced ever since — routinely under $15, often under $10.
@@ -74,6 +81,27 @@ neither band is vacant. **Read the “Before you transmit: spectrum” section b
 makes it exactly the wrong thing to reach for when coverage disappoints. Better propagation is
 less containment.
 
+### ☠️ EMERGENCY CALLING DOES NOT WORK ON THIS CELL — AND THE HANDSET WILL NOT SAY SO
+
+A handset that camps onto your cell will try to place **911 / 112 / 999 calls through it**, and
+**they will not complete.** The handset shows the user **no warning and no indication**: it
+displays bars, it looks like service, and the call fails when it matters most.
+
+⛔ **This is not fixable with configuration.** A private core has no route to an emergency
+services network, and there is no setting that makes one appear.
+
+⇒ ⭐ **So the containment rule is not only about spectrum.** Use **programmed SIMs you control**,
+**minimum transmit power**, and **physical containment**, so that no handset you do not control
+can camp onto it. ⚠️ **Band 5 propagates ~7 dB better than Band 2 — better propagation is more
+strangers' handsets, not just more coverage.**
+
+☠️ **If anyone in the building might rely on a phone to call for help, do not run the cell.**
+**This is the most dangerous property of a private cell and it is the one most easily forgotten,
+because nothing ever reports it as an error.**
+
+📌 **Containment that actually works, and the closed-access settings that keep strangers off:**
+[`docs/LEGAL.md`](docs/LEGAL.md).
+
 ### ⛔ Never broadcast a real carrier's PLMN
 
 A unit that ran on AT&T may still carry **MCC/MNC 310-410** in its live configuration.
@@ -137,6 +165,7 @@ documentation, not this repo's.
 | [`docs/CONFIG.md`](docs/CONFIG.md) | the attributes that matter and what they do |
 | [`docs/TRAPS.md`](docs/TRAPS.md) | ⭐ **the failure modes. Read this before you debug anything.** |
 | [`docs/ALTERNATIVES.md`](docs/ALTERNATIVES.md) | when one of these is the wrong choice |
+| **[`docs/LEGAL.md`](docs/LEGAL.md)** | ⭐ **operating one legally** — Part 5 licensing, containment, emergency calling, what you can publish |
 | `config/` | sanitised core-network config templates, with placeholders |
 | `tools/` | scripts that generalise beyond one network |
 | `_config.yml` | GitHub Pages settings. **The file does not enable Pages** — that is a repo-settings decision. |
@@ -190,8 +219,11 @@ as vacant.
 So a femtocell on your bench is not an unlicensed device the way a Wi-Fi access point is.
 Two honest positions:
 
-- **The clean route** is an experimental licence — in the US, [FCC Part 5](https://www.fcc.gov/general/experimental-licenses).
-  It exists for exactly this, and it is not exotic.
+- **The clean route** is an experimental licence — in the US, **FCC Part 5**. It exists for
+  exactly this, an individual can hold one, and it is roughly a form and 30–45 days.
+  ⇒ 📌 **[`docs/LEGAL.md`](docs/LEGAL.md) has the checklist**: eligibility, Form 442, the ELS
+  filing system, what the application asks for, and the non-interference condition that applies
+  whether or not you hold one.
 - **The pragmatic route** that many people actually take is minimum transmit power, minimum
   antenna, and containment to a single room or a shielded enclosure — accepting a risk
   knowingly rather than not knowing there is one.
@@ -201,6 +233,33 @@ Nothing here is legal advice. Rules differ by country; find out which apply to y
 ## Scope: your hardware, your core
 
 This is about making a femtocell **you own** serve a core **you run**. That is the whole subject.
+
+⭐ **And it is the substance of this project's position, not a disclaimer wrapped around it.**
+**Owning the device is what makes every route on these pages a repair manual rather than an
+attack guide** — and it is why the scope holds even where a mechanism would transfer.
+📌 **Restated at the top of every page that describes a way in**, because a scope limit that
+lives only on the front page is one the reader never meets. **What you may publish and the one
+bright line: [`docs/LEGAL.md`](docs/LEGAL.md).**
+
+> ### ⛔ **ONE CONSTRAINT ON *YOUR CORE* BEFORE YOU BUILD IT — AND IT IS THE ONE THAT BITES LATER**
+> **These devices ship a 2008 TLS stack.** A DPH-154 offers **TLS 1.0 only, exactly one cipher
+> suite (`0x002f` / `TLS_RSA_WITH_AES_128_CBC_SHA`), and no extensions.**
+> ⇒ ⭐⭐ **One suite means there is no negotiation margin at all.** Any modern default, distro crypto
+> policy, or `SECLEVEL` bump removes the *only* thing it can speak, and the handshake does not
+> degrade — it ends.
+> ### ☠️ **THE FAILURE YOU SHOULD ACTUALLY PLAN FOR IS NOT SETUP. IT IS A ROUTINE UPGRADE, MONTHS LATER.**
+> **You will get this working. Then you will upgrade the OS or tighten TLS for an unrelated service
+> on the same host, and every femtocell will stop managing at once** — none of them touched.
+> ⛔ **It presents as *"the devices died"*, which sends you to the hardware.** ⭐ **Simultaneity is
+> the tell: N independent devices do not fail in the same minute — the thing that changed is the one
+> thing they share, which is your core.**
+> ✅ **So write the requirement down on the CORE, next to whatever runs its upgrades — not in the
+> femtocell notes.** *The person typing `apt upgrade` is not reading this page.*
+> 📌 Mechanism, probe and the way `openssl s_client` misreports it:
+> [trap 24](docs/TRAPS.md#24-your-tls-server-is-too-modern-to-talk-to-it). **Same class as the
+> DPH-151's SSH needing the legacy cipher set — an obsolete peer whose requirements are invisible
+> until maintenance removes them.** ⚠️ **The SSH one fails loudly at your prompt. This one fails on a
+> device with no screen.**
 
 It deliberately does not cover attacking, intercepting or impersonating anyone else's
 equipment or network. Some of the same mechanisms would apply — that is true of most
@@ -267,10 +326,30 @@ source that already exists rather than publishing a new one. **`sysmocom`'s ship
 configuration is the other artefact worth reading**: it settles at least one question in
 [`docs/CONFIG.md`](docs/CONFIG.md) that our own measurements only corroborated.
 
+## Trademarks
+
+AT&T and MicroCell are trademarks of AT&T Intellectual Property. Cisco is a trademark of Cisco
+Systems, Inc. ip.access and nano3G are trademarks of ip.access Ltd, acquired by Mavenir in
+September 2020. These marks are used here **only to identify the hardware this document
+describes**, as permitted by nominative fair use.
+
+⛔ **This project is not affiliated with, endorsed by, or sponsored by AT&T, Cisco, ip.access or
+Mavenir.**
+
 ## Licence
 
-**GPL-3.0.** See [`LICENSE`](LICENSE).
+- **Documentation** — `README.md`, `docs/`, `config/` — [**CC BY-SA 4.0**](https://creativecommons.org/licenses/by-sa/4.0/), see [`LICENSE-DOCS`](LICENSE-DOCS)
+- **Code** — `tools/` — [**GPL-3.0**](LICENSE)
+
+📌 **Commits before 2026-09-18 were published under GPL-3.0 and remain available under it.** The
+split applies going forward, because GPLv3 is a software licence whose source/object-code
+machinery does not map onto prose, and this repository is mostly prose.
 
 ⚠️ The licence covers the **writing and the scripts in this repository**. It says nothing about
 the femtocell firmware itself, which is ip.access's and is **not distributed here** — see
 [`docs/HARDWARE.md`](docs/HARDWARE.md) for what you need to obtain yourself and from where.
+
+## Contributing and security
+
+Corrections are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md) for the evidence vocabulary
+and the contribution licence. Vendor contact and disclosure posture: [`SECURITY.md`](SECURITY.md).

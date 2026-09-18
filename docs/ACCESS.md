@@ -1,5 +1,16 @@
 # Access: getting into the device
 
+> ## 🔑 **THIS PAGE ASSUMES THE DEVICE IS YOURS. THAT IS NOT A DISCLAIMER — IT IS THE SUBJECT.**
+> **Everything here is written for someone holding hardware they bought, pointing it at a core
+> they run.** ⭐ **That is not packaging around the technical content; it is what the technical
+> content is *for*.** A guide to reusing your own device and a guide to attacking someone else's
+> are different documents even where a paragraph would look the same.
+> ⛔ **Nothing here is for equipment or a network you do not own** — not a carrier's, not a
+> neighbour's, not one you found. **No route on this page is published to help you reach
+> somebody else's unit**, and every one of them needs physical or LAN access you would only
+> have to your own.
+> 📌 **What you may publish, what you may not, and the one bright line: [`LEGAL.md`](LEGAL.md).**
+
 > ## 🔴 **WHICH RALINK BUILD IS THIS PROCEDURE FOR? — READ THIS BEFORE YOU LOG IN**
 > **Everything below that uses `guest` / `1qaz@WSX` describes a Ralink running `FW:1.0.34`.**
 > ⛔ **THE ACCOUNT SETS ON THE TWO BUILDS ARE *DISJOINT*, NOT OVERLAPPING:**
@@ -55,7 +66,7 @@ apply to it.**
 > ### ✅✅ **AND PATH D IS NOT A THEORY — IT IS HOW `.244`'s PICOCHIP ACTUALLY GOT ROOT.**
 > `[findings-dph151-root-baseline.md:1-4 — "first root baseline, measured 2026-09-05 21:59Z.
 >  READ OFF THE DEVICE OVER SSH AS uid=0 ON THE PICO (192.168.157.186, via the Ralink
->  10.0.6.244:22 DNAT). Everything below is measured, not inferred." — and :8 attributes the
+>  <unit-151-a>:22 DNAT). Everything below is measured, not inferred." — and :8 attributes the
 >  nv_env write to "OUR v7 HOOK", :57 to "the hook installed JP's dph151-jp key".]`
 > ⚠️ **This page previously said PATH D was "assembled from measured parts". That hedge was
 > WRONG and it was mine** — it turns a demonstrated capability into a hypothesis, which is
@@ -126,7 +137,7 @@ is closed — because it has no SSH server at all (below).
 > ### 🎯 **THIS IS HOW A DPH GETS ROOT ON ITS PICOCHIP. NO JTAG. NO SERIAL. NO SOLDERING.**
 > `[JP, 2026-09-13, verbatim: **"no we did it all over netork"** · and Osmocom Discourse topic 2625
 >  post 41 (tempest → nickvsnetworking), recovered by JP because Anubis blocks automated fetch.
->  Full text: `~/Projects/microcell/docs/reference/forum-extracts/post-41-tempest-2026-09-04.md`]`
+>  Full text: `(private lab notes: Discourse topic 2625 post 41, tempest, 2026-09-04)`]`
 >
 > ⛔ **EVERY OTHER ROUTE ON THIS PAGE LANDS ON THE RALINK, OR NEEDS A KEY THAT IS ALREADY ON THE
 > PICO.** **Route 0 is the step that crosses between them, and it was missing from this document
@@ -179,7 +190,7 @@ is closed — because it has no SSH server at all (below).
 > ### ✅✅ **AND IT IS CONFIRMED ON A DPH-151 — BY THE PERSON WHO RAN IT**
 > `[JP, 2026-09-13, verbatim: **"the 153 exploit to access the pico worked on the 151 we did it
 >  alrday"** · and **"no we did it all over netork"**]`
-> ⇒ ⭐⭐⭐ **THE 153's PICO EXPLOIT WORKS ON THE 151. IT HAS BEEN DONE ON `10.0.6.244`, WHICH HAS A
+> ⇒ ⭐⭐⭐ **THE 153's PICO EXPLOIT WORKS ON THE 151. IT HAS BEEN DONE ON `<unit-151-a>`, WHICH HAS A
 > LIVE ROOT SHELL ON BOTH CHIPS TODAY** (`ip202ff`, uid 0 — verified 2026-09-13).
 > ⛔ **THIS REPO'S OWN `reference/working-scripts/README.md` CARRIES THE OPPOSITE CAUTION:**
 > *"These target a **DPH-153**. Our unit is a **DPH-151**… tempest states plainly that the 151/154
@@ -338,8 +349,22 @@ What it does have is **`telnetd`, bound to the internal point-to-point address o
 > not carry it across.
 
 Access routes, all from fail0verflow's 2012 work:
-- **telnet with the shipped default credentials.** We are deliberately not reprinting the
-  credential pair here; it is in the fail0verflow write-up, which you should read anyway.
+- **telnet with the shipped default credentials.** Both pairs are named in this repo — in the
+  banner at the top of this file and in [`BRINGUP.md`](BRINGUP.md) Step 1b.
+  > ### 🔴 **CORRECTED 2026-09-18 — THIS LINE USED TO SAY THE CREDENTIAL IS IN THE fail0verflow WRITE-UP. IT IS NOT.**
+  > **This bullet read:** ~~*"We are deliberately not reprinting the credential pair here; it is
+  > in the fail0verflow write-up, which you should read anyway."*~~
+  > **Both halves were wrong.** ⛔ **fail0verflow never published the password.** Their 2012 post
+  > says only that they cracked it — *"the system includes users for ssh and root, both of which
+  > have the same password"*, *"non-dictionary, but after around 5 days of average processing, we
+  > were able to determine the password"* — **and the string appears nowhere in it.**
+  > ⛔ **And this repo was reprinting the pair anyway, in 8 places across two files**, while this
+  > line claimed it was not. ⇒ **A stated policy that the corpus does not follow is worse than no
+  > policy: it tells a reader the credentials are not here, so they stop looking and miss the
+  > bank-dependence that actually matters.**
+  > ⭐ **The repo's own law, firing on the repo:** *a correction that updates one mention of a fact
+  > leaves the others reading as confirmation.* **Here the un-updated mention was the policy
+  > itself.**
   ⚠️ **The accounts are bank-dependent**: on our unit one firmware bank carries a `guest`
   account and no `root`, and the other carries `root` and no `guest`. ⇒ **`Login incorrect`
   may mean "wrong bank", not "wrong password".** Which bank your unit booted is a separate
@@ -866,7 +891,7 @@ of that one box.
 ### 🔴 **AND THE PICO IS SEALED FROM EVERY INBOUND DIRECTION ON AN UNPROVISIONED UNIT**
 `[measured on .106, each with a passing control]`
 ```
-10.0.6.106:22 / .186:22   CLOSED   <- dropbear is NOT on 0.0.0.0 because
+<unit-151-b>:22 / .186:22   CLOSED   <- dropbear is NOT on 0.0.0.0 because
                                       ENV_VERBOSE_CONSOLE_ENABLED != TRUE. THIS IS THE LOCK.
 udp/69 TFTP               no answer
 tcp 80 / 443 / 8080 / 8090  CLOSED  <- so the dmi_config.cgi FILE-UPLOAD route is NOT available
@@ -877,7 +902,7 @@ CONTROL: .185:23          OPEN      <- the probe works; the zeros above are real
 and the guides that teach pico→Ralink have the dependency BACKWARDS** — on a factory-fresh unit
 the Ralink is reachable first and the pico is behind default-deny.
 
-### ✅ **THE EXACT COMMAND THAT UNLOCKED `.244`'s PICO — recovered from `microcell/build/dph151/pico-dump-*.dbg`**
+### ✅ **THE EXACT COMMAND THAT UNLOCKED `.244`'s PICO — recovered from `(private lab notes)`**
 ```sh
 grep -q pounce-rce /var/ipaccess/root_home/.ssh/authorized_keys 2>/dev/null || \
   echo "ssh-rsa AAAA… cwmp_rce_proof pounce-rce" >> /var/ipaccess/root_home/.ssh/authorized_keys
@@ -895,8 +920,8 @@ iptables -I INPUT 1 -p tcp --dport 22 -j ACCEPT
 >    38cb81eb65f12ad1   "dph151-jp"                   <- JP's own. Fine.
 >    b22d85d26763594a   "cwmp_rce_proof pounce-rce"   <- 🔴 THIS ONE
 >
-> ssh-keygen -y -f microcell/tmp/DPH153-AT/cwmp_rce_key   ->  b22d85d26763594a   EXACT MATCH
-> git -C microcell/tmp/DPH153-AT remote -v
+> ssh-keygen -y -f (private lab notes)   ->  b22d85d26763594a   EXACT MATCH
+> git -C (private lab notes) remote -v
 >    origin  https://github.com/nickvsnetworking/DPH153-AT.git          <- PUBLIC REPO
 > ```
 > ⇒ ⛔ **ANY UNIT PROVISIONED WITH THIS ACCEPTS ROOT SSH FROM A KEY ANYONE CAN `git clone`.**
@@ -962,7 +987,7 @@ iptables -I INPUT 1 -p tcp --dport 22 -j ACCEPT
 > 📌 **Raised to JP directly on 2026-09-13. This banner records it; it does not decide it.**
 
 ⚠️ **THAT IS THE PERSISTENCE STEP, NOT THE ENTRY.** The `.dbg` shows it delivered **over SSH to
-`10.0.6.244:22`, answered by `dropbear_0.50`** — i.e. the pico's sshd was ALREADY listening when
+`<unit-151-a>:22`, answered by `dropbear_0.50`** — i.e. the pico's sshd was ALREADY listening when
 this ran. ⛔ **Do not read it as the way in.** `ENV_START_DMI_TELNET TRUE` is what opens `:8090`.
 
 ### ⛔ **STILL OPEN, STATED AS OPEN: RALINK ROOT → A WRITE ON THE PICO'S FILESYSTEM**
@@ -979,8 +1004,8 @@ or the pico's own outbound ACS leg per Route 0.
 
 ```
 ACS Download RPC  ->  rmm-selfclean.sdp  ->  post_swdl_hook runs the hook AS ROOT on the PICO
-     microcell/build/dph151/selfclean_hook_jp.sh  (the payload, 6892 B)
-     microcell/build/dph151/rmm-selfclean.sdp     (4450 B, one 0x5007 hook item, 3 CRCs verified)
+     (private lab notes)  (the payload, 6892 B)
+     (private lab notes)     (4450 B, one 0x5007 hook item, 3 CRCs verified)
   the hook then:
      installs authorized_keys (dph151-jp + pounce-rce) in /var/ipaccess/root_home/.ssh
    🔴 pounce-rce = THE PUBLIC-GITHUB KEY. See the red banner above before serving this.
@@ -999,21 +1024,21 @@ PERSISTENT SSH on it     -> the RCE ladder. A DIFFERENT GOAL.
 ### 🔴 **THE BLOCKER WAS OURS, NOT THE DEVICE'S — AND `TLS-OK` IS THE TRAP**
 `[measured on exchange, 6-hour window, BOTH units]`
 ```
-10.0.6.106  95 sessions   10.0.6.244  1280 sessions
-every one:  -> 10.0.6.20:443 [CMHS/other] · TLS-OK clientcert=len=1006 · peer closed (state=init)
+<unit-151-b>  95 sessions   <unit-151-a>  1280 sessions
+every one:  -> <your-cmhs-ip>:443 [CMHS/other] · TLS-OK clientcert=len=1006 · peer closed (state=init)
 ```
 **The cells reach us, authenticate with a valid client cert, and OUR ACS never advances past
 `init`.** ⇒ ⭐⭐ **`TLS-OK` is the loudest success line in the log and it certifies the TRANSPORT
 ONLY. The session dies one state later, and a transport receipt reads like a provisioning receipt.**
 
 **THE MECHANISM: one IP cannot serve both roles.** `ctx` is chosen by `getsockname()` because these
-devices send **no TLS SNI**, and the dispatch has **no branch for `10.0.6.20`** — it falls to
+devices send **no TLS SNI**, and the dispatch has **no branch for `<your-cmhs-ip>`** — it falls to
 `else: chan="CMHS/other"`. A CWMP device that lands there is answered with an **XMPP stream
 header**, which it cannot parse, so it closes at `state=init`.
 ```
-femtocell.wireless.att.com          -> 10.0.6.21   ✅ ACS handler
-dpewe-santa-clara.wireless.att.com  -> 10.0.6.21   ✅ ACS handler
-cmhswe-santa-clara.wireless.att.com -> 10.0.6.20   ⛔ NO BRANCH -> else -> CMHS
+femtocell.wireless.att.com          -> <your-acs-ip>   ✅ ACS handler
+dpewe-santa-clara.wireless.att.com  -> <your-acs-ip>   ✅ ACS handler
+cmhswe-santa-clara.wireless.att.com -> <your-cmhs-ip>   ⛔ NO BRANCH -> else -> CMHS
 ```
 ✅ **DNS has since been corrected for `femtocell`, which is why `.244` now lands 385 Informs on
 `.21`.** ⚠️ **Two findings that looked contradictory — "0 Informs, ever" and "385 Informs, all
@@ -1129,7 +1154,7 @@ measurement names the translated host, and nothing in the data says otherwise***
 correct DNS capture sat misattributed for days because of exactly this.
 
 ### ⭐⭐⭐ **A DPH-151 INFORMS AT BOOT. "IT NEVER INFORMS" AND "IT HAS HAD NOTHING TO SAY SINCE IT BOOTED" PRODUCE IDENTICAL LOGS.**
-`[2026-09-13, ~6 hours lost to reading the first one. 151#2 = 10.0.6.106.]`
+`[2026-09-13, ~6 hours lost to reading the first one. 151#2 = <unit-151-b>.]`
 ```
 209 sessions · TLS-OK, valid client cert · ZERO application bytes · ~12 ms close · 0 Informs
 ```

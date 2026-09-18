@@ -1,5 +1,16 @@
 # Bring-up: DPH-151 — from a boxed MicroCell to a call
 
+> ## 🔑 **THIS PAGE ASSUMES THE DEVICE IS YOURS. THAT IS NOT A DISCLAIMER — IT IS THE SUBJECT.**
+> **Everything here is written for someone holding hardware they bought, pointing it at a core
+> they run.** ⭐ **That is not packaging around the technical content; it is what the technical
+> content is *for*.** A guide to reusing your own device and a guide to attacking someone else's
+> are different documents even where a paragraph would look the same.
+> ⛔ **Nothing here is for equipment or a network you do not own** — not a carrier's, not a
+> neighbour's, not one you found. **No route on this page is published to help you reach
+> somebody else's unit**, and every one of them needs physical or LAN access you would only
+> have to your own.
+> 📌 **What you may publish, what you may not, and the one bright line: [`LEGAL.md`](LEGAL.md).**
+
 > ## 🔴 **WHICH RALINK BUILD IS THIS PROCEDURE FOR? — READ THIS BEFORE YOU LOG IN**
 > **Everything below that uses `guest` / `1qaz@WSX` describes a Ralink running `FW:1.0.34`.**
 > ⛔ **THE ACCOUNT SETS ON THE TWO BUILDS ARE *DISJOINT*, NOT OVERLAPPING:**
@@ -130,7 +141,7 @@ udp 1024:65535   THE ONLY UNEXPLORED RANGE. The pico firewall permits it from .1
                  ⛔ needs a real UDP client ⇒ do it FROM THE PICO. The Ralink's tftp gives
                     REACH, NOT ENUMERATION — an RRQ is answered only by a TFTP server.
 tcp 20000        🔴 RETRACTED 2026-09-14 — NOT A SURFACE ON .106. It is a .244 forward.
-                 Probed live: 10.0.6.106:20000 REFUSED, identically to the :9999 control.
+                 Probed live: <unit-151-b>:20000 REFUSED, identically to the :9999 control.
                  See the per-unit block below; do not put it back.
 tcp 3016 · 2345  OBSERVED LISTENING ON 0.0.0.0 — not loopback — on .244's pico.
                  ⇒ what becomes reachable on .106 the MOMENT its firewall opens.
@@ -139,14 +150,14 @@ udp 5050         netannounce. ⚠️ CMHS-side (present in cmhs, absent in DslmS
 ```
 ### 🔴 **`tcp 20000` RETRACTED AS A `.106` SURFACE — AND WHAT REPLACES IT IS WORTH MORE THAN THE PORT**
 `[lucid-console154, live nat table AND a probe on .106, 2026-09-14, with BOTH controls passing:
- 192.168.157.185:23 succeeded (known-open) · 10.0.6.106:9999 refused (known-closed) ⇒ the
+ 192.168.157.185:23 succeeded (known-open) · <unit-151-b>:9999 refused (known-closed) ⇒ the
  instrument discriminates. Device scope independently confirmed at the source by nebula-librarian3.]`
 ```
                   .244  (DPH-151 #1)        .106  (DPH-151 #2)
   DNAT forwards   80, 22, 8080, 20000       80, 22, 8080          <- THREE RULES, NOT FOUR
   source          findings-dph151.md:113    live nat table, measured 2026-09-14
 ```
-⇒ ⛔ **`10.0.6.106:20000` refuses EXACTLY AS `:9999` DOES — because it IS like `:9999`: with no
+⇒ ⛔ **`<unit-151-b>:20000` refuses EXACTLY AS `:9999` DOES — because it IS like `:9999`: with no
 DNAT it lands on the Ralink, which has no listener and RSTs.**
 ⇒ ⭐⭐⭐ **THE TWO UNITS DIFFER, AND *THAT* IS THE DURABLE FINDING: THE FORWARD TABLE IS PER-UNIT
 CONFIGURATION, NOT A MODEL PROPERTY.** ⇒ **NO PORT LIST TRANSFERS BETWEEN THESE UNITS.**
@@ -155,7 +166,7 @@ CONFIGURATION, NOT A MODEL PROPERTY.** ⇒ **NO PORT LIST TRANSFERS BETWEEN THES
 set a forward on `.244` that `.106` lacks. ⇒ **`set_port_fwd` WORKS and its effect PERSISTS —
 learned from a difference between two units, without touching the verb.**
 ☠️ **PROVENANCE, BECAUSE IT IS THIS CORPUS'S MOST-REPEATED ERROR: `findings-dph151.md` IS A `.244`
-FILE.** Its own header reads *"Lane: lucid-dph151 · 2026-09-04"* and its §1 reads `IP 10.0.6.244`.
+FILE.** Its own header reads *"Lane: lucid-dph151 · 2026-09-04"* and its §1 reads `IP <unit-151-a>`.
 ⇒ **A `.244` fact was read into a `.106` surface list, and I lifted it into this guide on that
 list's word — inside a document whose stated purpose is to stop people re-deriving things.**
 ⭐ **It was caught ONLY BECAUSE IT WAS LIFTED** — i.e. read by someone other than its author.
@@ -254,12 +265,24 @@ telnet 192.168.157.185
 > unit: `root`/`gemtekro` opens a BusyBox v1.8.2 shell; the banner's account table is correct.]`
 > 📌 **`gemtekro` is a CRACKED HASH, not a vendor-published default** — Gemtek is the ODM, `ro` is
 > `ro`(ot). ⚠️ **It is not guaranteed on every unit; if it fails, the hash is per-build, not per-device.**
+> ### 📌 **PROVENANCE, STATED BECAUSE A CREDENTIAL WITH NO SOURCE IS AN UNVERIFIABLE CLAIM**
+> **fail0verflow cracked this same password in 2012 and did NOT publish the string** — their post
+> reports only the fact and the ~5 days of processing. ⇒ ⭐ **So this line is very likely the first
+> public appearance of the plaintext, and it should say so rather than imply a prior source.**
+> **Why it is published here anyway:** the hardware is end-of-life, **the network it served was
+> shut down 2022-02-22**, the account is reachable **only from the device's own internal `/30`**
+> (`192.168.157.185`, not the LAN — measured, see the bind-address note below), and **the same
+> teardown published an unauthenticated remote root backdoor** (`wizard`, UDP 14677) that is
+> strictly more dangerous than a local password. ⇒ **Withholding this string protects nobody and
+> costs every owner the use of their own device.**
+> ⚠️ **If you disagree with that judgement, it is one string in one file** — but change the
+> reasoning here too, not just the value.
 > ☠️ **This is this corpus's own law firing on this file: a correction that updates one mention of a
 > fact leaves the others reading as confirmation.** **The banner was added and this step was not.**
 
 > ### ⚠️ **AND THE BIND ADDRESS IS *INTERNAL ONLY* — MEASURED, BECAUSE IT LOOKS LIKE A DEAD UNIT**
 > ```
-> 10.0.6.106:23        closed      <- the LAN address. Nothing listens here.
+> <unit-151-b>:23        closed      <- the LAN address. Nothing listens here.
 > 192.168.157.185:23   OPEN        <- the SAME CHIP, its internal address
 > ```
 > ⇒ ⭐ **Port-scanning the unit's LAN address tells you telnet is shut. It is not — it is bound
@@ -396,7 +419,7 @@ what fails when the operator's infrastructure is unreachable.
 > ```
 
 > ## 🎯 **AND IF YOUR UNIT REBOOTS AND SENDS NO INFORM — STOP HERE. IT IS PROBABLY NOT BROKEN.**
-> ### **⇒ [`microcell/docs/findings/findings-106-never-provisioned-2026-09-13.md`](../../microcell/docs/findings/findings-106-never-provisioned-2026-09-13.md)**
+> ### **⇒ [`(private lab notes)`](../../(private lab notes))**
 > **A unit with a BOOTSTRAP pointer and no MANAGEMENT pointer asks the redirector *"where is my
 > management server?"*, gets answered as though the redirector IS the server, and closes with
 > nothing to say.** ⇒ ***A DECISION WITH NO WORK, not a timeout — and no number of power cycles
@@ -469,7 +492,7 @@ intend to change, *then* reboot once. `[measured — "~24 hours of null results"
 TLS handshake, zero application bytes, and a hang-up.~~ RETRACTED 2026-09-13.**
 `[lucid-console154, 0437e55, disproving their own mechanism; verified independently.]`
 ```
-385 CWMP Informs in 9 days, ALL of them [ACS/femtocell] on 10.0.6.21
+385 CWMP Informs in 9 days, ALL of them [ACS/femtocell] on <your-acs-ip>
 ⇒ the address that name resolves to here IS A FULLY WORKING CWMP ENDPOINT.
 .244 (WORKING) shows 19,352 silent closes AND 100 Informs
 ⇒ a completed TLS handshake followed by a silent close is NORMAL. It is a POLL, not a rejection.
@@ -651,7 +674,7 @@ on one DPH-151 — **every `rmm_client` verb failed while the port stayed open.*
 > ⇒ ⛔ **So "completes TLS and says nothing" is NOT by itself a fault.** **Do not diagnose from a
 > single silent connection — the healthy device produced 19,352 of them.**
 >
-> ### 🔴 **AND `10.0.6.21` IS THE ACS, NOT A "FILE-DOWNLOAD HOST". THIS GUIDE SAID OTHERWISE.**
+> ### 🔴 **AND `<your-acs-ip>` IS THE ACS, NOT A "FILE-DOWNLOAD HOST". THIS GUIDE SAID OTHERWISE.**
 > ```
 > 385 CWMP Informs in 9 days   ALL of them  [ACS/femtocell]   ⇒ .21 is a FULLY WORKING CWMP endpoint
 > ```
@@ -666,6 +689,20 @@ on one DPH-151 — **every `rmm_client` verb failed while the port stayed open.*
 > .106   never resolves a cmhs* name, ever                    [openwrt-f8]
 > .106   ONE destination          .244  THREE
 > ```
+> > ### ⚠️ **`.106` / `.244` / `.127` HERE ARE LAB HOST SHORTHAND — THREE PHYSICAL UNITS, NOT SETTINGS**
+> > **They are the last octet of one lab's addresses and mean nothing on yours.** ⭐ **Read them as
+> > *"unit A / unit B / unit C"*; only the ASYMMETRY between them is the finding.**
+> > ### ☠️☠️ **AND `127` NAMES A DEVICE HERE AND A FIRMWARE BUILD ELSEWHERE IN THIS REPO**
+> > ```
+> > .127            a HOST, in this table               <- unit C
+> > 579.11.127      a FIRMWARE TRAIN                    <- see BRINGUP-DPH154.md
+> > ```
+> > ⇒ ⛔ **The two are unrelated, and the unit running train `579.11.127` is NOT the one called
+> > `.127` — that unit runs `579.11.144`.** **A sentence pairing "127" with "144" is CORRECT and
+> > reads exactly like a typo.** ⚠️ **Anyone normalising it "fixes" it into a falsehood.**
+> > 📌 **Counts in this corpus carry different windows and denominators** — this row is *9 days*, and
+> > other write-ups slice the same device by *single day* or *by destination address*. ⭐ **Quote a
+> > count only with the window and denominator it was measured over; the bare number is not portable.**
 > ⇒ ⭐ **`.106` is dialling a FULLY WORKING CWMP ENDPOINT AND DECLINING TO SPEAK ON IT.** **The
 > asymmetry was never in doubt; the *why* was wrong.**
 > ### 🔑 **THE LEADING CANDIDATE — team-lead's, and STILL UNMEASURED**
@@ -854,7 +891,7 @@ reboot -> device sends "1 BOOT", re-reads DNS -> management session completes
 > installs and what you authenticate with gives `rc=255` and is indistinguishable from a lost race.
 > **Install BOTH halves of the pair you intend to use.** ⛔ **The error is in WHICH pair.**
 > ```
-> b22d85d26763594a  "cwmp_rce_proof pounce-rce"  🔴 private half = microcell/tmp/DPH153-AT/cwmp_rce_key
+> b22d85d26763594a  "cwmp_rce_proof pounce-rce"  🔴 private half = (private lab notes)
 >                                                   origin github.com/nickvsnetworking/DPH153-AT  PUBLIC
 > 38cb81eb65f12ad1  "dph151-jp"                  ✅ JP's own
 > ```
@@ -896,7 +933,7 @@ subsequent "not found" is meaningless.**
 > ### ⚠️ **A SEPARATE, REAL DEFECT ON `.106`: IT HAS NO TIME SOURCE** `[measured 2026-09-13]`
 > ```
 > .106   418 x NTP attempts to AT&T servers — correctly BLOCKED by our egress rules. No clock.
-> .244   uses a LOCAL source (10.0.6.1), taken from hw_description.dat.       Clock OK.
+> .244   uses a LOCAL source (<your-gateway>), taken from hw_description.dat.       Clock OK.
 > ```
 > ⛔ **NOT the cause of the provisioning silence** — ⭐ *a clock fails CONSISTENTLY, and this
 > symptom is intermittent across units that share it.* **Recorded as a standalone defect so the
@@ -924,7 +961,7 @@ guide. This section exists so it cannot be lost a third time.]`**
 > ```
 > ⇒ **Persistence on the pico is a FILE. Persistent SSH on the Ralink would be a FIRMWARE CHANGE** —
 > or a re-push from the pico every boot, proposed and unbuilt
-> (`microcell/docs/findings/findings-morpheus3gkeep-ralink-ssh.md`).
+> (`(private lab notes)`).
 > ### ⭐⭐⭐ **BUT DO NOT READ THAT AS "RALINK ACCESS IS LOST AT REBOOT" — IT IS NOT.**
 > > ***"The telnetd is not persistent. THE MEANS OF CREATING IT IS."***
 > > `[findings-nebulatopology-ralink-ssh.md:91 — `wizard` is in the firmware image]`
@@ -1018,7 +1055,7 @@ guide. This section exists so it cannot be lost a third time.]`**
 > ⚠️ **Three prerequisites, ONE now cleared:** ✅ the telnet path works (measured on `.106`,
 > 2026-09-14) · ⛔ **a static mipsel/MIPS-II/uClibc dropbear actually BUILDING — UNVERIFIED** ·
 > ⛔ **free ramfs space on the Ralink — UNMEASURED.**
-> 📌 `microcell/docs/findings/findings-morpheus3gkeep-ralink-ssh.md`.
+> 📌 `(private lab notes)`.
 >
 > ⇒ ⭐⭐ ***"We do not know why it survives" is a better thing to carry in a guide than a wrong
 > reason*** — a wrong reason gets dismissed the moment someone checks it, and takes the true
@@ -1151,6 +1188,14 @@ evidence the callee accepted it.**
 > pragmatic one (minimum power, minimum antenna, one room) — and **you cannot have house-wide
 > coverage and RF containment at the same time.**
 >
+> ### ☠️ **AND EMERGENCY CALLING DOES NOT WORK ON THIS CELL.**
+> A handset that camps onto it will try to place **911 / 112 / 999 calls through it, and they
+> will not complete** — with **no warning shown to the user.** It displays bars and looks like
+> service. ⛔ **Not fixable with configuration:** a private core has no route to emergency
+> services. ⇒ **Programmed SIMs you control, minimum power, physical containment** — so no
+> handset you do not control can camp on. ☠️ **If anyone nearby might rely on a phone to call
+> for help, do not run the cell.**
+>
 > **And settle the PLMN before this step, not after.** A unit that ran on a carrier's network
 > still carries that carrier's MCC/MNC. See [`CONFIG.md`](CONFIG.md), and verify it **on the
 > air** — trap 15 in [`TRAPS.md`](TRAPS.md) is a store that reads back correctly while the
@@ -1227,7 +1272,7 @@ working over, and on our unit it caused a reboot.
 > `[measured: a cell at 100% packet loss with ARP failing, while show hnb read healthy]`
 > ```
 > SCTP-ASSOC: State SCTP_ESTABLISHED                      <- the ASSOCIATION's view. SURVIVES THE PEER.
->  RemAddr 10.0.6.x:29169 State SCTP_POTENTIALLY_FAILED   <- the PATH's view. FAILS FIRST. USE THIS.
+>  RemAddr <your-core-ip>:29169 State SCTP_POTENTIALLY_FAILED   <- the PATH's view. FAILS FIRST. USE THIS.
 > Uptime 1h01m · "3 HNB connected"                        <- none of these moved
 > ```
 > ⇒ **Read the indented `RemAddr … State`, not the association line above it.**
