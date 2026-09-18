@@ -24,7 +24,7 @@
 # settles those. In the vocabulary this repo uses on its own claims, the four
 # checks above are *measured* and everything else here is *reported*.
 
-title: Reusing AT&T MicroCell femtocells
+title: Reusing retired UMTS femtocells
 description: >-
   Field notes on the Cisco DPH-151/153/154 and the ip.access nano3G: what the
   hardware is, how to get a management channel, how to bring a cell up against
@@ -73,3 +73,6 @@ kramdown:
 exclude:
   - tools/
   - LICENSE
+  - LICENSE-DOCS
+  - CONTRIBUTING.md
+  - SECURITY.md
