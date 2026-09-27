@@ -1,6 +1,6 @@
 Documentation in this repository — README.md, docs/ and config/ — is licensed
 under the Creative Commons Attribution-ShareAlike 4.0 International License.
-Code in tools/ is licensed under GPL-3.0; see LICENSE.
+Code in tools/ is licensed under AGPL-3.0-or-later; see LICENSE.
 
 Commits before 2026-09-18 were published under GPL-3.0 and remain available under it.
 
