@@ -19,7 +19,7 @@ that matter, and an instruction that is correct for one can destroy another.
 ## Licence of contributions
 
 By submitting a pull request you agree that your contribution is licensed under the same terms
-as this repository — **CC BY-SA 4.0 for documentation, GPL-3.0 for code** — and that you have
+as this repository — **CC BY-SA 4.0 for documentation, AGPL-3.0-or-later for code** — and that you have
 the right to grant that licence. If you are contributing on behalf of an employer, confirm you
 are authorised to do so.
 

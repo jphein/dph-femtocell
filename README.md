@@ -339,11 +339,13 @@ Mavenir.**
 ## Licence
 
 - **Documentation** — `README.md`, `docs/`, `config/` — [**CC BY-SA 4.0**](https://creativecommons.org/licenses/by-sa/4.0/), see [`LICENSE-DOCS`](LICENSE-DOCS)
-- **Code** — `tools/` — [**GPL-3.0**](LICENSE)
+- **Code** — `tools/` — **AGPL-3.0-or-later** © 2026 Jeffrey Pine Hein. See [LICENSE](LICENSE).
 
 📌 **Commits before 2026-09-18 were published under GPL-3.0 and remain available under it.** The
 split applies going forward, because GPLv3 is a software licence whose source/object-code
 machinery does not map onto prose, and this repository is mostly prose.
+Code in `tools/` moved from GPL-3.0 to AGPL-3.0-or-later on 2026-09-27; earlier commits keep
+the GPL-3.0 grant.
 
 ⚠️ The licence covers the **writing and the scripts in this repository**. It says nothing about
 the femtocell firmware itself, which is ip.access's and is **not distributed here** — see
